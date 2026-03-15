@@ -19,8 +19,12 @@
         body {
             font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             margin: 0;
-            background: url('fundosite.webp') no-repeat center top fixed;
-            background-size: 125%;
+            /* AJUSTE PARA CELULAR: O 'cover' faz o fundo preencher a tela toda */
+            background: url('fundosite.webp') no-repeat center center fixed;
+            background-size: cover;
+            -webkit-background-size: cover;
+            -moz-background-size: cover;
+            -o-background-size: cover;
             color: #bc13fe; 
             line-height: 1.6;
             overflow-x: hidden;
@@ -34,7 +38,6 @@
         }
 
         .header-logo { max-width: 350px; margin: 0 auto 15px auto; }
-        /* TRAVA 2: Impede que a logo seja arrastada */
         .header-logo img { width: 100%; height: auto; display: block; pointer-events: none; }
 
         .subtitle {
@@ -92,7 +95,6 @@
 
         .gallery-item:hover { transform: scale(1.02); border-color: #bc13fe; }
 
-        /* TRAVA 3: Impede arrastar as imagens da galeria */
         .gallery-item img, .gallery-item video {
             width: 100%;
             height: 200px;
@@ -128,7 +130,6 @@
             border: 2px solid #bc13fe;
             border-radius: 10px;
             box-shadow: 0 0 30px rgba(188, 19, 254, 0.5);
-            /* Aqui permitimos o clique para fechar, mas o bloqueio de menu continua */
         }
 
         .actions { text-align: center; padding: 40px 0; }
@@ -201,7 +202,6 @@
     </footer>
 
     <script>
-        // TRAVA 5: Bloqueia atalhos de desenvolvedor (F12, Ctrl+Shift+I, Ctrl+U, Ctrl+S)
         document.addEventListener('keydown', function(e) {
             if (
                 e.key === "F12" || 
