@@ -154,11 +154,17 @@
             font-weight: bold;
         }
 
-        /* ESTILO DO BOTÃO DO YOUTUBE */
+        /* BOTÃO DO CANAL COM ZOOM */
         .actions { text-align: center; padding: 40px 0; }
-        .btn-gif { display: inline-block; transition: transform 0.3s ease; max-width: 400px; cursor: pointer; }
-        .btn-gif:hover { transform: scale(1.05); }
-        .btn-gif img { width: 100%; height: auto; border-radius: 10px; pointer-events: none; }
+        .btn-gif { 
+            display: inline-block; 
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            max-width: 500px; 
+            cursor: pointer; 
+            text-decoration: none;
+        }
+        .btn-gif:hover { transform: scale(1.1); }
+        .btn-gif img { width: 100%; height: auto; border-radius: 15px; pointer-events: none; border: 2px solid rgba(188, 19, 254, 0.3); }
 
         footer {
             text-align: center;
@@ -175,7 +181,7 @@
         <div class="header-logo">
             <img src="logo sinsice2 site.webp" alt="Sins Ice2 Logo">
         </div>
-        <div class="subtitle">13 anos • YouTuber • Animador • Compositor • Designer</div>
+        <div class="subtitle">14 anos • YouTuber • Animador • Compositor • Designer</div>
     </header>
 
     <div class="container">
@@ -205,7 +211,7 @@
 
         <div class="actions">
             <a href="https://www.youtube.com/@Sinsice2" target="_blank" class="btn-gif">
-                <img src="vireumgelo.gif" alt="Se inscreva no canal - Vire um Gelo">
+                <img src="vireumgelo.gif" alt="Vire um Gelo">
             </a>
         </div>
     </div>
@@ -213,10 +219,8 @@
     <div id="lightbox">
         <span class="close-btn" onclick="closeLightbox()">&times;</span>
         <button id="btn-prev" class="nav-btn prev-btn" onclick="changeItem(-1)">&#10094;</button>
-        
         <img id="lightbox-img" src="" style="display:none;" oncontextmenu="return false;">
         <video id="lightbox-video" controls loop style="display:none;" oncontextmenu="return false;"></video>
-        
         <div id="counter"></div>
         <button id="btn-next" class="nav-btn next-btn" onclick="changeItem(1)">&#10095;</button>
     </div>
@@ -226,25 +230,20 @@
     </footer>
 
     <script>
-        // BLOQUEIO DE TECLAS
+        // Bloqueios
         document.addEventListener('keydown', function(e) {
             if (e.key === "F12" || (e.ctrlKey && e.shiftKey && e.key === "I") || (e.ctrlKey && (e.key === "u" || e.key === "s"))) {
                 e.preventDefault();
             }
         });
 
-        // GRUPOS SEPARADOS (Cada tópico com seus próprios itens)
         const groups = {
-            'animacao': [
-                { type: 'video', src: 'bixo de espada.mp4' }
-            ],
+            'animacao': [{ type: 'video', src: 'bixo de espada.mp4' }],
             'ilustracao': [
                 { type: 'img', src: 'soldado.webp' },
                 { type: 'img', src: 'Demencia.webp' }
             ],
-            'design': [
-                { type: 'img', src: 'Design1.webp' }
-            ]
+            'design': [{ type: 'img', src: 'Design1.webp' }]
         };
 
         let currentGroup = [];
@@ -255,7 +254,6 @@
             currentIdx = 0;
             updateLightbox();
             document.getElementById('lightbox').style.display = 'flex';
-            
             const showBtns = currentGroup.length > 1 ? 'block' : 'none';
             document.getElementById('btn-prev').style.display = showBtns;
             document.getElementById('btn-next').style.display = showBtns;
@@ -266,19 +264,14 @@
             const lbVid = document.getElementById('lightbox-video');
             const counter = document.getElementById('counter');
             const item = currentGroup[currentIdx];
-
             counter.innerText = (currentIdx + 1) + ' / ' + currentGroup.length;
 
             if (item.type === 'img') {
-                lbVid.style.display = 'none';
-                lbVid.pause();
-                lbImg.src = item.src;
-                lbImg.style.display = 'block';
+                lbVid.style.display = 'none'; lbVid.pause();
+                lbImg.src = item.src; lbImg.style.display = 'block';
             } else {
                 lbImg.style.display = 'none';
-                lbVid.src = item.src;
-                lbVid.style.display = 'block';
-                lbVid.play();
+                lbVid.src = item.src; lbVid.style.display = 'block'; lbVid.play();
             }
         }
 
