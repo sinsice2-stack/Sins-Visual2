@@ -177,19 +177,19 @@
             <h2>Portfólio</h2>
             <div class="gallery-grid">
                 
-                <div class="gallery-item" onclick="openGallery(0)">
+                <div class="gallery-item" onclick="openGroup('animacao')">
                     <video autoplay loop muted playsinline>
                         <source src="bixo de espada.mp4" type="video/mp4">
                     </video>
                     <div class="gallery-caption">Minhas Animações</div>
                 </div>
 
-                <div class="gallery-item" onclick="openGallery(1)">
+                <div class="gallery-item" onclick="openGroup('ilustracao')">
                     <img src="soldado.webp" alt="Ilustrações">
                     <div class="gallery-caption">Ilustrações</div>
                 </div>
 
-                <div class="gallery-item" onclick="openGallery(3)">
+                <div class="gallery-item" onclick="openGroup('design')">
                     <img src="Design1.webp" alt="Design">
                     <div class="gallery-caption">Assets & Design</div>
                 </div>
@@ -200,13 +200,13 @@
 
     <div id="lightbox">
         <span class="close-btn" onclick="closeLightbox()">&times;</span>
-        <button class="nav-btn prev-btn" onclick="changeItem(-1)">&#10094;</button>
+        <button id="btn-prev" class="nav-btn prev-btn" onclick="changeItem(-1)">&#10094;</button>
         
         <img id="lightbox-img" src="" style="display:none;" oncontextmenu="return false;">
         <video id="lightbox-video" controls loop style="display:none;" oncontextmenu="return false;"></video>
         
         <div id="counter"></div>
-        <button class="nav-btn next-btn" onclick="changeItem(1)">&#10095;</button>
+        <button id="btn-next" class="nav-btn next-btn" onclick="changeItem(1)">&#10095;</button>
     </div>
 
     <footer>
@@ -221,27 +221,42 @@
             }
         });
 
-        let currentIdx = 0;
-        const items = [
-            { type: 'video', src: 'bixo de espada.mp4' }, // 0
-            { type: 'img', src: 'soldado.webp' },        // 1
-            { type: 'img', src: 'Demencia.webp' },       // 2
-            { type: 'img', src: 'Design1.webp' }         // 3
-        ];
+        // GRUPOS SEPARADOS
+        const groups = {
+            'animacao': [
+                { type: 'video', src: 'bixo de espada.mp4' }
+            ],
+            'ilustracao': [
+                { type: 'img', src: 'soldado.webp' },
+                { type: 'img', src: 'Demencia.webp' }
+            ],
+            'design': [
+                { type: 'img', src: 'Design1.webp' }
+            ]
+        };
 
-        function openGallery(index) {
-            currentIdx = index;
+        let currentGroup = [];
+        let currentIdx = 0;
+
+        function openGroup(groupName) {
+            currentGroup = groups[groupName];
+            currentIdx = 0;
             updateLightbox();
             document.getElementById('lightbox').style.display = 'flex';
+            
+            // Esconde as setas se o tópico tiver só 1 item
+            const showBtns = currentGroup.length > 1 ? 'block' : 'none';
+            document.getElementById('btn-prev').style.display = showBtns;
+            document.getElementById('btn-next').style.display = showBtns;
         }
 
         function updateLightbox() {
             const lbImg = document.getElementById('lightbox-img');
             const lbVid = document.getElementById('lightbox-video');
             const counter = document.getElementById('counter');
-            const item = items[currentIdx];
+            const item = currentGroup[currentIdx];
 
-            counter.innerText = (currentIdx + 1) + ' / ' + items.length;
+            counter.innerText = (currentIdx + 1) + ' / ' + currentGroup.length;
 
             if (item.type === 'img') {
                 lbVid.style.display = 'none';
@@ -258,8 +273,8 @@
 
         function changeItem(dir) {
             currentIdx += dir;
-            if (currentIdx < 0) currentIdx = items.length - 1;
-            if (currentIdx >= items.length) currentIdx = 0;
+            if (currentIdx < 0) currentIdx = currentGroup.length - 1;
+            if (currentIdx >= currentGroup.length) currentIdx = 0;
             updateLightbox();
         }
 
@@ -268,11 +283,12 @@
             document.getElementById('lightbox-video').pause();
         }
 
-        // Navegação por teclado
         document.addEventListener('keydown', (e) => {
             if (e.key === "Escape") closeLightbox();
-            if (e.key === "ArrowLeft") changeItem(-1);
-            if (e.key === "ArrowRight") changeItem(1);
+            if (currentGroup.length > 1) {
+                if (e.key === "ArrowLeft") changeItem(-1);
+                if (e.key === "ArrowRight") changeItem(1);
+            }
         });
     </script>
 </body>
