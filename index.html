@@ -154,6 +154,12 @@
             font-weight: bold;
         }
 
+        /* ESTILO DO BOTÃO DO YOUTUBE */
+        .actions { text-align: center; padding: 40px 0; }
+        .btn-gif { display: inline-block; transition: transform 0.3s ease; max-width: 400px; cursor: pointer; }
+        .btn-gif:hover { transform: scale(1.05); }
+        .btn-gif img { width: 100%; height: auto; border-radius: 10px; pointer-events: none; }
+
         footer {
             text-align: center;
             padding: 40px;
@@ -196,6 +202,12 @@
 
             </div>
         </div>
+
+        <div class="actions">
+            <a href="https://www.youtube.com/@Sinsice2" target="_blank" class="btn-gif">
+                <img src="vireumgelo.gif" alt="Se inscreva no canal - Vire um Gelo">
+            </a>
+        </div>
     </div>
 
     <div id="lightbox">
@@ -221,7 +233,7 @@
             }
         });
 
-        // GRUPOS SEPARADOS
+        // GRUPOS SEPARADOS (Cada tópico com seus próprios itens)
         const groups = {
             'animacao': [
                 { type: 'video', src: 'bixo de espada.mp4' }
@@ -244,7 +256,6 @@
             updateLightbox();
             document.getElementById('lightbox').style.display = 'flex';
             
-            // Esconde as setas se o tópico tiver só 1 item
             const showBtns = currentGroup.length > 1 ? 'block' : 'none';
             document.getElementById('btn-prev').style.display = showBtns;
             document.getElementById('btn-next').style.display = showBtns;
