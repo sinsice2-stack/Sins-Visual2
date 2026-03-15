@@ -222,12 +222,11 @@
         });
 
         let currentIdx = 0;
-        // O arquivo "Demencia.webp" está agora no Index 2, logo após o Soldado
         const items = [
-            { type: 'video', src: 'bixo de espada.mp4' }, 
-            { type: 'img', src: 'soldado.webp' },        
-            { type: 'img', src: 'Demencia.webp' },       
-            { type: 'img', src: 'Design1.webp' }         
+            { type: 'video', src: 'bixo de espada.mp4' }, // 0
+            { type: 'img', src: 'soldado.webp' },        // 1
+            { type: 'img', src: 'Demencia.webp' },       // 2
+            { type: 'img', src: 'Design1.webp' }         // 3
         ];
 
         function openGallery(index) {
@@ -269,6 +268,7 @@
             document.getElementById('lightbox-video').pause();
         }
 
+        // Navegação por teclado
         document.addEventListener('keydown', (e) => {
             if (e.key === "Escape") closeLightbox();
             if (e.key === "ArrowLeft") changeItem(-1);
