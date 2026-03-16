@@ -177,6 +177,7 @@
 <body oncontextmenu="return false;">
 
     <audio id="click-sound" src="click.mp3" preload="auto"></audio>
+    <audio id="select-sound" src="select.mp3" preload="auto"></audio>
 
     <header>
         <div class="header-logo">
@@ -231,12 +232,23 @@
     </footer>
 
     <script>
-        // Função para tocar o som
+        // Configuração dos sons
         const clickSound = document.getElementById('click-sound');
+        const selectSound = document.getElementById('select-sound');
+
+        // Som para as SETAS (click.mp3)
         function playClick() {
             if (clickSound) {
                 clickSound.currentTime = 0;
-                clickSound.play().catch(e => console.log("Som bloqueado até interação"));
+                clickSound.play().catch(e => console.log("Áudio aguardando interação"));
+            }
+        }
+
+        // Som para as CATEGORIAS (select.mp3)
+        function playSelect() {
+            if (selectSound) {
+                selectSound.currentTime = 0;
+                selectSound.play().catch(e => console.log("Áudio aguardando interação"));
             }
         }
 
@@ -259,6 +271,7 @@
         let currentIdx = 0;
 
         function openGroup(groupName) {
+            playSelect(); // Toca o som de seleção ao abrir a categoria
             currentGroup = groups[groupName];
             currentIdx = 0;
             updateLightbox();
@@ -285,7 +298,7 @@
         }
 
         function changeItem(dir) {
-            playClick(); // Chama o som aqui
+            playClick(); // Toca o som de clique ao usar as setas
             currentIdx += dir;
             if (currentIdx < 0) currentIdx = currentGroup.length - 1;
             if (currentIdx >= currentGroup.length) currentIdx = 0;
