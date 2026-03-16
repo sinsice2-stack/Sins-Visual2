@@ -154,7 +154,6 @@
             font-weight: bold;
         }
 
-        /* BOTÃO DO CANAL COM ZOOM (SEM BORDA ROXA) */
         .actions { text-align: center; padding: 40px 0; }
         .btn-gif { 
             display: inline-block; 
@@ -176,6 +175,8 @@
     </style>
 </head>
 <body oncontextmenu="return false;">
+
+    <audio id="click-sound" src="click.mp3" preload="auto"></audio>
 
     <header>
         <div class="header-logo">
@@ -230,6 +231,15 @@
     </footer>
 
     <script>
+        // Função para tocar o som
+        const clickSound = document.getElementById('click-sound');
+        function playClick() {
+            if (clickSound) {
+                clickSound.currentTime = 0;
+                clickSound.play().catch(e => console.log("Som bloqueado até interação"));
+            }
+        }
+
         document.addEventListener('keydown', function(e) {
             if (e.key === "F12" || (e.ctrlKey && e.shiftKey && e.key === "I") || (e.ctrlKey && (e.key === "u" || e.key === "s"))) {
                 e.preventDefault();
@@ -275,6 +285,7 @@
         }
 
         function changeItem(dir) {
+            playClick(); // Chama o som aqui
             currentIdx += dir;
             if (currentIdx < 0) currentIdx = currentGroup.length - 1;
             if (currentIdx >= currentGroup.length) currentIdx = 0;
