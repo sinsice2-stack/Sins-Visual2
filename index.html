@@ -232,25 +232,29 @@
     </footer>
 
     <script>
-        // Configuração dos sons
         const clickSound = document.getElementById('click-sound');
         const selectSound = document.getElementById('select-sound');
 
-        // Som para as SETAS (click.mp3)
+        // Garante que o som toque voltando ao início sempre
         function playClick() {
             if (clickSound) {
                 clickSound.currentTime = 0;
-                clickSound.play().catch(e => console.log("Áudio aguardando interação"));
+                clickSound.play().catch(e => console.log("Som de seta aguardando clique"));
             }
         }
 
-        // Som para as CATEGORIAS (select.mp3)
         function playSelect() {
             if (selectSound) {
                 selectSound.currentTime = 0;
-                selectSound.play().catch(e => console.log("Áudio aguardando interação"));
+                selectSound.play().catch(e => console.log("Som de categoria aguardando clique"));
             }
         }
+
+        // Função extra para "acordar" os áudios no primeiro clique do usuário
+        document.body.addEventListener('click', function() {
+            clickSound.load();
+            selectSound.load();
+        }, { once: true });
 
         document.addEventListener('keydown', function(e) {
             if (e.key === "F12" || (e.ctrlKey && e.shiftKey && e.key === "I") || (e.ctrlKey && (e.key === "u" || e.key === "s"))) {
@@ -271,7 +275,7 @@
         let currentIdx = 0;
 
         function openGroup(groupName) {
-            playSelect(); // Toca o som de seleção ao abrir a categoria
+            playSelect(); // Toca o select.mp3
             currentGroup = groups[groupName];
             currentIdx = 0;
             updateLightbox();
@@ -298,7 +302,7 @@
         }
 
         function changeItem(dir) {
-            playClick(); // Toca o som de clique ao usar as setas
+            playClick(); // Toca o click.mp3
             currentIdx += dir;
             if (currentIdx < 0) currentIdx = currentGroup.length - 1;
             if (currentIdx >= currentGroup.length) currentIdx = 0;
