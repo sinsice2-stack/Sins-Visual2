@@ -2,7 +2,7 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Super Ball - Sinsice Extreme</title>
+    <title>Super Ball - Sinsice Extreme Fixed</title>
     <style>
         body { margin: 0; overflow: hidden; background: #000; font-family: 'Segoe UI', sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; }
         canvas { border: 2px solid #555; box-shadow: 0 0 60px rgba(0,0,0,0.9); cursor: crosshair; display: none; }
@@ -54,15 +54,18 @@ let player = { x: 60, y: 350, r: 18, vx: 0, vy: 0, angle: 0, speed: 1.5, frictio
 function startGame() {
     const input = document.getElementById("playerNameInput").value.trim();
     const welcome = document.getElementById("welcomeMsg");
-    const lowerInput = input.toLowerCase();
     if (input === "") { welcome.innerText = "Digite um nome!"; return; }
-    if (lowerInput === "sinsice") { welcome.innerText = "BEM VINDO CRIADOR"; }
-    else if (lowerInput.includes("sinsice")) { welcome.innerText = "Acesso Negado"; return; }
+    if (input.toLowerCase().includes("sinsice") && input.toLowerCase() !== "sinsice") { welcome.innerText = "Acesso Negado"; return; }
+    
     document.getElementById("startMenu").style.display = "none";
     document.getElementById("gameHud").style.display = "flex";
     document.getElementById("displayName").innerText = input.toUpperCase();
     canvas.style.display = "block";
-    gameRunning = true; startTime = Date.now(); loadLevel(1); requestAnimationFrame(gameLoop);
+    
+    gameRunning = true; 
+    startTime = Date.now(); 
+    loadLevel(1); 
+    gameLoop(); // Inicia o loop
 }
 
 function togglePause() { if(!gameRunning) return; isPaused = !isPaused; document.getElementById("pauseScreen").style.display = isPaused ? "flex" : "none"; }
@@ -86,14 +89,12 @@ function generateLevel(n) {
     const biome = getBiome(n);
     const lv = [];
     lv.push({x: 0, y: 400, w: 100, h: 100, c: biome.g || "#555", t: biome.t || "#777", type: 'normal'});
-    
     let lastX = 100, lastY = 400;
     if (!biome.water) {
         while (lastX < 850) {
             let gapX = biome.space ? 180 : 120 + (random() * 80);
             let gapY = (random() * 140) - 70;
             let width = biome.laser ? 45 : 60 + (random() * 40);
-            if (biome.mountain) { gapX = 70; gapY = -80; }
             lastX += gapX; lastY += gapY;
             if (lastY < 120) lastY = 150; if (lastY > 440) lastY = 400;
             if (lastX > 880) break;
@@ -103,7 +104,7 @@ function generateLevel(n) {
         }
     }
     let finalY = (biome.water || biome.space) ? 220 : lastY;
-    lv.push({x: 920, y: finalY, w: 60, h: 300, c: biome.g || "#444", t: biome.t || "#666", type: 'normal', isRock: biome.mountain, points: biome.mountain ? generateRockPoints(60, 40) : null});
+    lv.push({x: 920, y: finalY, w: 60, h: 300, c: biome.g || "#444", t: biome.t || "#666", type: 'normal'});
     lv.push({x: 950, y: finalY, type: 'goal'});
     return lv;
 }
@@ -123,19 +124,21 @@ function update() {
     player.x += player.vx; player.y += player.vy;
     player.angle += player.vx * 0.1;
 
-    // Balas de Gelo (em todas as fases)
-    bullets.forEach((bu, i) => {
+    // ATUALIZAÇÃO DAS BALAS
+    for (let i = bullets.length - 1; i >= 0; i--) {
+        let bu = bullets[i];
         bu.x += bu.vx; bu.y += bu.vy;
+        
+        // Colisão Bala com Plataforma (Sempre verifica)
         platforms.forEach(p => {
             if (bu.x > p.x && bu.x < p.x + p.w && bu.y > p.y && bu.y < p.y + p.h) {
                 if (p.type === 'spike') { p.type = 'normal'; p.c = '#add8e6'; p.t = '#fff'; bullets.splice(i, 1); }
             }
         });
-        if(bu.y > 480 && b.lava) { // Gelo na Lava cria bloco
-            platforms.push({x: bu.x-20, y: 470, w: 40, h: 30, c: '#add8e6', t: '#fff', type: 'normal', temp: true});
-            bullets.splice(i, 1);
-        }
-    });
+
+        // Sumir se sair da tela
+        if (bu.x < 0 || bu.x > 1000 || bu.y < 0 || bu.y > 500) bullets.splice(i, 1);
+    }
 
     player.grounded = false;
     platforms.forEach(p => {
@@ -147,57 +150,68 @@ function update() {
         }
     });
 
-    if (b.lava && player.y > 460) { deaths++; loadLevel(currentLevel); } // Morte na lava
-    if (player.y > 550 || player.y < -200) { deaths++; loadLevel(currentLevel); }
+    if (b.lava && player.y > 465) { deaths++; loadLevel(currentLevel); }
+    if (player.y > 550 || player.y < -250) { deaths++; loadLevel(currentLevel); }
     if (player.x < 0) player.x = 0; if (player.x > 1000) player.x = 1000;
+    
     document.getElementById("timer").innerText = new Date(Date.now() - startTime).toISOString().substr(14, 8);
     document.getElementById("deathCount").innerText = deaths;
 }
 
 function draw() {
     let b = getBiome(currentLevel);
+    ctx.clearRect(0, 0, 1000, 500); // Limpa o canvas antes de desenhar
     ctx.fillStyle = b.bg; ctx.fillRect(0, 0, 1000, 500);
-    if(b.lava) { ctx.fillStyle = "#ff4500"; ctx.fillRect(0, 470, 1000, 30); } // Desenha o mar de lava
+    
+    if(b.lava) { ctx.fillStyle = "#ff4500"; ctx.fillRect(0, 475, 1000, 25); }
     if(b.space) { ctx.fillStyle = "#fff"; for(let i=0; i<20; i++) ctx.fillRect((i*157)%1000, (i*243)%500, 2, 2); }
 
     platforms.forEach(p => {
         if(p.type === 'goal') {
             ctx.fillStyle = "#fff"; ctx.fillRect(p.x-2, p.y-70, 4, 70);
             ctx.fillStyle = "red"; ctx.beginPath(); ctx.moveTo(p.x, p.y-70); ctx.lineTo(p.x+40, p.y-50); ctx.lineTo(p.x, p.y-30); ctx.fill();
-        } else if (p.isRock) {
-            ctx.fillStyle = p.c; ctx.beginPath(); ctx.moveTo(p.x + p.points[0].x, p.y + p.points[0].y);
-            p.points.forEach(pt => ctx.lineTo(p.x + pt.x, p.y + pt.y)); ctx.closePath(); ctx.fill();
         } else {
             ctx.fillStyle = p.c; ctx.fillRect(p.x, p.y, p.w, p.h);
             ctx.fillStyle = p.t; ctx.fillRect(p.x, p.y, p.w, 4);
         }
     });
 
+    // Desenha as Balas
+    bullets.forEach(bu => { ctx.fillStyle = "cyan"; ctx.beginPath(); ctx.arc(bu.x, bu.y, 6, 0, Math.PI*2); ctx.fill(); });
+
+    // Player e Arma
     let a = Math.atan2(mouse.y - player.y, mouse.x - player.x);
     ctx.save(); ctx.translate(player.x, player.y); ctx.rotate(player.angle);
     ctx.drawImage(ballImg, -player.r, -player.r, player.r*2, player.r*2); ctx.restore();
     ctx.save(); ctx.translate(player.x, player.y); ctx.rotate(a);
-    ctx.drawImage(gunImg, 15, -12, 40, 25); ctx.restore(); // Arma SEMPRE visível
-    
-    bullets.forEach(bu => { ctx.fillStyle = "cyan"; ctx.beginPath(); ctx.arc(bu.x, bu.y, 5, 0, 7); ctx.fill(); });
+    ctx.drawImage(gunImg, 15, -12, 40, 25); ctx.restore();
 }
 
-function gameLoop() { update(); draw(); requestAnimationFrame(gameLoop); }
+function gameLoop() {
+    update();
+    draw();
+    requestAnimationFrame(gameLoop);
+}
 
 window.addEventListener("keydown", e => {
     keys[e.keyCode] = true;
     if (e.key === "Escape") togglePause();
-    if (e.keyCode === 32) {
+    if (e.keyCode === 32) { // ESPAÇO
         let b = getBiome(currentLevel);
-        if (player.grounded || b.water || b.space) { player.vy = b.water ? -6 : (b.space ? -4 : -13); player.grounded = false; }
-        else if (player.canDoubleJump) { player.vy = -11; player.canDoubleJump = false; }
+        if (player.grounded || b.water || b.space) {
+            player.vy = b.water ? -6 : (b.space ? -4 : -13);
+            player.grounded = false;
+        } else if (player.canDoubleJump) {
+            player.vy = -11;
+            player.canDoubleJump = false;
+        }
     }
 });
 window.addEventListener("keyup", e => keys[e.keyCode] = false);
-canvas.addEventListener('mousedown', () => {
+window.addEventListener('mousedown', () => {
     if(!gameRunning || isPaused) return;
     let a = Math.atan2(mouse.y - player.y, mouse.x - player.x);
-    bullets.push({x: player.x, y: player.y, vx: Math.cos(a)*18, vy: Math.sin(a)*18});
+    bullets.push({x: player.x, y: player.y, vx: Math.cos(a)*15, vy: Math.sin(a)*15});
 });
 canvas.addEventListener('mousemove', e => { 
     let r = canvas.getBoundingClientRect(); mouse.x = e.clientX - r.left; mouse.y = e.clientY - r.top; 
