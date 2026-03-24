@@ -48,7 +48,7 @@ for (let i = 1; i <= 8; i++) {
 
 let currentLevel = 1, deaths = 0, startTime, gameRunning = false;
 let keys = {}, mouse = { x: 0, y: 0 }, platforms = [], bullets = [];
-let player = { x: 60, y: 350, r: 18, vx: 0, vy: 0, angle: 0, grounded: false, canDoubleJump: true };
+let player = { x: 60, y: 300, r: 18, vx: 0, vy: 0, angle: 0, grounded: false, canDoubleJump: true };
 let camX = 0, camY = 0, spriteFrame = 0, spriteTimer = 0;
 
 function startGame() {
@@ -76,25 +76,25 @@ function getBiome(n) {
 
 function generateLevel(n) {
     rngSeed = n * 54321;
-    const biome = getBiome(n);
+    const b = getBiome(n);
     const lv = [];
-    if (biome.isMountain) {
+    if (b.isMountain) {
         let curX = 120, curY = 400;
         lv.push({x: 0, y: 400, w: 120, h: 500, c: "#1a252c", t: "#fff", type: 'normal'});
         lv.push({ x1: curX, y1: curY, x2: curX + 1000, y2: curY - 600, type: 'slope' });
-        lv.push({ x: curX + 1000, y: curY - 600, w: 300, h: 1000, c: "#1a252c", t: "#ffffff", type: 'normal' });
-        lv.push({ x: curX + 1150, y: curY - 600, type: 'goal' });
+        lv.push({ x: curX + 1000, y: curY - 600, w: 400, h: 1000, c: "#1a252c", t: "#ffffff", type: 'normal' });
+        lv.push({ x: curX + 1200, y: curY - 600, type: 'goal' });
     } else {
-        lv.push({x: 0, y: 400, w: 120, h: 500, c: biome.g || "#555", t: biome.t || "#777", type: 'normal'});
-        let lastX = 120, lastY = 400;
-        while (lastX < 850) {
-            lastX += 110 + (random() * 80); lastY += (random() * 120) - 60;
-            if (lastY < 150) lastY = 150; if (lastY > 440) lastY = 400;
-            let type = (biome.lava || biome.laser) && random() > 0.6 ? 'spike' : 'normal';
-            lv.push({x: lastX, y: lastY, w: 70, h: 25, c: type==='spike'?'#f00':(biome.g||"#555"), t: type==='spike'?'#f00':(biome.t||"#777"), type: type});
+        lv.push({x: 0, y: 400, w: 120, h: 500, c: b.g || "#555", t: b.t || "#777", type: 'normal'});
+        let lx = 120, ly = 400;
+        while (lx < 850) {
+            lx += 110 + (random()*80); ly += (random()*120)-60;
+            if (ly < 150) ly = 150; if (ly > 440) ly = 400;
+            let type = (b.lava || b.laser) && random() > 0.6 ? 'spike' : 'normal';
+            lv.push({x: lx, y: ly, w: 70, h: 25, c: type==='spike'?'#f00':(b.g||"#555"), t: type==='spike'?'#f00':(b.t||"#777"), type: type});
         }
-        lv.push({x: 930, y: lastY, w: 70, h: 500, c: biome.g || "#444", t: biome.t || "#666", type: 'normal'});
-        lv.push({x: 960, y: lastY, type: 'goal'});
+        lv.push({x: 930, y: ly, w: 70, h: 500, c: b.g || "#444", t: b.t || "#666", type: 'normal'});
+        lv.push({x: 960, y: ly, type: 'goal'});
     }
     return lv;
 }
@@ -118,20 +118,19 @@ function update() {
         camX += (player.x - 500 - camX) * 0.1; camY += (player.y - 300 - camY) * 0.1;
     } else { camX = 0; camY = 0; }
 
-    // --- LÓGICA DO TIRO E CONGELAMENTO ---
+    // --- PAREDE INVISÍVEL (Justiça) ---
+    if (player.x - player.r < camX) { player.x = camX + player.r; player.vx = 0; }
+    // No lado direito, só limita se não for a fase da montanha (que é longa)
+    if (currentLevel !== 33 && player.x + player.r > 1000) { player.x = 1000 - player.r; player.vx = 0; }
+
     for (let i = bullets.length - 1; i >= 0; i--) {
         let bu = bullets[i]; bu.x += bu.vx; bu.y += bu.vy;
-        
-        // Se atingir a lava (y > 475)
         if(b.lava && bu.y > 475) {
             platforms.push({x: bu.x - 40, y: 475, w: 80, h: 25, c: '#add8e6', t: '#fff', type: 'normal'});
             bullets.splice(i, 1); continue;
         }
-
         let hit = false;
-        platforms.forEach(p => {
-            if (p.type !== 'goal' && bu.x > p.x && bu.x < p.x + p.w && bu.y > p.y && bu.y < p.y + p.h) hit = true;
-        });
+        platforms.forEach(p => { if (p.type !== 'goal' && bu.x > p.x && bu.x < p.x + p.w && bu.y > p.y && bu.y < p.y + p.h) hit = true; });
         if (hit || bu.x < camX - 100 || bu.x > camX + 1100) bullets.splice(i, 1);
     }
 
