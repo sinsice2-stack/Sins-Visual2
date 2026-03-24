@@ -74,14 +74,15 @@ function generateLevel(n) {
     const lv = [];
     
     if (biome.isMountain) {
-        lv.push({x: 0, y: 400, w: 200, h: 600, c: "#555", t: "#777", type: 'normal'});
-        let mX = 200, mY = 400;
-        for(let i = 0; i < 40; i++) {
-            mX += 75 + (random() * 30);
-            mY -= 120 + (random() * 40);
-            lv.push({x: mX, y: mY, w: 40, h: 12, c: "#000", t: "#000", type: 'normal'});
+        lv.push({x: 0, y: 400, w: 250, h: 600, c: "#555", t: "#777", type: 'normal'});
+        let mX = 250, mY = 400;
+        for(let i = 0; i < 45; i++) {
+            mX += 80 + (random() * 20);
+            mY -= 130 + (random() * 30);
+            // Rochas irregulares (em vez de blocos)
+            lv.push({x: mX, y: mY, w: 40 + (random()*20), h: 30, type: 'rock'});
         }
-        lv.push({x: mX + 50, y: mY - 60, type: 'goal'});
+        lv.push({x: mX + 50, y: mY - 80, type: 'goal'});
     } else {
         lv.push({x: 0, y: 400, w: 100, h: 100, c: biome.g || "#555", t: biome.t || "#777", type: 'normal'});
         let lastX = 100, lastY = 400;
@@ -125,35 +126,40 @@ function update() {
     if(b.isMountain) {
         let targetCam = player.y - 300;
         camY += (targetCam - camY) * 0.1;
+        
+        // --- COLISÃO COM A RAMPA DA MONTANHA ---
+        // A rampa começa em x=250, y=400 e sobe 1.5 pixels para cada 1 pixel pro lado
+        if (player.x > 250) {
+            let slopeY = 400 - (player.x - 250) * 1.55; 
+            if (player.y + player.r > slopeY) {
+                player.y = slopeY - player.r;
+                player.vy = 0;
+                player.grounded = true;
+                player.canDoubleJump = true;
+                player.vx *= 0.9; // Atrito na subida
+            }
+        }
     } else { camY = 0; }
 
-    // --- ATUALIZAÇÃO DAS BALAS ---
     for (let i = bullets.length - 1; i >= 0; i--) {
         let bu = bullets[i];
         bu.x += bu.vx; bu.y += bu.vy;
-        
         platforms.forEach(p => {
             if (bu.x > p.x && bu.x < p.x + p.w && bu.y > p.y && bu.y < p.y + p.h) {
                 if (p.type === 'spike') { p.type = 'normal'; p.c = '#add8e6'; p.t = '#fff'; }
                 bullets.splice(i, 1);
             }
         });
-        
-        if (b.lava && bu.y > 475) {
-            platforms.push({x: bu.x - 35, y: 475, w: 70, h: 25, c: '#add8e6', t: '#fff', type: 'normal'});
-            bullets.splice(i, 1);
-        }
-        
         if (bu.x < -200 || bu.x > 1200 || bu.y < camY - 1000 || bu.y > camY + 1000) bullets.splice(i, 1);
     }
 
-    player.grounded = false;
     platforms.forEach(p => {
         if (p.type === 'goal' && Math.hypot(player.x - p.x, player.y - (p.y - 20)) < 45) loadLevel(currentLevel + 1);
         if (player.x + player.r > p.x && player.x - player.r < p.x + p.w && player.y + player.r > p.y && player.y - player.r < p.y + p.h) {
             if (p.type === 'spike') { deaths++; loadLevel(currentLevel); }
-            if (player.vy > 0 && player.y < p.y + 12) { player.grounded = true; player.canDoubleJump = true; player.vy = 0; player.y = p.y - player.r; }
-            else { player.vx *= -0.5; }
+            if (player.vy > 0 && player.y < p.y + 15) { 
+                player.grounded = true; player.canDoubleJump = true; player.vy = 0; player.y = p.y - player.r; 
+            } else { player.vx *= -0.5; }
         }
     });
 
@@ -174,16 +180,14 @@ function draw() {
     ctx.fillStyle = b.bg; ctx.fillRect(0, camY, 1000, 500);
 
     if(b.isMountain) {
-        ctx.fillStyle = "#888"; 
+        ctx.fillStyle = "#666"; // Rocha sólida
         ctx.beginPath();
-        ctx.moveTo(200, 400); 
-        ctx.lineTo(8000, -7000); 
+        ctx.moveTo(250, 400); 
+        ctx.lineTo(8000, -11612); // Inclinação compatível com a colisão
         ctx.lineTo(8000, 8000);
-        ctx.lineTo(200, 8000);
+        ctx.lineTo(250, 8000);
         ctx.fill();
-        ctx.strokeStyle = "#000"; 
-        ctx.lineWidth = 4;
-        ctx.beginPath(); ctx.moveTo(200, 400); ctx.lineTo(8000, -7000); ctx.stroke();
+        ctx.strokeStyle = "#000"; ctx.lineWidth = 5; ctx.stroke();
     }
     
     if(b.lava) { ctx.fillStyle = "#ff4500"; ctx.fillRect(0, 475, 1000, 25); }
@@ -192,21 +196,23 @@ function draw() {
         if(p.type === 'goal') {
             ctx.fillStyle = "#fff"; ctx.fillRect(p.x-2, p.y-70, 4, 70);
             ctx.fillStyle = "red"; ctx.beginPath(); ctx.moveTo(p.x, p.y-70); ctx.lineTo(p.x+40, p.y-50); ctx.lineTo(p.x, p.y-30); ctx.fill();
+        } else if (p.type === 'rock') {
+            // Desenha rochas irregulares cinzas
+            ctx.fillStyle = "#444";
+            ctx.beginPath();
+            ctx.arc(p.x + p.w/2, p.y + p.h/2, p.w/1.8, 0, Math.PI*2);
+            ctx.fill();
+            ctx.fillStyle = "#222"; // Sombra da rocha
+            ctx.fillRect(p.x, p.y + p.h - 5, p.w, 5);
         } else {
             ctx.fillStyle = p.c; ctx.fillRect(p.x, p.y, p.w, p.h);
             if(!b.isMountain) { ctx.fillStyle = p.t; ctx.fillRect(p.x, p.y, p.w, 4); }
         }
     });
 
-    // --- DESENHAR AS BALAS (O QUE FALTAVA!) ---
     bullets.forEach(bu => {
-        ctx.fillStyle = "cyan";
-        ctx.beginPath();
-        ctx.arc(bu.x, bu.y, 6, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = "white";
-        ctx.lineWidth = 2;
-        ctx.stroke();
+        ctx.fillStyle = "cyan"; ctx.beginPath(); ctx.arc(bu.x, bu.y, 6, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = "white"; ctx.lineWidth = 2; ctx.stroke();
     });
 
     ctx.save(); ctx.translate(player.x, player.y); ctx.rotate(player.angle);
@@ -240,7 +246,6 @@ window.addEventListener("keyup", e => keys[e.keyCode] = false);
 window.addEventListener('mousedown', () => {
     if(!gameRunning || currentLevel < 21) return;
     let a = Math.atan2((mouse.y + camY) - player.y, mouse.x - player.x);
-    // Cria a bala com velocidade
     bullets.push({x: player.x, y: player.y, vx: Math.cos(a)*15, vy: Math.sin(a)*15});
 });
 
