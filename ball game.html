@@ -21,7 +21,6 @@
         <span>FASE <b id="lvlNum">1</b></span>
         <span>⏱️ <b id="timer">00:00:00</b></span>
         <span>MORTES <b id="deathCount">0</b></span>
-        <span style="font-size: 12px; color: #aaa;">[R] RESETAR GELO</span>
     </div>
 
     <div id="startMenu" class="overlay">
@@ -59,7 +58,10 @@ function startGame() {
     document.getElementById("gameHud").style.display = "flex";
     document.getElementById("displayName").innerText = input.toUpperCase();
     canvas.style.display = "block";
-    gameRunning = true; startTime = Date.now(); loadLevel(1); gameLoop();
+    gameRunning = true; 
+    startTime = Date.now(); // O cronômetro começa aqui!
+    loadLevel(1); 
+    gameLoop();
 }
 
 let rngSeed = 1;
@@ -114,12 +116,19 @@ function update() {
     player.vy += b.grav; player.vx *= 0.95; player.x += player.vx; player.y += player.vy;
     player.angle += player.vx * 0.1;
 
-    // BLOQUEIO DE TELA
+    // BLOQUEIO DE TELA (BORDA DA TELA)
     if (player.x - player.r < 0) { player.x = player.r; player.vx = 0; }
     if (player.x + player.r > 1000) { player.x = 1000 - player.r; player.vx = 0; }
     if (player.y - player.r < 0) { player.y = player.r; player.vy = 0; }
 
-    // LÓGICA DAS BALAS DE GELO
+    // CRONÔMETRO PROGRESSIVO (VOLTOU!)
+    let timeDiff = Date.now() - startTime;
+    let mins = Math.floor(timeDiff / 60000).toString().padStart(2, '0');
+    let secs = Math.floor((timeDiff % 60000) / 1000).toString().padStart(2, '0');
+    let msecs = Math.floor((timeDiff % 1000) / 10).toString().padStart(2, '0');
+    document.getElementById("timer").innerText = `${mins}:${secs}:${msecs}`;
+
+    // Lógica das balas de gelo
     for (let i = bullets.length - 1; i >= 0; i--) {
         let bu = bullets[i]; bu.x += bu.vx; bu.y += bu.vy;
         if(b.lava && bu.y > 480) {
@@ -174,7 +183,6 @@ function draw() {
 
     bullets.forEach(bu => { ctx.fillStyle = "cyan"; ctx.beginPath(); ctx.arc(bu.x, bu.y, 6, 0, Math.PI * 2); ctx.fill(); });
 
-    // RENDERIZAR JOGADOR E ARMA
     ctx.save(); ctx.translate(player.x, player.y); 
     if(b.isAssas) {
         ctx.drawImage(assasSprites[spriteFrame], -player.r * 1.6, -player.r, player.r * 3.2, player.r * 2);
@@ -184,13 +192,10 @@ function draw() {
     }
     ctx.restore();
 
-    // DESENHAR ARMA (SÓ NA LAVA)
     if(b.hasGun) {
-        ctx.save();
-        ctx.translate(player.x, player.y);
+        ctx.save(); ctx.translate(player.x, player.y);
         let angle = Math.atan2(mouse.y - player.y, mouse.x - player.x);
-        ctx.rotate(angle);
-        ctx.drawImage(gunImg, 10, -10, 30, 20); // Renderiza a arma de gelo
+        ctx.rotate(angle); ctx.drawImage(gunImg, 10, -10, 30, 20);
         ctx.restore();
     }
 }
@@ -205,9 +210,7 @@ window.addEventListener("keydown", e => {
         else if (player.grounded) { player.vy = -13; player.grounded = false; }
         else if (player.canDoubleJump) { player.vy = -11; player.canDoubleJump = false; }
     }
-    if (e.keyCode === 82) { // TECLA R - DERRETE O GELO (RECOLOQUER LAVA)
-        platforms = platforms.filter(p => p.type !== 'ice');
-    }
+    if (e.keyCode === 82) platforms = platforms.filter(p => p.type !== 'ice');
 });
 window.addEventListener("keyup", e => keys[e.keyCode] = false);
 window.addEventListener('mousedown', () => {
