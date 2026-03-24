@@ -11,6 +11,7 @@
         .menu-btn:hover { background: #fff; transform: scale(1.1); color: #000; }
         input { padding: 12px; font-size: 18px; border-radius: 5px; border: none; margin-bottom: 20px; text-align: center; width: 250px; }
         .hud { color: white; position: absolute; top: 20px; font-size: 18px; width: 100%; pointer-events: none; display: flex; justify-content: space-around; z-index: 10; font-weight: bold; text-shadow: 2px 2px 4px #000; }
+        b { color: #00fbff; font-size: 24px; }
     </style>
 </head>
 <body>
@@ -35,10 +36,20 @@ const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 canvas.width = 1000; canvas.height = 500;
 
+// --- SEUS ARQUIVOS WEBP VOLTARAM ---
+const ballImg = new Image(); ballImg.src = 'bola amarela.webp'; 
+const gunImg = new Image(); gunImg.src = 'arma-de-gelo.webp'; 
+const assasSprites = [];
+for (let i = 1; i <= 8; i++) {
+    const img = new Image();
+    img.src = `bola-amarela-assas${i.toString().padStart(4, '0')}.webp`;
+    assasSprites.push(img);
+}
+
 let currentLevel = 1, deaths = 0, startTime, gameRunning = false;
 let keys = {}, mouse = { x: 0, y: 0 }, platforms = [], bullets = [], lasers = [];
 let player = { x: 60, y: 300, r: 18, vx: 0, vy: 0, angle: 0, grounded: false, canDoubleJump: true };
-let camX = 0, camY = 0;
+let camX = 0, camY = 0, spriteFrame = 0, spriteTimer = 0;
 
 function startGame() {
     const input = document.getElementById("playerNameInput").value.trim();
@@ -76,23 +87,20 @@ function generateLevel(n) {
                 x: random() * 1000,
                 y: random() * 500,
                 angle: random() * Math.PI * 2,
-                rotSpeed: (0.01 + random() * 0.02) * (random() > 0.5 ? 1 : -1),
+                rotSpeed: (0.012 + random() * 0.015) * (random() > 0.5 ? 1 : -1),
                 len: 2000
             });
         }
     }
 
-    // Plataforma inicial e final padrão
-    lv.push({x: 0, y: 400, w: 120, h: 500, c: b.g || "#444", t: b.t || "#666", type: 'normal'});
-    
+    lv.push({x: 0, y: 400, w: 120, h: 500, c: b.g || "#555", t: b.t || "#777", type: 'normal'});
     let lx = 120, ly = 400;
     while (lx < 850) {
-        lx += 120 + (random()*100); ly += (random()*140)-70;
+        lx += 110 + (random()*80); ly += (random()*120)-60;
         if (ly < 150) ly = 150; if (ly > 440) ly = 400;
         let type = (b.lava || b.laser) && random() > 0.8 ? 'spike' : 'normal';
-        lv.push({x: lx, y: ly, w: 80, h: 25, c: type==='spike'?'#f00':(b.g||"#555"), t: type==='spike'?'#f00':(b.t||"#777"), type: type});
+        lv.push({x: lx, y: ly, w: 70, h: 25, c: type==='spike'?'#f00':(b.g||"#555"), t: type==='spike'?'#f00':(b.t||"#777"), type: type});
     }
-    
     lv.push({x: 930, y: ly, w: 70, h: 500, c: b.g || "#444", t: b.t || "#666", type: 'normal'});
     lv.push({x: 960, y: ly, type: 'goal'});
     return lv;
@@ -107,34 +115,19 @@ function loadLevel(n) {
 function update() {
     if (!gameRunning) return;
     let b = getBiome(currentLevel);
+    if(b.isAssas) { spriteTimer++; if(spriteTimer % 5 === 0) spriteFrame = (spriteFrame + 1) % 8; }
 
     if (keys[39]) player.vx += 0.8; if (keys[37]) player.vx -= 0.8;
     player.vy += b.grav; player.vx *= 0.95; player.x += player.vx; player.y += player.vy;
     player.angle += player.vx * 0.1;
 
-    // Barreira Esquerda
-    if (player.x - player.r < 0) { player.x = player.r; player.vx = 0; }
-    if (player.x + player.r > 1000) { player.x = 1000 - player.r; player.vx = 0; }
-
-    // Lasers: Rotação e Colisão
     lasers.forEach(l => {
         l.angle += l.rotSpeed;
-        // Equação da linha: Ax + By + C = 0 -> sen(a)x - cos(a)y + C = 0
         let a = Math.sin(l.angle), b_line = -Math.cos(l.angle);
         let c = -(a * l.x + b_line * l.y);
-        let dist = Math.abs(a * player.x + b_line * player.y + c) / Math.sqrt(a*a + b_line*b_line);
+        let dist = Math.abs(a * player.x + b_line * player.y + c);
         if (dist < player.r - 2) { deaths++; loadLevel(currentLevel); }
     });
-
-    // Balas e Lava
-    for (let i = bullets.length - 1; i >= 0; i--) {
-        let bu = bullets[i]; bu.x += bu.vx; bu.y += bu.vy;
-        if(b.lava && bu.y > 475) {
-            platforms.push({x: bu.x - 40, y: 475, w: 80, h: 25, c: '#add8e6', t: '#fff', type: 'normal'});
-            bullets.splice(i, 1); continue;
-        }
-        if (bu.x < 0 || bu.x > 1000 || bu.y < 0 || bu.y > 500) bullets.splice(i, 1);
-    }
 
     player.grounded = false;
     platforms.forEach(p => {
@@ -146,9 +139,7 @@ function update() {
         }
     });
 
-    if (b.lava && player.y > 480) { deaths++; loadLevel(currentLevel); }
     if (player.y > 600) { deaths++; loadLevel(currentLevel); }
-    
     let timeDiff = Date.now() - startTime;
     document.getElementById("timer").innerText = `${Math.floor(timeDiff/60000).toString().padStart(2,'0')}:${Math.floor((timeDiff%60000)/1000).toString().padStart(2,'0')}:${Math.floor((timeDiff%1000)/10).toString().padStart(2,'0')}`;
     document.getElementById("deathCount").innerText = deaths;
@@ -159,16 +150,14 @@ function draw() {
     ctx.clearRect(0, 0, 1000, 500);
     ctx.fillStyle = b.bg; ctx.fillRect(0, 0, 1000, 500);
 
-    if(b.lava) { ctx.fillStyle = "#ff4500"; ctx.fillRect(0, 480, 1000, 20); }
-
-    // Desenha Lasers
+    // Lasers (Código puro, espalhados e lentos)
     lasers.forEach(l => {
         ctx.save(); ctx.translate(l.x, l.y); ctx.rotate(l.angle);
-        ctx.strokeStyle = "rgba(255, 0, 0, 0.8)"; ctx.lineWidth = 2;
+        ctx.strokeStyle = "red"; ctx.lineWidth = 2; ctx.shadowBlur = 8; ctx.shadowColor = "red";
         ctx.beginPath(); ctx.moveTo(-l.len, 0); ctx.lineTo(l.len, 0); ctx.stroke();
         ctx.strokeStyle = "white"; ctx.lineWidth = 0.5;
         ctx.beginPath(); ctx.moveTo(-l.len, 0); ctx.lineTo(l.len, 0); ctx.stroke();
-        ctx.restore();
+        ctx.restore(); ctx.shadowBlur = 0;
     });
 
     platforms.forEach(p => {
@@ -181,22 +170,15 @@ function draw() {
         }
     });
 
-    bullets.forEach(bu => { ctx.fillStyle = "cyan"; ctx.beginPath(); ctx.arc(bu.x, bu.y, 6, 0, Math.PI * 2); ctx.fill(); });
-
-    // DESENHO DO PERSONAGEM (Sem Imagens)
+    // --- SEUS SPRITES WEBP DESENHADOS AQUI ---
     ctx.save(); ctx.translate(player.x, player.y); 
     if(b.isAssas) {
-        // Personagem Assas (Gordinho com Asas geométricas)
-        ctx.fillStyle = "#FFD700";
-        // Asas
-        ctx.beginPath(); ctx.moveTo(-30, 0); ctx.lineTo(-15, -20); ctx.lineTo(-15, 20); ctx.fill();
-        ctx.beginPath(); ctx.moveTo(30, 0); ctx.lineTo(15, -20); ctx.lineTo(15, 20); ctx.fill();
-        // Corpo (Engordado)
-        ctx.beginPath(); ctx.ellipse(0, 0, player.r * 1.3, player.r, 0, 0, Math.PI * 2); ctx.fill();
+        // Sprite ENGORDADO para o Assas
+        ctx.drawImage(assasSprites[spriteFrame], -player.r * 1.6, -player.r, player.r * 3.2, player.r * 2);
     } else {
+        // Sprite Normal
         ctx.rotate(player.angle);
-        ctx.fillStyle = "yellow"; ctx.beginPath(); ctx.arc(0, 0, player.r, 0, Math.PI*2); ctx.fill();
-        ctx.fillStyle = "black"; ctx.fillRect(5, -5, 4, 4); // Olhinho pra dar charme
+        ctx.drawImage(ballImg, -player.r, -player.r, player.r * 2, player.r * 2);
     }
     ctx.restore();
 }
@@ -207,18 +189,12 @@ window.addEventListener("keydown", e => {
     keys[e.keyCode] = true;
     if (e.keyCode === 32) {
         let b = getBiome(currentLevel);
-        if (b.isAssas) { player.vy = -8; }
+        if (b.isAssas) { player.vy = -8.5; }
         else if (player.grounded) { player.vy = -13; player.grounded = false; }
         else if (player.canDoubleJump) { player.vy = -11; player.canDoubleJump = false; }
     }
 });
 window.addEventListener("keyup", e => keys[e.keyCode] = false);
-window.addEventListener('mousedown', () => {
-    let b = getBiome(currentLevel);
-    if(!gameRunning || currentLevel < 21 || b.isAssas) return;
-    let a = Math.atan2(mouse.y - player.y, mouse.x - player.x);
-    bullets.push({x: player.x, y: player.y, vx: Math.cos(a)*15, vy: Math.sin(a)*15});
-});
 canvas.addEventListener('mousemove', e => { 
     let r = canvas.getBoundingClientRect(); mouse.x = e.clientX - r.left; mouse.y = e.clientY - r.top; 
 });
