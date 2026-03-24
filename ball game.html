@@ -21,6 +21,7 @@
         <span>FASE <b id="lvlNum">1</b></span>
         <span>⏱️ <b id="timer">00:00:00</b></span>
         <span>MORTES <b id="deathCount">0</b></span>
+        <span style="font-size: 12px; color: #aaa;">[R] RESETAR GELO</span>
     </div>
 
     <div id="startMenu" class="overlay">
@@ -36,7 +37,7 @@ const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 canvas.width = 1000; canvas.height = 500;
 
-// --- SEUS ARQUIVOS WEBP VOLTARAM ---
+// SPRITES
 const ballImg = new Image(); ballImg.src = 'bola amarela.webp'; 
 const gunImg = new Image(); gunImg.src = 'arma-de-gelo.webp'; 
 const assasSprites = [];
@@ -49,7 +50,7 @@ for (let i = 1; i <= 8; i++) {
 let currentLevel = 1, deaths = 0, startTime, gameRunning = false;
 let keys = {}, mouse = { x: 0, y: 0 }, platforms = [], bullets = [], lasers = [];
 let player = { x: 60, y: 300, r: 18, vx: 0, vy: 0, angle: 0, grounded: false, canDoubleJump: true };
-let camX = 0, camY = 0, spriteFrame = 0, spriteTimer = 0;
+let spriteFrame = 0, spriteTimer = 0;
 
 function startGame() {
     const input = document.getElementById("playerNameInput").value.trim();
@@ -67,7 +68,7 @@ function random() { rngSeed = (rngSeed * 9301 + 49297) % 233280; return rngSeed 
 function getBiome(n) {
     if (n <= 10) return { bg: "#87ceeb", g: "#5d4037", t: "#2ecc71", grav: 0.8 };
     if (n <= 20) return { bg: "#f0f8ff", g: "#b0c4de", t: "#ffffff", grav: 0.8 };
-    if (n <= 32) return { bg: "#2a0000", lava: true, grav: 0.8 };
+    if (n <= 32) return { bg: "#2a0000", lava: true, hasGun: true, grav: 0.8 };
     if (n === 33) return { bg: "#4a5b6d", grav: 0.95, isMountain: true }; 
     if (n <= 50) return { bg: "#001a33", water: true, grav: 0.2 }; 
     if (n <= 70) return { bg: "#050505", laser: true, grav: 0.85, isAssas: true }; 
@@ -79,20 +80,12 @@ function generateLevel(n) {
     const b = getBiome(n);
     const lv = [];
     lasers = [];
-
     if (b.laser) {
         let numLasers = 6 + Math.floor((n - 51) / 3);
         for(let i=0; i < numLasers; i++) {
-            lasers.push({
-                x: random() * 1000,
-                y: random() * 500,
-                angle: random() * Math.PI * 2,
-                rotSpeed: (0.012 + random() * 0.015) * (random() > 0.5 ? 1 : -1),
-                len: 2000
-            });
+            lasers.push({ x: random() * 1000, y: random() * 500, angle: random() * Math.PI * 2, rotSpeed: (0.012 + random() * 0.015) * (random() > 0.5 ? 1 : -1), len: 2000 });
         }
     }
-
     lv.push({x: 0, y: 400, w: 120, h: 500, c: b.g || "#555", t: b.t || "#777", type: 'normal'});
     let lx = 120, ly = 400;
     while (lx < 850) {
@@ -109,7 +102,7 @@ function generateLevel(n) {
 function loadLevel(n) { 
     currentLevel = n; bullets = []; platforms = generateLevel(n); 
     player.x = 60; player.y = 300; player.vx = player.vy = 0; 
-    camX = 0; camY = 0; document.getElementById("lvlNum").innerText = n; 
+    document.getElementById("lvlNum").innerText = n; 
 }
 
 function update() {
@@ -121,17 +114,25 @@ function update() {
     player.vy += b.grav; player.vx *= 0.95; player.x += player.vx; player.y += player.vy;
     player.angle += player.vx * 0.1;
 
-    // --- BLOQUEIO DOS CANTOS (O QUE VOCÊ QUERIA) ---
+    // BLOQUEIO DE TELA
     if (player.x - player.r < 0) { player.x = player.r; player.vx = 0; }
     if (player.x + player.r > 1000) { player.x = 1000 - player.r; player.vx = 0; }
     if (player.y - player.r < 0) { player.y = player.r; player.vy = 0; }
 
+    // LÓGICA DAS BALAS DE GELO
+    for (let i = bullets.length - 1; i >= 0; i--) {
+        let bu = bullets[i]; bu.x += bu.vx; bu.y += bu.vy;
+        if(b.lava && bu.y > 480) {
+            platforms.push({x: bu.x - 35, y: 480, w: 70, h: 20, c: '#add8e6', t: '#fff', type: 'ice'});
+            bullets.splice(i, 1); continue;
+        }
+        if (bu.x < 0 || bu.x > 1000 || bu.y < 0 || bu.y > 500) bullets.splice(i, 1);
+    }
+
     lasers.forEach(l => {
         l.angle += l.rotSpeed;
-        let a = Math.sin(l.angle), b_line = -Math.cos(l.angle);
-        let c = -(a * l.x + b_line * l.y);
-        let dist = Math.abs(a * player.x + b_line * player.y + c);
-        if (dist < player.r - 2) { deaths++; loadLevel(currentLevel); }
+        let a = Math.sin(l.angle), bl = -Math.cos(l.angle), c = -(a * l.x + bl * l.y);
+        if (Math.abs(a * player.x + bl * player.y + c) < player.r - 2) { deaths++; loadLevel(currentLevel); }
     });
 
     player.grounded = false;
@@ -144,9 +145,8 @@ function update() {
         }
     });
 
+    if (b.lava && player.y > 480) { deaths++; loadLevel(currentLevel); }
     if (player.y > 600) { deaths++; loadLevel(currentLevel); }
-    let timeDiff = Date.now() - startTime;
-    document.getElementById("timer").innerText = `${Math.floor(timeDiff/60000).toString().padStart(2,'0')}:${Math.floor((timeDiff%60000)/1000).toString().padStart(2,'0')}:${Math.floor((timeDiff%1000)/10).toString().padStart(2,'0')}`;
     document.getElementById("deathCount").innerText = deaths;
 }
 
@@ -155,14 +155,11 @@ function draw() {
     ctx.clearRect(0, 0, 1000, 500);
     ctx.fillStyle = b.bg; ctx.fillRect(0, 0, 1000, 500);
 
-    // Lasers (Código puro, espalhados e lentos)
+    if(b.lava) { ctx.fillStyle = "#ff4500"; ctx.fillRect(0, 480, 1000, 20); }
+
     lasers.forEach(l => {
         ctx.save(); ctx.translate(l.x, l.y); ctx.rotate(l.angle);
-        ctx.strokeStyle = "red"; ctx.lineWidth = 2; ctx.shadowBlur = 8; ctx.shadowColor = "red";
-        ctx.beginPath(); ctx.moveTo(-l.len, 0); ctx.lineTo(l.len, 0); ctx.stroke();
-        ctx.strokeStyle = "white"; ctx.lineWidth = 0.5;
-        ctx.beginPath(); ctx.moveTo(-l.len, 0); ctx.lineTo(l.len, 0); ctx.stroke();
-        ctx.restore(); ctx.shadowBlur = 0;
+        ctx.strokeStyle = "red"; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-l.len, 0); ctx.lineTo(l.len, 0); ctx.stroke(); ctx.restore();
     });
 
     platforms.forEach(p => {
@@ -175,7 +172,9 @@ function draw() {
         }
     });
 
-    // --- SEUS SPRITES WEBP ---
+    bullets.forEach(bu => { ctx.fillStyle = "cyan"; ctx.beginPath(); ctx.arc(bu.x, bu.y, 6, 0, Math.PI * 2); ctx.fill(); });
+
+    // RENDERIZAR JOGADOR E ARMA
     ctx.save(); ctx.translate(player.x, player.y); 
     if(b.isAssas) {
         ctx.drawImage(assasSprites[spriteFrame], -player.r * 1.6, -player.r, player.r * 3.2, player.r * 2);
@@ -184,6 +183,16 @@ function draw() {
         ctx.drawImage(ballImg, -player.r, -player.r, player.r * 2, player.r * 2);
     }
     ctx.restore();
+
+    // DESENHAR ARMA (SÓ NA LAVA)
+    if(b.hasGun) {
+        ctx.save();
+        ctx.translate(player.x, player.y);
+        let angle = Math.atan2(mouse.y - player.y, mouse.x - player.x);
+        ctx.rotate(angle);
+        ctx.drawImage(gunImg, 10, -10, 30, 20); // Renderiza a arma de gelo
+        ctx.restore();
+    }
 }
 
 function gameLoop() { update(); draw(); requestAnimationFrame(gameLoop); }
@@ -192,12 +201,21 @@ window.addEventListener("keydown", e => {
     keys[e.keyCode] = true;
     if (e.keyCode === 32) {
         let b = getBiome(currentLevel);
-        if (b.isAssas) { player.vy = -8.5; }
+        if (b.isAssas) player.vy = -8.5;
         else if (player.grounded) { player.vy = -13; player.grounded = false; }
         else if (player.canDoubleJump) { player.vy = -11; player.canDoubleJump = false; }
     }
+    if (e.keyCode === 82) { // TECLA R - DERRETE O GELO (RECOLOQUER LAVA)
+        platforms = platforms.filter(p => p.type !== 'ice');
+    }
 });
 window.addEventListener("keyup", e => keys[e.keyCode] = false);
+window.addEventListener('mousedown', () => {
+    let b = getBiome(currentLevel);
+    if(!gameRunning || !b.hasGun) return;
+    let a = Math.atan2(mouse.y - player.y, mouse.x - player.x);
+    bullets.push({x: player.x, y: player.y, vx: Math.cos(a)*15, vy: Math.sin(a)*15});
+});
 canvas.addEventListener('mousemove', e => { 
     let r = canvas.getBoundingClientRect(); mouse.x = e.clientX - r.left; mouse.y = e.clientY - r.top; 
 });
