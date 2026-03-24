@@ -118,9 +118,7 @@ function update() {
         camX += (player.x - 500 - camX) * 0.1; camY += (player.y - 300 - camY) * 0.1;
     } else { camX = 0; camY = 0; }
 
-    // --- BARREIRA INVISÍVEL NO CANTO ESQUERDO ---
     if (player.x - player.r < camX) { player.x = camX + player.r; player.vx = 0; }
-    // No lado direito, só limita se não for a fase da montanha (que é longa)
     if (currentLevel !== 33 && player.x + player.r > 1000) { player.x = 1000 - player.r; player.vx = 0; }
 
     for (let i = bullets.length - 1; i >= 0; i--) {
@@ -160,7 +158,6 @@ function draw() {
     let b = getBiome(currentLevel);
     ctx.clearRect(0, 0, 1000, 500);
     ctx.fillStyle = b.bg; ctx.fillRect(0, 0, 1000, 500);
-
     if(b.lava) { ctx.fillStyle = "#ff4500"; ctx.fillRect(0, 480, 1000, 20); }
 
     ctx.save(); ctx.translate(-camX, -camY);
@@ -181,8 +178,10 @@ function draw() {
 
     ctx.save(); ctx.translate(player.x, player.y); 
     if(b.isAssasino) {
-        // PROPORÇÃO 1:1 CONFORME SOLICITADO
-        ctx.drawImage(assasSprites[spriteFrame], -player.r, -player.r, player.r * 2, player.r * 2);
+        // --- SPRITE "ENGORDADO" ---
+        // Largura = player.r * 3.2 (60% maior que a bola normal)
+        // Altura = player.r * 2 (Mantém a altura da bola)
+        ctx.drawImage(assasSprites[spriteFrame], -player.r * 1.6, -player.r, player.r * 3.2, player.r * 2);
     } else {
         ctx.rotate(player.angle);
         ctx.drawImage(ballImg, -player.r, -player.r, player.r * 2, player.r * 2);
@@ -221,3 +220,4 @@ canvas.addEventListener('mousemove', e => {
 </script>
 </body>
 </html>
+
