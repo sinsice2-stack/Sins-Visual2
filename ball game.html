@@ -36,10 +36,10 @@ const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 canvas.width = 1000; canvas.height = 500;
 
-// --- CARREGAMENTO DE IMAGENS ---
 const ballImg = new Image(); ballImg.src = 'bola amarela.webp'; 
 const gunImg = new Image(); gunImg.src = 'arma-de-gelo.webp'; 
 
+// Sprites do Assasino
 const assasSprites = [];
 for (let i = 1; i <= 8; i++) {
     const img = new Image();
@@ -48,12 +48,11 @@ for (let i = 1; i <= 8; i++) {
     assasSprites.push(img);
 }
 
-// --- VARIÁVEIS GLOBAIS ---
 let currentLevel = 1, deaths = 0, startTime, gameRunning = false;
 let keys = {}, mouse = { x: 0, y: 0 }, platforms = [], bullets = [];
 let player = { x: 60, y: 350, r: 18, vx: 0, vy: 0, angle: 0, grounded: false, canDoubleJump: true };
 let camY = 0, camX = 0;
-let spriteFrame = 0, spriteTimer = 0, spriteSpeed = 5;
+let spriteFrame = 0, spriteTimer = 0;
 
 function startGame() {
     const input = document.getElementById("playerNameInput").value.trim();
@@ -72,47 +71,47 @@ function getBiome(n) {
     if (n <= 10) return { bg: "#87ceeb", g: "#5d4037", t: "#2ecc71", grav: 0.8 };
     if (n <= 20) return { bg: "#f0f8ff", g: "#b0c4de", t: "#ffffff", grav: 0.8 };
     if (n <= 32) return { bg: "#2a0000", lava: true, grav: 0.8 };
-    if (n === 33) return { bg: "#1a1a2e", grav: 1.1, isMountain: true }; 
-    if (n <= 80) return { bg: "#001a33", water: true, grav: 0.25 };
-    if (n <= 95) return { bg: "#050505", laser: true, grav: 0.85, isLaserPhase: true }; // FASE DO ASSASINO
-    return { bg: "#000005", space: true, grav: 0.08 }; 
+    if (n === 33) return { bg: "#4a5b6d", grav: 0.95, isMountain: true }; 
+    if (n <= 50) return { bg: "#001a33", water: true, grav: 0.2 }; 
+    if (n <= 70) return { bg: "#050505", laser: true, grav: 0.85 };
+    if (n <= 95) return { bg: "#050505", laser: true, grav: 0.85, isAssasino: true }; // SPRITE MUDA AQUI
+    return { bg: "#000011", space: true, grav: 0.05 };
 }
 
 function generateLevel(n) {
     rngSeed = n * 54321;
-    const b = getBiome(n);
+    const biome = getBiome(n);
     const lv = [];
-    lv.push({x: 0, y: 400, w: 100, h: 600, c: "#444", t: "#fff", type: 'normal'});
+    let startColor = biome.isMountain ? "#1a252c" : (biome.g || "#555");
+    lv.push({x: 0, y: 400, w: 120, h: 600, c: startColor, t: biome.isMountain ? "#fff" : (biome.t || "#777"), type: 'normal'});
     
-    if (b.isMountain) {
-        let cx = 100, cy = 400;
-        lv.push({ x1: cx, y1: cy, x2: cx + 700, y2: cy - 450, type: 'slope' });
-        cx += 700; cy -= 450; cx += 280; 
-        lv.push({ x: cx, y: cy + 50, w: 100, h: 500, c: "#222", t: "#fff", type: 'normal' });
-        cx += 100; cx += 320; 
-        lv.push({ x1: cx, y1: cy, x2: cx + 900, y2: cy - 400, type: 'slope' });
-        cx += 900; cy -= 400;
-        lv.push({ x: cx, y: cy, w: 150, h: 1000, c: "#222", t: "#fff", type: 'normal' });
-        cx += 150;
-        lv.push({ x1: cx, y1: cy, x2: cx + 1500, y2: cy + 900, type: 'slope' });
-        cx += 1500; cy += 900;
-        lv.push({ x: cx, y: cy, w: 400, h: 500, c: "#222", t: "#fff", type: 'normal' });
-        lv.push({ x: cx + 200, y: cy, type: 'goal' });
+    if (biome.isMountain) {
+        let curX = 120, curY = 400;
+        lv.push({ x1: curX, y1: curY, x2: curX + 800, y2: curY - 400, type: 'slope' });
+        curX += 800; curY -= 400; curX += 200; 
+        lv.push({ x: curX, y: curY + 20, w: 150, h: 500, c: "#1a252c", t: "#ffffff", type: 'normal' });
+        curX += 150; curX += 220; 
+        lv.push({ x1: curX, y1: curY, x2: curX + 900, y2: curY - 450, type: 'slope' });
+        curX += 900; curY -= 450;
+        lv.push({ x: curX, y: curY, w: 250, h: 1000, c: "#1a252c", t: "#ffffff", type: 'normal' });
+        curX += 250;
+        lv.push({ x1: curX, y1: curY, x2: curX + 1500, y2: curY + 850, type: 'slope' });
+        curX += 1500; curY += 850;
+        lv.push({ x: curX, y: curY, w: 400, h: 500, c: "#1a252c", t: "#ffffff", type: 'normal' });
+        lv.push({ x: curX + 200, y: curY, type: 'goal' });
     } else {
-        let lx = 100, ly = 400;
-        let targetX = (b.space) ? 1300 : 850; 
-        while (lx < targetX) {
-            let gx = (b.space) ? 240 + (random() * 80) : 120 + (random() * 80);
-            let gy = (random() * 160) - 80;
-            lx += gx; ly += gy;
-            if (ly < 120) ly = 150; if (ly > 440) ly = 400;
-            let type = (b.laser || b.lava) && random() > 0.5 ? 'spike' : 'normal';
-            let wd = (b.space) ? 40 : 70;
-            lv.push({x: lx, y: ly, w: wd, h: 20, c: type==='spike'?'#f00':'#555', t: type==='spike'?'#f00':'#0ef', type: type});
-            lx += wd;
+        let lastX = 120, lastY = 400;
+        while (lastX < 850) {
+            let gapX = 110 + (random() * 80);
+            let gapY = (random() * 120) - 60;
+            lastX += gapX; lastY += gapY;
+            if (lastY < 150) lastY = 150; if (lastY > 440) lastY = 400;
+            let type = (biome.lava || biome.laser) && random() > 0.6 ? 'spike' : 'normal';
+            lv.push({x: lastX, y: lastY, w: 70, h: 25, c: type==='spike'?'#f00':(biome.g||"#555"), t: type==='spike'?'#f00':(biome.t||"#777"), type: type});
+            lastX += 70;
         }
-        lv.push({x: lx + 50, y: ly, w: 60, h: 500, c: "#444", t: "#fff", type: 'normal'});
-        lv.push({x: lx + 80, y: ly, type: 'goal'});
+        lv.push({x: 930, y: biome.water ? 250 : lastY, w: 70, h: 500, c: biome.g || "#444", t: biome.t || "#666", type: 'normal'});
+        lv.push({x: 960, y: biome.water ? 250 : lastY, type: 'goal'});
     }
     return lv;
 }
@@ -126,26 +125,31 @@ function loadLevel(n) {
 
 function update() {
     if (!gameRunning) return;
-    const b = getBiome(currentLevel);
+    let b = getBiome(currentLevel);
     
+    // Timer de animação
     spriteTimer++;
-    if (spriteTimer % spriteSpeed === 0) spriteFrame = (spriteFrame + 1) % 8;
+    if(spriteTimer % 5 === 0) spriteFrame = (spriteFrame + 1) % 8;
 
-    let speed = b.space ? 0.35 : 0.8;
-    if (keys[39]) player.vx += speed;
-    if (keys[37]) player.vx -= speed;
+    if (keys[39]) player.vx += 0.8;
+    if (keys[37]) player.vx -= 0.8;
     player.vy += b.grav;
-    player.vx *= 0.96; 
+    player.vx *= 0.95; 
     player.x += player.vx; player.y += player.vy;
     player.angle += player.vx * 0.1;
 
-    // CÂMERA SÓ NA 33
     if(currentLevel === 33) {
         camX += (player.x - 400 - camX) * 0.1;
         camY += (player.y - 300 - camY) * 0.1;
+        if (camX < 0) camX = 0;
     } else { camX = 0; camY = 0; }
 
-    // BALAS
+    let timeDiff = Date.now() - startTime;
+    let mins = Math.floor(timeDiff / 60000).toString().padStart(2, '0');
+    let secs = Math.floor((timeDiff % 60000) / 1000).toString().padStart(2, '0');
+    let ms = Math.floor((timeDiff % 1000) / 10).toString().padStart(2, '0');
+    document.getElementById("timer").innerText = `${mins}:${secs}:${ms}`;
+
     for (let i = bullets.length - 1; i >= 0; i--) {
         let bu = bullets[i]; bu.x += bu.vx; bu.y += bu.vy;
         if(b.lava && bu.y > 475) {
@@ -161,75 +165,75 @@ function update() {
                 }
             } else if (p.type !== 'goal' && bu.x > p.x && bu.x < p.x + p.w && bu.y > p.y && bu.y < p.y + p.h) hit = true;
         });
-        if (hit || bu.x < camX - 300 || bu.x > camX + 1500) bullets.splice(i, 1);
+        if (hit || bu.x < camX - 200 || bu.x > camX + 1200) bullets.splice(i, 1);
     }
 
     player.grounded = false;
     platforms.forEach(p => {
-        if (p.type === 'goal' && Math.hypot(player.x - p.x, player.y - (p.y - 20)) < 45) loadLevel(currentLevel + 1);
+        if (p.type === 'goal' && Math.hypot(player.x - p.x, player.y - (p.y - 20)) < 50) loadLevel(currentLevel + 1);
         if (p.type === 'slope' && player.x >= p.x1 && player.x <= p.x2) {
             let pct = (player.x - p.x1) / (p.x2 - p.x1);
-            let ry = p.y1 + pct * (p.y2 - p.y1);
-            if (player.y + player.r > ry) { player.y = ry - player.r; player.vy = 0; player.grounded = true; player.canDoubleJump = true; }
+            let rampY = p.y1 + pct * (p.y2 - p.y1);
+            if (player.y + player.r > rampY) { 
+                player.y = rampY - player.r; player.vy = 0; player.grounded = true; player.canDoubleJump = true;
+            }
         } else if (p.type !== 'goal' && player.x + player.r > p.x && player.x - player.r < p.x + p.w && player.y + player.r > p.y && player.y - player.r < p.y + p.h) {
             if (p.type === 'spike') { deaths++; loadLevel(currentLevel); }
-            if (player.vy > 0 && player.y < p.y + 15) { player.grounded = true; player.canDoubleJump = true; player.vy = 0; player.y = p.y - player.r; }
-            else { player.vx *= -0.5; }
+            if (player.vy > 0 && player.y < p.y + 20) { 
+                player.grounded = true; player.canDoubleJump = true; player.vy = 0; player.y = p.y - player.r; 
+            } else { player.vx *= -0.5; }
         }
     });
 
     if (b.lava && player.y > 480) { deaths++; loadLevel(currentLevel); }
-    if (player.y > camY + 850 || (currentLevel === 33 && player.y < camY - 1500)) { deaths++; loadLevel(currentLevel); }
+    if (player.y > camY + 1000 || player.y < camY - 2000) { deaths++; loadLevel(currentLevel); }
     if (player.x < 0) { player.x = 0; player.vx = 0; }
-    if (currentLevel !== 33 && player.x > 1050) { player.x = 1050; player.vx = 0; }
+    if (currentLevel !== 33 && player.x > 1000) { player.x = 1000; player.vx = 0; }
 
     document.getElementById("deathCount").innerText = deaths;
-    let timeDiff = Date.now() - startTime;
-    let mins = Math.floor(timeDiff / 60000).toString().padStart(2, '0');
-    let secs = Math.floor((timeDiff % 60000) / 1000).toString().padStart(2, '0');
-    document.getElementById("timer").innerText = `${mins}:${secs}:${Math.floor((timeDiff % 1000)/10).toString().padStart(2,'0')}`;
 }
 
 function draw() {
-    const b = getBiome(currentLevel);
+    let b = getBiome(currentLevel);
     ctx.clearRect(0, 0, 1000, 500);
     ctx.save();
     ctx.translate(-camX, -camY);
     ctx.fillStyle = b.bg; ctx.fillRect(camX - 500, camY - 500, 5000, 5000);
-    if(b.lava) { ctx.fillStyle = "#ff4500"; ctx.fillRect(0, 480, 1000, 25); }
+    if(b.lava) { ctx.fillStyle = "#ff4500"; ctx.fillRect(0, 480, 1000, 200); }
 
     platforms.forEach(p => {
         if(p.type === 'goal') {
             ctx.fillStyle = "#fff"; ctx.fillRect(p.x-2, p.y-70, 4, 70);
             ctx.fillStyle = "red"; ctx.beginPath(); ctx.moveTo(p.x, p.y-70); ctx.lineTo(p.x+40, p.y-50); ctx.lineTo(p.x, p.y-30); ctx.fill();
         } else if (p.type === 'slope') {
-            ctx.fillStyle = "#111"; ctx.beginPath(); ctx.moveTo(p.x1, p.y1); ctx.lineTo(p.x2, p.y2); ctx.lineTo(p.x2, p.y2 + 1000); ctx.lineTo(p.x1, p.y1 + 1000); ctx.fill();
-            ctx.strokeStyle = "#fff"; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(p.x1, p.y1); ctx.lineTo(p.x2, p.y2); ctx.stroke();
+            ctx.fillStyle = "#1a252c";
+            ctx.beginPath(); ctx.moveTo(p.x1, p.y1); ctx.lineTo(p.x2, p.y2); ctx.lineTo(p.x2, p.y2 + 1000); ctx.lineTo(p.x1, p.y1 + 1000); ctx.fill();
+            ctx.strokeStyle = "#fff"; ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(p.x1, p.y1); ctx.lineTo(p.x2, p.y2); ctx.stroke();
         } else {
             ctx.fillStyle = p.c; ctx.fillRect(p.x, p.y, p.w, p.h);
-            ctx.fillStyle = p.t; ctx.fillRect(p.x, p.y, p.w, 3);
+            ctx.fillStyle = p.t; ctx.fillRect(p.x, p.y, p.w, 4);
         }
     });
 
     bullets.forEach(bu => {
-        ctx.fillStyle = "cyan"; ctx.beginPath(); ctx.arc(bu.x, bu.y, 5, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "cyan"; ctx.beginPath(); ctx.arc(bu.x, bu.y, 6, 0, Math.PI * 2); ctx.fill();
     });
 
-    // JOGADOR
     ctx.save(); ctx.translate(player.x, player.y); 
-    if (!b.isLaserPhase) {
+    if(b.isAssasino) {
+        // Usa o sprite animado e remove a rotação (tipo Flappy Bird)
+        ctx.drawImage(assasSprites[spriteFrame], -player.r, -player.r, player.r*2, player.r*2);
+    } else {
         ctx.rotate(player.angle);
         ctx.drawImage(ballImg, -player.r, -player.r, player.r*2, player.r*2);
-    } else {
-        ctx.drawImage(assasSprites[spriteFrame], -player.r, -player.r, player.r*2, player.r*2);
     }
     ctx.restore();
 
-    // ARMA (Some na fase do laser)
-    if (currentLevel >= 21 && !b.isLaserPhase) {
+    // Arma some na fase do assasino
+    if (currentLevel >= 21 && !b.isAssasino) {
         let a = Math.atan2((mouse.y + camY) - player.y, (mouse.x + camX) - player.x);
         ctx.save(); ctx.translate(player.x, player.y); ctx.rotate(a);
-        ctx.drawImage(gunImg, 15, -10, 35, 20); ctx.restore();
+        ctx.drawImage(gunImg, 15, -12, 40, 25); ctx.restore();
     }
     ctx.restore();
 }
@@ -246,8 +250,8 @@ window.addEventListener("keydown", e => {
 window.addEventListener("keyup", e => keys[e.keyCode] = false);
 
 window.addEventListener('mousedown', () => {
-    const b = getBiome(currentLevel);
-    if(!gameRunning || currentLevel < 21 || b.isLaserPhase) return;
+    let b = getBiome(currentLevel);
+    if(!gameRunning || currentLevel < 21 || b.isAssasino) return;
     let a = Math.atan2((mouse.y + camY) - player.y, (mouse.x + camX) - player.x);
     bullets.push({x: player.x, y: player.y, vx: Math.cos(a)*18, vy: Math.sin(a)*18});
 });
