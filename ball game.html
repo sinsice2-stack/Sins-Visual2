@@ -61,11 +61,8 @@ function getBiome(n) {
     if (n <= 10) return { bg: "#87ceeb", g: "#5d4037", t: "#2ecc71", grav: 0.8 };
     if (n <= 20) return { bg: "#f0f8ff", g: "#b0c4de", t: "#ffffff", grav: 0.8 };
     if (n <= 32) return { bg: "#2a0000", lava: true, grav: 0.8 };
-    if (n <= 50) return { bg: "#4a5b6d", grav: 0.9, isMountain: true }; // Novo Bioma após 33
-    if (n <= 70) return { bg: "#001a33", water: true, grav: 0.15 };
-    if (n <= 80) return { bg: "#050505", laser: true, grav: 0.85 };
-    if (n <= 95) return { bg: "#000011", space: true, grav: 0.05 };
-    return { bg: "#2ecc71", g: "#4d2600", t: "#27ae60", grav: 0.8 };
+    if (n <= 50) return { bg: "#4a5b6d", grav: 0.95, isMountain: true }; // O bioma das rampas longas
+    return { bg: "#001a33", water: true, grav: 0.15 };
 }
 
 function generateLevel(n) {
@@ -79,52 +76,50 @@ function generateLevel(n) {
     if (biome.isMountain) {
         let curX = 120, curY = 400;
 
-        // 1. PRIMEIRA RAMPA LONGA DE SUBIDA
+        // RAMPA 1: SUBIDA LONGA
+        lv.push({ x1: curX, y1: curY, x2: curX + 700, y2: curY - 350, type: 'slope' });
+        curX += 700; curY -= 350;
+
+        // BURACO 1
+        curX += 180;
+
+        // PLATAFORMA DE SALTO
+        lv.push({ x: curX, y: curY + 20, w: 120, h: 500, c: "#1a252c", t: "#ffffff", type: 'normal' });
+        curX += 120;
+
+        // BURACO 2
+        curX += 200;
+
+        // RAMPA 2: ATÉ O PICO
         lv.push({ x1: curX, y1: curY, x2: curX + 800, y2: curY - 400, type: 'slope' });
         curX += 800; curY -= 400;
 
-        // BURACO 1 (Salto necessário)
+        // PICO PLANO
+        lv.push({ x: curX, y: curY, w: 200, h: 1000, c: "#1a252c", t: "#ffffff", type: 'normal' });
         curX += 200;
 
-        // 2. PLATAFORMA DE APOIO COM NEVE
-        lv.push({ x: curX, y: curY, w: 200, h: 800, c: "#1a252c", t: "#ffffff", type: 'normal' });
-        curX += 200;
+        // RAMPA 3: DESCIDA ÉPICA
+        lv.push({ x1: curX, y1: curY, x2: curX + 1200, y2: curY + 700, type: 'slope' });
+        curX += 1200; curY += 700;
 
-        // BURACO 2 (Abismo fundo)
-        curX += 250;
-
-        // 3. SEGUNDA RAMPA LONGA ATÉ O PICO SUPREMO
-        lv.push({ x1: curX, y1: curY, x2: curX + 1000, y2: curY - 500, type: 'slope' });
-        curX += 1000; curY -= 500;
-
-        // TOPO DO MUNDO (Plano)
-        lv.push({ x: curX, y: curY, w: 300, h: 1000, c: "#1a252c", t: "#ffffff", type: 'normal' });
-        curX += 300;
-
-        // 4. DESCIDA FINAL GIGANTE E VELOZ
-        lv.push({ x1: curX, y1: curY, x2: curX + 1500, y2: curY + 900, type: 'slope' });
-        curX += 1500; curY += 900;
-
-        // FINAL: PLATAFORMA DA VITÓRIA
-        lv.push({ x: curX, y: curY, w: 400, h: 500, c: "#1a252c", t: "#ffffff", type: 'normal' });
-        lv.push({ x: curX + 200, y: curY, type: 'goal' });
+        // CHEGADA
+        lv.push({ x: curX, y: curY, w: 300, h: 500, c: "#1a252c", t: "#ffffff", type: 'normal' });
+        lv.push({ x: curX + 150, y: curY, type: 'goal' });
 
     } else {
+        // GERAÇÃO TRADICIONAL (FASES 1-32)
         let lastX = 120, lastY = 400;
-        if (!biome.water) {
-            while (lastX < 1500) { // Níveis normais também ficaram um pouco mais longos
-                let gapX = biome.space ? 180 : 120 + (random() * 80);
-                let gapY = (random() * 140) - 70;
-                let width = biome.laser ? 45 : 60 + (random() * 40);
-                lastX += gapX; lastY += gapY;
-                if (lastY < 120) lastY = 150; if (lastY > 440) lastY = 400;
-                let type = (biome.laser || biome.lava) && random() > 0.5 ? 'spike' : 'normal';
-                lv.push({x: lastX, y: lastY, w: width, h: 25, c: type==='spike'?'#f00':(biome.g||"#555"), t: type==='spike'?'#f00':(biome.t||"#777"), type: type});
-                lastX += width;
-            }
+        while (lastX < 850) {
+            let gapX = 110 + (random() * 80);
+            let gapY = (random() * 120) - 60;
+            lastX += gapX; lastY += gapY;
+            if (lastY < 150) lastY = 150; if (lastY > 440) lastY = 400;
+            let type = (biome.lava) && random() > 0.6 ? 'spike' : 'normal';
+            lv.push({x: lastX, y: lastY, w: 70, h: 25, c: type==='spike'?'#f00':(biome.g||"#555"), t: type==='spike'?'#f00':(biome.t||"#777"), type: type});
+            lastX += 70;
         }
-        lv.push({x: lastX + 100, y: biome.water ? 220 : lastY, w: 80, h: 500, c: biome.g || "#444", t: biome.t || "#666", type: 'normal'});
-        lv.push({x: lastX + 140, y: biome.water ? 220 : lastY, type: 'goal'});
+        lv.push({x: 930, y: lastY, w: 70, h: 500, c: biome.g || "#444", t: biome.t || "#666", type: 'normal'});
+        lv.push({x: 960, y: lastY, type: 'goal'});
     }
     return lv;
 }
@@ -140,20 +135,18 @@ function update() {
     if (!gameRunning) return;
     let b = getBiome(currentLevel);
     
-    if (keys[39]) player.vx += (b.space ? 0.4 : 1.0);
-    if (keys[37]) player.vx -= (b.space ? 0.4 : 1.0);
+    if (keys[39]) player.vx += 0.8;
+    if (keys[37]) player.vx -= 0.8;
     player.vy += b.grav;
-    let f = b.water ? 0.94 : (b.space ? 0.98 : 0.95);
-    player.vx *= f; player.vy *= (b.space || b.water ? f : 1);
+    player.vx *= 0.95; 
     player.x += player.vx; player.y += player.vy;
     player.angle += player.vx * 0.1;
 
-    // Câmera dinâmica Total (X e Y)
-    let targetCamX = player.x - 400;
-    let targetCamY = player.y - 300;
-    camX += (targetCamX - camX) * 0.1;
-    camY += (targetCamY - camY) * 0.1;
-    if (camX < 0) camX = 0;
+    // Câmera dinâmica só ativa na montanha ou se passar de 800px
+    if(b.isMountain || player.x > 800) {
+        camX += (player.x - 400 - camX) * 0.1;
+        camY += (player.y - 300 - camY) * 0.1;
+    } else { camX = 0; camY = 0; }
 
     let timeDiff = Date.now() - startTime;
     let mins = Math.floor(timeDiff / 60000).toString().padStart(2, '0');
@@ -161,64 +154,47 @@ function update() {
     let ms = Math.floor((timeDiff % 1000) / 10).toString().padStart(2, '0');
     document.getElementById("timer").innerText = `${mins}:${secs}:${ms}`;
 
-    // Atualiza Tiros e Congela Lava
+    // Balas e Congelamento de Lava
     for (let i = bullets.length - 1; i >= 0; i--) {
-        let bu = bullets[i];
-        bu.x += bu.vx; bu.y += bu.vy;
-
-        // CONGELAR LAVA (Voltou!)
-        if(b.lava && bu.y > 470) {
-            platforms.push({x: bu.x - 40, y: 470, w: 80, h: 30, c: '#add8e6', t: '#fff', type: 'normal'});
+        let bu = bullets[i]; bu.x += bu.vx; bu.y += bu.vy;
+        
+        if(b.lava && bu.y > 475) {
+            platforms.push({x: bu.x - 40, y: 475, w: 80, h: 30, c: '#add8e6', t: '#fff', type: 'normal'});
             bullets.splice(i, 1); continue;
         }
 
-        let bulletHit = false;
+        let hit = false;
         platforms.forEach(p => {
             if (p.type === 'slope') {
                 if (bu.x >= p.x1 && bu.x <= p.x2) {
                     let pct = (bu.x - p.x1) / (p.x2 - p.x1);
-                    if (bu.y > (p.y1 + pct * (p.y2 - p.y1))) bulletHit = true;
+                    if (bu.y > (p.y1 + pct * (p.y2 - p.y1))) hit = true;
                 }
-            } else if (p.type !== 'goal') {
-                if (bu.x > p.x && bu.x < p.x + p.w && bu.y > p.y && bu.y < p.y + p.h) {
-                    if (p.type === 'spike') { p.type = 'normal'; p.c = '#add8e6'; p.t = '#fff'; }
-                    bulletHit = true;
-                }
-            }
+            } else if (p.type !== 'goal' && bu.x > p.x && bu.x < p.x + p.w && bu.y > p.y && bu.y < p.y + p.h) hit = true;
         });
-        if (bulletHit || bu.x < camX - 200 || bu.x > camX + 1200) bullets.splice(i, 1);
+        if (hit || bu.x < camX - 200 || bu.x > camX + 1200) bullets.splice(i, 1);
     }
 
     player.grounded = false;
     platforms.forEach(p => {
         if (p.type === 'goal' && Math.hypot(player.x - p.x, player.y - (p.y - 20)) < 50) loadLevel(currentLevel + 1);
-        
-        if (p.type === 'slope') {
-            if (player.x >= p.x1 && player.x <= p.x2) {
-                let pct = (player.x - p.x1) / (p.x2 - p.x1);
-                let rampY = p.y1 + pct * (p.y2 - p.y1);
-                if (player.y + player.r > rampY) { 
-                    player.y = rampY - player.r;
-                    player.vy = 0;
-                    player.grounded = true;
-                    player.canDoubleJump = true;
-                }
+        if (p.type === 'slope' && player.x >= p.x1 && player.x <= p.x2) {
+            let pct = (player.x - p.x1) / (p.x2 - p.x1);
+            let rampY = p.y1 + pct * (p.y2 - p.y1);
+            if (player.y + player.r > rampY) { 
+                player.y = rampY - player.r; player.vy = 0; player.grounded = true; player.canDoubleJump = true;
             }
-        } else if (p.type !== 'goal') {
-            if (player.x + player.r > p.x && player.x - player.r < p.x + p.w && player.y + player.r > p.y && player.y - player.r < p.y + p.h) {
-                if (p.type === 'spike') { deaths++; loadLevel(currentLevel); }
-                if (player.vy > 0 && player.y < p.y + 20) { 
-                    player.grounded = true; player.canDoubleJump = true; 
-                    player.vy = 0; player.y = p.y - player.r; 
-                } else { player.vx *= -0.5; }
-            }
+        } else if (p.type !== 'goal' && player.x + player.r > p.x && player.x - player.r < p.x + p.w && player.y + player.r > p.y && player.y - player.r < p.y + p.h) {
+            if (p.type === 'spike') { deaths++; loadLevel(currentLevel); }
+            if (player.vy > 0 && player.y < p.y + 20) { 
+                player.grounded = true; player.canDoubleJump = true; player.vy = 0; player.y = p.y - player.r; 
+            } else { player.vx *= -0.5; }
         }
     });
 
     if (b.lava && player.y > 480) { deaths++; loadLevel(currentLevel); }
-    if (player.y > camY + 1200 || player.y < camY - 2000) { deaths++; loadLevel(currentLevel); }
+    if (player.y > camY + 1000 || player.y < camY - 2000) { deaths++; loadLevel(currentLevel); }
     if (player.x < 0) { player.x = 0; player.vx = 0; }
-    
     document.getElementById("deathCount").innerText = deaths;
 }
 
@@ -227,25 +203,19 @@ function draw() {
     ctx.clearRect(0, 0, 1000, 500);
     ctx.save();
     ctx.translate(-camX, -camY);
-
-    // Fundo Bioma
-    ctx.fillStyle = b.bg; ctx.fillRect(camX - 500, camY - 1000, 3000, 3000);
-    if(b.lava) { ctx.fillStyle = "#ff4500"; ctx.fillRect(camX - 100, 480, 2000, 200); }
+    ctx.fillStyle = b.bg; ctx.fillRect(camX - 500, camY - 500, 3000, 3000);
+    if(b.lava) { ctx.fillStyle = "#ff4500"; ctx.fillRect(camX - 100, 480, 3000, 200); }
 
     platforms.forEach(p => {
         if(p.type === 'goal') {
             ctx.fillStyle = "#fff"; ctx.fillRect(p.x-2, p.y-70, 4, 70);
             ctx.fillStyle = "red"; ctx.beginPath(); ctx.moveTo(p.x, p.y-70); ctx.lineTo(p.x+40, p.y-50); ctx.lineTo(p.x, p.y-30); ctx.fill();
         } else if (p.type === 'slope') {
-            let grd = ctx.createLinearGradient(0, Math.min(p.y1, p.y2) - 100, 0, Math.max(p.y1, p.y2) + 600);
+            let grd = ctx.createLinearGradient(0, p.y1 - 100, 0, p.y2 + 600);
             grd.addColorStop(0, "#6a7b8c"); grd.addColorStop(1, "#1a252c");
             ctx.fillStyle = grd;
-            ctx.beginPath();
-            ctx.moveTo(p.x1, p.y1); ctx.lineTo(p.x2, p.y2);
-            ctx.lineTo(p.x2, p.y2 + 1000); ctx.lineTo(p.x1, p.y1 + 1000);
-            ctx.fill();
-            ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 6; 
-            ctx.beginPath(); ctx.moveTo(p.x1, p.y1); ctx.lineTo(p.x2, p.y2); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(p.x1, p.y1); ctx.lineTo(p.x2, p.y2); ctx.lineTo(p.x2, p.y2 + 1000); ctx.lineTo(p.x1, p.y1 + 1000); ctx.fill();
+            ctx.strokeStyle = "#fff"; ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(p.x1, p.y1); ctx.lineTo(p.x2, p.y2); ctx.stroke();
         } else {
             ctx.fillStyle = p.c; ctx.fillRect(p.x, p.y, p.w, p.h);
             ctx.fillStyle = p.t; ctx.fillRect(p.x, p.y, p.w, 4);
@@ -254,7 +224,6 @@ function draw() {
 
     bullets.forEach(bu => {
         ctx.fillStyle = "cyan"; ctx.beginPath(); ctx.arc(bu.x, bu.y, 6, 0, Math.PI * 2); ctx.fill();
-        ctx.strokeStyle = "white"; ctx.stroke();
     });
 
     ctx.save(); ctx.translate(player.x, player.y); ctx.rotate(player.angle);
@@ -265,7 +234,6 @@ function draw() {
         ctx.save(); ctx.translate(player.x, player.y); ctx.rotate(a);
         ctx.drawImage(gunImg, 15, -12, 40, 25); ctx.restore();
     }
-    
     ctx.restore();
 }
 
@@ -274,13 +242,8 @@ function gameLoop() { update(); draw(); requestAnimationFrame(gameLoop); }
 window.addEventListener("keydown", e => {
     keys[e.keyCode] = true;
     if (e.keyCode === 32) {
-        let b = getBiome(currentLevel);
-        if (player.grounded || b.water || b.space) {
-            player.vy = b.water ? -6 : (b.space ? -4 : -13);
-            player.grounded = false;
-        } else if (player.canDoubleJump) {
-            player.vy = -11; player.canDoubleJump = false;
-        }
+        if (player.grounded) { player.vy = -13; player.grounded = false; }
+        else if (player.canDoubleJump) { player.vy = -11; player.canDoubleJump = false; }
     }
 });
 window.addEventListener("keyup", e => keys[e.keyCode] = false);
