@@ -40,11 +40,10 @@ canvas.width = 1000; canvas.height = 500;
 const ballImg = new Image(); ballImg.src = 'bola amarela.webp'; 
 const gunImg = new Image(); gunImg.src = 'arma-de-gelo.webp'; 
 
-// Carrega os 8 sprites EXATOS que você definiu
 const assasSprites = [];
 for (let i = 1; i <= 8; i++) {
     const img = new Image();
-    const frameNum = i.toString().padStart(4, '0'); // Gera 0001, 0002...
+    const frameNum = i.toString().padStart(4, '0');
     img.src = `bola-amarela-assas${frameNum}.webp`;
     assasSprites.push(img);
 }
@@ -74,7 +73,6 @@ function getBiome(n) {
     if (n <= 32) return { bg: "#2a0000", lava: true, grav: 0.8 };
     if (n === 33) return { bg: "#4a5b6d", grav: 0.95, isMountain: true }; 
     if (n <= 50) return { bg: "#001a33", water: true, grav: 0.2 }; 
-    // FASE 51: Laser + Assasino (até a 70)
     if (n <= 70) return { bg: "#050505", laser: true, grav: 0.85, isAssasino: true }; 
     return { bg: "#000011", space: true, grav: 0.05 };
 }
@@ -128,7 +126,6 @@ function update() {
     if (!gameRunning) return;
     let b = getBiome(currentLevel);
     
-    // Velocidade da animação do Assasino
     spriteTimer++;
     if(spriteTimer % 5 === 0) spriteFrame = (spriteFrame + 1) % 8;
 
@@ -151,7 +148,6 @@ function update() {
     let ms = Math.floor((timeDiff % 1000) / 10).toString().padStart(2, '0');
     document.getElementById("timer").innerText = `${mins}:${secs}:${ms}`;
 
-    // Lógica de balas
     for (let i = bullets.length - 1; i >= 0; i--) {
         let bu = bullets[i]; bu.x += bu.vx; bu.y += bu.vy;
         if(b.lava && bu.y > 475) {
@@ -221,18 +217,16 @@ function draw() {
         ctx.fillStyle = "cyan"; ctx.beginPath(); ctx.arc(bu.x, bu.y, 6, 0, Math.PI * 2); ctx.fill();
     });
 
-    // --- DESENHO DO JOGADOR ---
     ctx.save(); ctx.translate(player.x, player.y); 
     if(b.isAssasino) {
-        // Usa bola-amarela-assas0001.webp até 0008.webp
-        ctx.drawImage(assasSprites[spriteFrame], -player.r, -player.r, player.r*2, player.r*2);
+        // PROPORÇÃO CORRIGIDA: Mesma altura da bola, largura levemente maior para as asas
+        ctx.drawImage(assasSprites[spriteFrame], -player.r - 5, -player.r, (player.r * 2) + 10, player.r * 2);
     } else {
         ctx.rotate(player.angle);
-        ctx.drawImage(ballImg, -player.r, -player.r, player.r*2, player.r*2);
+        ctx.drawImage(ballImg, -player.r, -player.r, player.r * 2, player.r * 2);
     }
     ctx.restore();
 
-    // --- DESENHO DA ARMA (Some na fase 51-70) ---
     if (currentLevel >= 21 && !b.isAssasino) {
         let a = Math.atan2((mouse.y + camY) - player.y, (mouse.x + camX) - player.x);
         ctx.save(); ctx.translate(player.x, player.y); ctx.rotate(a);
@@ -246,15 +240,21 @@ function gameLoop() { update(); draw(); requestAnimationFrame(gameLoop); }
 window.addEventListener("keydown", e => {
     keys[e.keyCode] = true;
     if (e.keyCode === 32) {
-        if (player.grounded) { player.vy = -13; player.grounded = false; }
-        else if (player.canDoubleJump) { player.vy = -11; player.canDoubleJump = false; }
+        let b = getBiome(currentLevel);
+        if (b.isAssasino) {
+            // VOO DO ASSASINO: Pulos infinitos no ar, mas requer agilidade
+            player.vy = -8.5; 
+            player.grounded = false;
+        } else {
+            if (player.grounded) { player.vy = -13; player.grounded = false; }
+            else if (player.canDoubleJump) { player.vy = -11; player.canDoubleJump = false; }
+        }
     }
 });
 window.addEventListener("keyup", e => keys[e.keyCode] = false);
 
 window.addEventListener('mousedown', () => {
     let b = getBiome(currentLevel);
-    // Tiro desabilitado na fase do Assasino
     if(!gameRunning || currentLevel < 21 || b.isAssasino) return;
     let a = Math.atan2((mouse.y + camY) - player.y, (mouse.x + camX) - player.x);
     bullets.push({x: player.x, y: player.y, vx: Math.cos(a)*18, vy: Math.sin(a)*18});
