@@ -47,7 +47,7 @@ for (let i = 1; i <= 8; i++) {
 }
 
 let currentLevel = 1, deaths = 0, startTime, gameRunning = false;
-let keys = {}, mouse = { x: 0, y: 0 }, platforms = [], bullets = [];
+let keys = {}, mouse = { x: 0, y: 0 }, platforms = [], bullets = [], lasers = [];
 let player = { x: 60, y: 300, r: 18, vx: 0, vy: 0, angle: 0, grounded: false, canDoubleJump: true };
 let camX = 0, camY = 0, spriteFrame = 0, spriteTimer = 0;
 
@@ -70,7 +70,7 @@ function getBiome(n) {
     if (n <= 32) return { bg: "#2a0000", lava: true, grav: 0.8 };
     if (n === 33) return { bg: "#4a5b6d", grav: 0.95, isMountain: true }; 
     if (n <= 50) return { bg: "#001a33", water: true, grav: 0.2 }; 
-    if (n <= 70) return { bg: "#050505", laser: true, grav: 0.85, isAssasino: true }; 
+    if (n <= 70) return { bg: "#050505", laser: true, grav: 0.85, isAssas: true }; 
     return { bg: "#000011", space: true, grav: 0.05 };
 }
 
@@ -78,6 +78,20 @@ function generateLevel(n) {
     rngSeed = n * 54321;
     const b = getBiome(n);
     const lv = [];
+    lasers = [];
+
+    if (b.laser) {
+        let numLasers = Math.min(4 + Math.floor((n - 51) / 2), 12);
+        for(let i=0; i<numLasers; i++) {
+            lasers.push({
+                y: random() * 500,
+                speed: (random() * 2.5 + 1.5) * (random() > 0.5 ? 1 : -1),
+                angle: random() * Math.PI,
+                rotSpeed: random() * 0.06 * (random() > 0.5 ? 1 : -1)
+            });
+        }
+    }
+
     if (b.isMountain) {
         let curX = 120, curY = 400;
         lv.push({x: 0, y: 400, w: 120, h: 500, c: "#1a252c", t: "#fff", type: 'normal'});
@@ -90,7 +104,7 @@ function generateLevel(n) {
         while (lx < 850) {
             lx += 110 + (random()*80); ly += (random()*120)-60;
             if (ly < 150) ly = 150; if (ly > 440) ly = 400;
-            let type = (b.lava || b.laser) && random() > 0.6 ? 'spike' : 'normal';
+            let type = (b.lava || b.laser) && random() > 0.7 ? 'spike' : 'normal';
             lv.push({x: lx, y: ly, w: 70, h: 25, c: type==='spike'?'#f00':(b.g||"#555"), t: type==='spike'?'#f00':(b.t||"#777"), type: type});
         }
         lv.push({x: 930, y: ly, w: 70, h: 500, c: b.g || "#444", t: b.t || "#666", type: 'normal'});
@@ -108,7 +122,7 @@ function loadLevel(n) {
 function update() {
     if (!gameRunning) return;
     let b = getBiome(currentLevel);
-    if(b.isAssasino) { spriteTimer++; if(spriteTimer % 5 === 0) spriteFrame = (spriteFrame + 1) % 8; }
+    if(b.isAssas) { spriteTimer++; if(spriteTimer % 5 === 0) spriteFrame = (spriteFrame + 1) % 8; }
 
     if (keys[39]) player.vx += 0.8; if (keys[37]) player.vx -= 0.8;
     player.vy += b.grav; player.vx *= 0.95; player.x += player.vx; player.y += player.vy;
@@ -120,6 +134,13 @@ function update() {
 
     if (player.x - player.r < camX) { player.x = camX + player.r; player.vx = 0; }
     if (currentLevel !== 33 && player.x + player.r > 1000) { player.x = 1000 - player.r; player.vx = 0; }
+
+    lasers.forEach(l => {
+        l.y += l.speed; l.angle += l.rotSpeed;
+        if(l.y > 500 || l.y < 0) l.speed *= -1;
+        let dist = Math.abs((player.x) * Math.sin(l.angle) - (player.y - l.y) * Math.cos(l.angle));
+        if (dist < player.r - 2) { deaths++; loadLevel(currentLevel); }
+    });
 
     for (let i = bullets.length - 1; i >= 0; i--) {
         let bu = bullets[i]; bu.x += bu.vx; bu.y += bu.vy;
@@ -160,6 +181,16 @@ function draw() {
     ctx.fillStyle = b.bg; ctx.fillRect(0, 0, 1000, 500);
     if(b.lava) { ctx.fillStyle = "#ff4500"; ctx.fillRect(0, 480, 1000, 20); }
 
+    lasers.forEach(l => {
+        ctx.save(); ctx.translate(0, l.y); ctx.rotate(l.angle);
+        ctx.shadowBlur = 10; ctx.shadowColor = "red";
+        ctx.strokeStyle = "red"; ctx.lineWidth = 2.5; // Lasers mais finos
+        ctx.beginPath(); ctx.moveTo(-2000, 0); ctx.lineTo(2000, 0); ctx.stroke();
+        ctx.strokeStyle = "white"; ctx.lineWidth = 0.8;
+        ctx.beginPath(); ctx.moveTo(-2000, 0); ctx.lineTo(2000, 0); ctx.stroke();
+        ctx.restore();
+    });
+
     ctx.save(); ctx.translate(-camX, -camY);
     platforms.forEach(p => {
         if(p.type === 'goal') {
@@ -177,10 +208,8 @@ function draw() {
     bullets.forEach(bu => { ctx.fillStyle = "cyan"; ctx.beginPath(); ctx.arc(bu.x, bu.y, 6, 0, Math.PI * 2); ctx.fill(); });
 
     ctx.save(); ctx.translate(player.x, player.y); 
-    if(b.isAssasino) {
-        // --- SPRITE "ENGORDADO" ---
-        // Largura = player.r * 3.2 (60% maior que a bola normal)
-        // Altura = player.r * 2 (Mantém a altura da bola)
+    if(b.isAssas) {
+        // PROPORÇÃO ENGORDADA (GORDINHO COM ASAS)
         ctx.drawImage(assasSprites[spriteFrame], -player.r * 1.6, -player.r, player.r * 3.2, player.r * 2);
     } else {
         ctx.rotate(player.angle);
@@ -188,7 +217,7 @@ function draw() {
     }
     ctx.restore();
 
-    if (currentLevel >= 21 && !b.isAssasino) {
+    if (currentLevel >= 21 && !b.isAssas) {
         let a = Math.atan2((mouse.y + camY) - player.y, (mouse.x + camX) - player.x);
         ctx.save(); ctx.translate(player.x, player.y); ctx.rotate(a);
         ctx.drawImage(gunImg, 15, -12, 40, 25); ctx.restore();
@@ -202,7 +231,7 @@ window.addEventListener("keydown", e => {
     keys[e.keyCode] = true;
     if (e.keyCode === 32) {
         let b = getBiome(currentLevel);
-        if (b.isAssasino) { player.vy = -8.5; player.grounded = false; }
+        if (b.isAssas) { player.vy = -8.5; player.grounded = false; }
         else if (player.grounded) { player.vy = -13; player.grounded = false; }
         else if (player.canDoubleJump) { player.vy = -11; player.canDoubleJump = false; }
     }
@@ -210,7 +239,7 @@ window.addEventListener("keydown", e => {
 window.addEventListener("keyup", e => keys[e.keyCode] = false);
 window.addEventListener('mousedown', () => {
     let b = getBiome(currentLevel);
-    if(!gameRunning || currentLevel < 21 || b.isAssasino) return;
+    if(!gameRunning || currentLevel < 21 || b.isAssas) return;
     let a = Math.atan2((mouse.y + camY) - player.y, (mouse.x + camX) - player.x);
     bullets.push({x: player.x, y: player.y, vx: Math.cos(a)*18, vy: Math.sin(a)*18});
 });
@@ -220,4 +249,3 @@ canvas.addEventListener('mousemove', e => {
 </script>
 </body>
 </html>
-
