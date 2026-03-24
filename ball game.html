@@ -2,7 +2,7 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Super Ball - Sinsice Extreme</title>
+    <title>Super Ball - Sinsice Mountain Edition</title>
     <style>
         body { margin: 0; overflow: hidden; background: #000; font-family: 'Segoe UI', sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; }
         canvas { border: 2px solid #555; box-shadow: 0 0 60px rgba(0,0,0,0.9); cursor: crosshair; display: none; }
@@ -61,7 +61,7 @@ function getBiome(n) {
     if (n <= 10) return { bg: "#87ceeb", g: "#5d4037", t: "#2ecc71", grav: 0.8 };
     if (n <= 20) return { bg: "#f0f8ff", g: "#b0c4de", t: "#ffffff", grav: 0.8 };
     if (n <= 32) return { bg: "#2a0000", lava: true, grav: 0.8 };
-    if (n <= 50) return { bg: "#4a7c82", g: "#444", t: "#666", grav: 0.9, isMountain: true }; 
+    if (n <= 50) return { bg: "#576d85", grav: 0.9, isMountain: true }; 
     if (n <= 70) return { bg: "#001a33", water: true, grav: 0.15 };
     if (n <= 80) return { bg: "#050505", laser: true, grav: 0.85 };
     if (n <= 95) return { bg: "#000011", space: true, grav: 0.05 };
@@ -72,47 +72,53 @@ function generateLevel(n) {
     rngSeed = n * 54321;
     const biome = getBiome(n);
     const lv = [];
-    lv.push({x: 0, y: 400, w: 100, h: 100, c: biome.g || "#555", t: biome.t || "#777", type: 'normal'});
     
-    let lastX = 100, lastY = 400;
-
+    // Início padrão
+    lv.push({x: 0, y: 400, w: 120, h: 200, c: biome.g || "#555", t: biome.t || "#777", type: 'normal'});
+    
     if (biome.isMountain) {
-        // --- NOVO SISTEMA DE MONTANHA (SUBIDA E DESCIDA) ---
-        let mX = 100, mY = 400;
-        for(let i = 0; i < 40; i++) {
-            let width = 60 + (random() * 50);
-            let height = 30 + (random() * 20);
+        let curX = 100, curY = 400;
+        // Criar uma sequência densa e irregular de rochas
+        for(let i = 0; i < 60; i++) {
+            let rW = 80 + (random() * 60);
+            let rH = 50 + (random() * 40);
             
-            // Metade sobe, metade desce
-            if (i < 20) {
-                mX += 60 + (random() * 40);
-                mY -= 80 + (random() * 60);
+            // Lógica de Subida (até i=35) e Descida
+            if (i < 35) {
+                curX += 40 + (random() * 40);
+                curY -= 60 + (random() * 50);
             } else {
-                mX += 80 + (random() * 40);
-                mY += 60 + (random() * 40);
+                curX += 60 + (random() * 50);
+                curY += 50 + (random() * 60);
             }
 
-            if(mX > 850) mX = 800;
-            // Todas as rochas da montanha agora são do tipo 'rock' para desenhar circular
-            lv.push({x: mX, y: mY, w: width, h: height, c: "#444", t: "#666", type: 'rock'});
+            // Impede que a montanha "fuja" muito para os lados do canvas
+            if(curX > 850) curX = 750;
+            if(curX < 50) curX = 150;
+
+            lv.push({ x: curX, y: curY, w: rW, h: rH, type: 'mountain_rock' });
         }
-        lv.push({x: mX + 20, y: mY - 60, type: 'goal'});
-    } else if (!biome.water) {
-        while (lastX < 850) {
-            let gapX = biome.space ? 180 : 120 + (random() * 80);
-            let gapY = (random() * 140) - 70;
-            let width = biome.laser ? 45 : 60 + (random() * 40);
-            lastX += gapX; lastY += gapY;
-            if (lastY < 120) lastY = 150; if (lastY > 440) lastY = 400;
-            if (lastX > 880) break;
-            let type = (biome.laser || biome.lava) && random() > 0.5 ? 'spike' : 'normal';
-            lv.push({x: lastX, y: lastY, w: width, h: 25, c: type==='spike'?'#f00':(biome.g||"#555"), t: type==='spike'?'#f00':(biome.t||"#777"), type: type});
-            lastX += width;
-        }
-        lv.push({x: 920, y: lastY, w: 60, h: 300, c: biome.g || "#444", t: biome.t || "#666", type: 'normal'});
-        lv.push({x: 950, y: lastY, type: 'goal'});
+        // Bandeira no final de tudo
+        lv.push({ x: curX + 30, y: curY - 60, type: 'goal' });
+
     } else {
-        lv.push({x: 950, y: 220, type: 'goal'});
+        // Geração padrão das outras fases (mantendo sua lógica original)
+        let lastX = 120, lastY = 400;
+        if (!biome.water) {
+            while (lastX < 850) {
+                let gapX = biome.space ? 180 : 120 + (random() * 80);
+                let gapY = (random() * 140) - 70;
+                let width = biome.laser ? 45 : 60 + (random() * 40);
+                lastX += gapX; lastY += gapY;
+                if (lastY < 120) lastY = 150; if (lastY > 440) lastY = 400;
+                if (lastX > 880) break;
+                let type = (biome.laser || biome.lava) && random() > 0.5 ? 'spike' : 'normal';
+                lv.push({x: lastX, y: lastY, w: width, h: 25, c: type==='spike'?'#f00':(biome.g||"#555"), t: type==='spike'?'#f00':(biome.t||"#777"), type: type});
+                lastX += width;
+            }
+        }
+        lv.push({x: 920, y: biome.water ? 220 : lastY, w: 60, h: 300, c: biome.g || "#444", t: biome.t || "#666", type: 'normal'});
+        lv.push({x: 950, y: biome.water ? 220 : lastY, type: 'goal'});
     }
     return lv;
 }
@@ -136,33 +142,39 @@ function update() {
     player.angle += player.vx * 0.1;
 
     if(b.isMountain) {
-        let targetCam = player.y - 300;
+        let targetCam = player.y - 250;
         camY += (targetCam - camY) * 0.1;
     } else { camY = 0; }
 
+    // Balas de Gelo
     for (let i = bullets.length - 1; i >= 0; i--) {
         let bu = bullets[i];
         bu.x += bu.vx; bu.y += bu.vy;
         platforms.forEach(p => {
             if (bu.x > p.x && bu.x < p.x + p.w && bu.y > p.y && bu.y < p.y + p.h) {
-                if (p.type === 'spike') { p.type = 'normal'; p.c = '#add8e6'; p.t = '#fff'; bullets.splice(i, 1); }
+                if (p.type === 'spike') { p.type = 'normal'; p.c = '#add8e6'; p.t = '#fff'; }
+                bullets.splice(i, 1);
             }
         });
-        if (bu.x < -100 || bu.x > 1100 || bu.y < camY - 500 || bu.y > camY + 1000) bullets.splice(i, 1);
+        if (bu.y > camY + 800 || bu.y < camY - 5000) bullets.splice(i, 1);
     }
 
     player.grounded = false;
     platforms.forEach(p => {
         if (p.type === 'goal' && Math.hypot(player.x - p.x, player.y - (p.y - 20)) < 45) loadLevel(currentLevel + 1);
+        
+        // Colisão com rochas ou blocos
         if (player.x + player.r > p.x && player.x - player.r < p.x + p.w && player.y + player.r > p.y && player.y - player.r < p.y + p.h) {
             if (p.type === 'spike') { deaths++; loadLevel(currentLevel); }
-            if (player.vy > 0 && player.y < p.y + 12) { player.grounded = true; player.canDoubleJump = true; player.vy = 0; player.y = p.y - player.r; }
-            else { player.vx *= -0.5; }
+            if (player.vy > 0 && player.y < p.y + 15) { 
+                player.grounded = true; player.canDoubleJump = true; 
+                player.vy = 0; player.y = p.y - player.r; 
+            } else { player.vx *= -0.5; }
         }
     });
 
     if (b.lava && player.y > 465) { deaths++; loadLevel(currentLevel); }
-    if (player.y > camY + 600 || player.y < camY - 4000) { deaths++; loadLevel(currentLevel); }
+    if (player.y > camY + 700 || player.y < camY - 6000) { deaths++; loadLevel(currentLevel); }
     if (player.x < 0) player.x = 0; if (player.x > 1000) player.x = 1000;
     
     document.getElementById("timer").innerText = new Date(Date.now() - startTime).toISOString().substr(14, 8);
@@ -176,19 +188,20 @@ function draw() {
     ctx.translate(0, -camY);
 
     ctx.fillStyle = b.bg; ctx.fillRect(0, camY, 1000, 500);
-    
-    if(b.lava) { ctx.fillStyle = "#ff4500"; ctx.fillRect(0, 475, 1000, 25); }
-    if(b.space) { ctx.fillStyle = "#fff"; for(let i=0; i<20; i++) ctx.fillRect((i*157)%1000, camY + (i*243)%500, 2, 2); }
 
     platforms.forEach(p => {
         if(p.type === 'goal') {
             ctx.fillStyle = "#fff"; ctx.fillRect(p.x-2, p.y-70, 4, 70);
             ctx.fillStyle = "red"; ctx.beginPath(); ctx.moveTo(p.x, p.y-70); ctx.lineTo(p.x+40, p.y-50); ctx.lineTo(p.x, p.y-30); ctx.fill();
-        } else if (p.type === 'rock') {
-            // Desenho circular de rocha
-            ctx.fillStyle = "#444";
+        } else if (p.type === 'mountain_rock') {
+            // Visual 3D com Degradê para volume
+            let grd = ctx.createRadialGradient(p.x + p.w/3, p.y + rH/3, 10, p.x + p.w/2, p.y + p.h/2, p.w);
+            grd.addColorStop(0, "#888"); // Brilho da pedra
+            grd.addColorStop(1, "#333"); // Sombra da pedra
+            ctx.fillStyle = grd;
+            
             ctx.beginPath();
-            ctx.ellipse(p.x + p.w/2, p.y + p.h/2, p.w/2, p.h/2, 0, 0, Math.PI*2);
+            ctx.ellipse(p.x + p.w/2, p.y + p.h/2, p.w/2, p.h/2, 0, 0, Math.PI * 2);
             ctx.fill();
             ctx.strokeStyle = "#222"; ctx.lineWidth = 2; ctx.stroke();
         } else {
@@ -197,7 +210,11 @@ function draw() {
         }
     });
 
-    bullets.forEach(bu => { ctx.fillStyle = "cyan"; ctx.beginPath(); ctx.arc(bu.x, bu.y, 6, 0, Math.PI*2); ctx.fill(); });
+    // Balas
+    bullets.forEach(bu => {
+        ctx.fillStyle = "cyan"; ctx.beginPath(); ctx.arc(bu.x, bu.y, 6, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = "white"; ctx.stroke();
+    });
 
     ctx.save(); ctx.translate(player.x, player.y); ctx.rotate(player.angle);
     ctx.drawImage(ballImg, -player.r, -player.r, player.r*2, player.r*2); ctx.restore();
