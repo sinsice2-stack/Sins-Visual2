@@ -117,7 +117,7 @@ function generateLevel(n) {
 
 function loadLevel(n) { 
     currentLevel = n; bullets = []; platforms = generateLevel(n); 
-    player.x = 40; player.y = 350; player.vx = player.vy = 0; 
+    player.x = 60; player.y = 350; player.vx = player.vy = 0; 
     camY = 0; camX = 0;
     document.getElementById("lvlNum").innerText = n; 
 }
@@ -136,32 +136,25 @@ function update() {
     player.x += player.vx; player.y += player.vy;
     player.angle += player.vx * 0.1;
 
+    // Ajuste de Câmera (Fase 33)
     if(currentLevel === 33) {
-        camX += (player.x - 400 - camX) * 0.1;
+        camX += (player.x - 500 - camX) * 0.1;
         camY += (player.y - 300 - camY) * 0.1;
-        if (camX < 0) camX = 0;
     } else { camX = 0; camY = 0; }
 
+    // CRONÔMETRO (Sempre roda)
     let timeDiff = Date.now() - startTime;
     let mins = Math.floor(timeDiff / 60000).toString().padStart(2, '0');
     let secs = Math.floor((timeDiff % 60000) / 1000).toString().padStart(2, '0');
     let ms = Math.floor((timeDiff % 1000) / 10).toString().padStart(2, '0');
     document.getElementById("timer").innerText = `${mins}:${secs}:${ms}`;
 
+    // Balas
     for (let i = bullets.length - 1; i >= 0; i--) {
         let bu = bullets[i]; bu.x += bu.vx; bu.y += bu.vy;
-        if(b.lava && bu.y > 475) {
-            platforms.push({x: bu.x - 40, y: 475, w: 80, h: 30, c: '#add8e6', t: '#fff', type: 'normal'});
-            bullets.splice(i, 1); continue;
-        }
         let hit = false;
         platforms.forEach(p => {
-            if (p.type === 'slope') {
-                if (bu.x >= p.x1 && bu.x <= p.x2) {
-                    let pct = (bu.x - p.x1) / (p.x2 - p.x1);
-                    if (bu.y > (p.y1 + pct * (p.y2 - p.y1))) hit = true;
-                }
-            } else if (p.type !== 'goal' && bu.x > p.x && bu.x < p.x + p.w && bu.y > p.y && bu.y < p.y + p.h) hit = true;
+            if (p.type !== 'goal' && bu.x > p.x && bu.x < p.x + p.w && bu.y > p.y && bu.y < p.y + p.h) hit = true;
         });
         if (hit || bu.x < camX - 200 || bu.x > camX + 1200) bullets.splice(i, 1);
     }
@@ -169,6 +162,7 @@ function update() {
     player.grounded = false;
     platforms.forEach(p => {
         if (p.type === 'goal' && Math.hypot(player.x - p.x, player.y - (p.y - 20)) < 50) loadLevel(currentLevel + 1);
+        
         if (p.type === 'slope' && player.x >= p.x1 && player.x <= p.x2) {
             let pct = (player.x - p.x1) / (p.x2 - p.x1);
             let rampY = p.y1 + pct * (p.y2 - p.y1);
@@ -183,10 +177,9 @@ function update() {
         }
     });
 
-    if (b.lava && player.y > 480) { deaths++; loadLevel(currentLevel); }
-    if (player.y > camY + 1000 || player.y < camY - 2000) { deaths++; loadLevel(currentLevel); }
+    // Morte por queda (Considerando Câmera na fase 33)
+    if (player.y > (currentLevel === 33 ? camY + 800 : 800)) { deaths++; loadLevel(currentLevel); }
     if (player.x < 0) { player.x = 0; player.vx = 0; }
-    if (currentLevel !== 33 && player.x > 1000) { player.x = 1000; player.vx = 0; }
 
     document.getElementById("deathCount").innerText = deaths;
 }
@@ -195,9 +188,11 @@ function draw() {
     let b = getBiome(currentLevel);
     ctx.clearRect(0, 0, 1000, 500);
     ctx.save();
-    ctx.translate(-camX, -camY);
-    ctx.fillStyle = b.bg; ctx.fillRect(camX - 500, camY - 500, 5000, 5000);
-    if(b.lava) { ctx.fillStyle = "#ff4500"; ctx.fillRect(0, 480, 1000, 200); }
+    ctx.translate(-camX, -camY); // O segredo do player aparecer na montanha
+
+    // Fundo Bioma
+    ctx.fillStyle = b.bg; 
+    ctx.fillRect(camX - 200, camY - 200, 1400, 900);
 
     platforms.forEach(p => {
         if(p.type === 'goal') {
@@ -206,7 +201,7 @@ function draw() {
         } else if (p.type === 'slope') {
             ctx.fillStyle = "#1a252c";
             ctx.beginPath(); ctx.moveTo(p.x1, p.y1); ctx.lineTo(p.x2, p.y2); ctx.lineTo(p.x2, p.y2 + 1000); ctx.lineTo(p.x1, p.y1 + 1000); ctx.fill();
-            ctx.strokeStyle = "#fff"; ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(p.x1, p.y1); ctx.lineTo(p.x2, p.y2); stroke();
+            ctx.strokeStyle = "#fff"; ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(p.x1, p.y1); ctx.lineTo(p.x2, p.y2); ctx.stroke();
         } else {
             ctx.fillStyle = p.c; ctx.fillRect(p.x, p.y, p.w, p.h);
             ctx.fillStyle = p.t; ctx.fillRect(p.x, p.y, p.w, 4);
@@ -217,10 +212,9 @@ function draw() {
         ctx.fillStyle = "cyan"; ctx.beginPath(); ctx.arc(bu.x, bu.y, 6, 0, Math.PI * 2); ctx.fill();
     });
 
-    // --- DESENHO DO JOGADOR ---
+    // JOGADOR
     ctx.save(); ctx.translate(player.x, player.y); 
     if(b.isAssasino) {
-        // PROPORÇÃO 1:1 ( player.r * 2 ) conforme sua instrução rígida
         ctx.drawImage(assasSprites[spriteFrame], -player.r, -player.r, player.r * 2, player.r * 2);
     } else {
         ctx.rotate(player.angle);
@@ -228,6 +222,7 @@ function draw() {
     }
     ctx.restore();
 
+    // ARMA
     if (currentLevel >= 21 && !b.isAssasino) {
         let a = Math.atan2((mouse.y + camY) - player.y, (mouse.x + camX) - player.x);
         ctx.save(); ctx.translate(player.x, player.y); ctx.rotate(a);
@@ -242,11 +237,8 @@ window.addEventListener("keydown", e => {
     keys[e.keyCode] = true;
     if (e.keyCode === 32) {
         let b = getBiome(currentLevel);
-        if (b.isAssasino) {
-            // VOO DO ASSASINO: Impulso constante
-            player.vy = -8.5; 
-            player.grounded = false;
-        } else {
+        if (b.isAssasino) { player.vy = -8.5; player.grounded = false; }
+        else {
             if (player.grounded) { player.vy = -13; player.grounded = false; }
             else if (player.canDoubleJump) { player.vy = -11; player.canDoubleJump = false; }
         }
