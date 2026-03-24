@@ -64,7 +64,6 @@
             gap: 20px;
         }
 
-        /* EFEITO DIAMONDY NOS CARDS */
         .gallery-item {
             background: rgba(0, 0, 0, 0.5);
             border-radius: 12px;
@@ -81,7 +80,6 @@
             box-shadow: 0 10px 25px rgba(188, 19, 254, 0.5);
         }
 
-        /* BRILHO PULSANTE PARA O JOGO NOVO */
         .new-game-glow {
             border: 1px solid #bc13fe !important;
             animation: pulse-glow 2s infinite;
@@ -101,8 +99,6 @@
             transition: 0.4s;
         }
 
-        .gallery-item:hover img { transform: scale(1.05); }
-
         .gallery-caption {
             padding: 12px;
             text-align: center;
@@ -111,7 +107,6 @@
             background: rgba(0,0,0,0.6);
         }
 
-        /* LIGHTBOX */
         #lightbox {
             display: none;
             position: fixed;
@@ -155,7 +150,7 @@
         <div class="header-logo">
             <img src="logo sinsice2 site.webp" alt="Sins Ice2 Logo">
         </div>
-        <div class="subtitle">14 anos • YouTuber • Animador • Compositor • Designer</div>
+        <div class="subtitle">13 anos • YouTuber • Animador • Compositor • Designer</div>
     </header>
 
     <div class="container">
@@ -222,7 +217,7 @@
         function playSelect() {
             if (selectSound) {
                 selectSound.currentTime = 0;
-                selectSound.play().catch(e => console.log("Aguardando interação"));
+                selectSound.play().catch(e => console.log("Erro som"));
             }
         }
 
