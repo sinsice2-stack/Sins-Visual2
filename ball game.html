@@ -118,7 +118,7 @@ function update() {
         camX += (player.x - 500 - camX) * 0.1; camY += (player.y - 300 - camY) * 0.1;
     } else { camX = 0; camY = 0; }
 
-    // --- PAREDE INVISÍVEL (Justiça) ---
+    // --- BARREIRA INVISÍVEL NO CANTO ESQUERDO ---
     if (player.x - player.r < camX) { player.x = camX + player.r; player.vx = 0; }
     // No lado direito, só limita se não for a fase da montanha (que é longa)
     if (currentLevel !== 33 && player.x + player.r > 1000) { player.x = 1000 - player.r; player.vx = 0; }
@@ -180,8 +180,13 @@ function draw() {
     bullets.forEach(bu => { ctx.fillStyle = "cyan"; ctx.beginPath(); ctx.arc(bu.x, bu.y, 6, 0, Math.PI * 2); ctx.fill(); });
 
     ctx.save(); ctx.translate(player.x, player.y); 
-    if(b.isAssasino) { ctx.drawImage(assasSprites[spriteFrame], -player.r, -player.r, player.r * 2, player.r * 2); } 
-    else { ctx.rotate(player.angle); ctx.drawImage(ballImg, -player.r, -player.r, player.r * 2, player.r * 2); }
+    if(b.isAssasino) {
+        // PROPORÇÃO 1:1 CONFORME SOLICITADO
+        ctx.drawImage(assasSprites[spriteFrame], -player.r, -player.r, player.r * 2, player.r * 2);
+    } else {
+        ctx.rotate(player.angle);
+        ctx.drawImage(ballImg, -player.r, -player.r, player.r * 2, player.r * 2);
+    }
     ctx.restore();
 
     if (currentLevel >= 21 && !b.isAssasino) {
