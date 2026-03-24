@@ -36,12 +36,13 @@ const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 canvas.width = 1000; canvas.height = 500;
 
+// Carregamento de Imagens
 const ballImg = new Image(); ballImg.src = 'bola amarela.webp'; 
 const gunImg = new Image(); gunImg.src = 'arma-de-gelo.webp'; 
 
 let currentLevel = 1, deaths = 0, startTime, gameRunning = false;
 let keys = {}, mouse = { x: 0, y: 0 }, platforms = [], bullets = [];
-let player = { x: 60, y: 350, r: 18, vx: 0, vy: 0, angle: 0, speed: 1.5, friction: 0.95, grounded: false, canDoubleJump: true };
+let player = { x: 60, y: 350, r: 18, vx: 0, vy: 0, angle: 0, grounded: false, canDoubleJump: true };
 
 function startGame() {
     const input = document.getElementById("playerNameInput").value.trim();
@@ -57,14 +58,14 @@ let rngSeed = 1;
 function random() { rngSeed = (rngSeed * 9301 + 49297) % 233280; return rngSeed / 233280; }
 
 function getBiome(n) {
-    if (n <= 10) return { name: "Gramado", bg: "#87ceeb", g: "#5d4037", t: "#2ecc71", grav: 0.8 };
-    if (n <= 20) return { name: "Neve", bg: "#f0f8ff", g: "#b0c4de", t: "#ffffff", grav: 0.8 };
-    if (n <= 32) return { name: "Lava", bg: "#2a0000", g: "#441100", t: "#ff4500", grav: 0.8, lava: true };
-    if (n <= 50) return { name: "Montanha", bg: "#4a7c82", g: "#444", t: "#666", grav: 0.9, mountain: true };
-    if (n <= 70) return { name: "Mar", bg: "#001a33", water: true, grav: 0.15 };
-    if (n <= 80) return { name: "Lasers", bg: "#050505", laser: true, grav: 0.85 };
-    if (n <= 95) return { name: "Espaço", bg: "#000011", space: true, grav: 0.05 };
-    return { name: "Final", bg: "#2ecc71", g: "#4d2600", t: "#27ae60", grav: 0.8 };
+    if (n <= 10) return { bg: "#87ceeb", g: "#5d4037", t: "#2ecc71", grav: 0.8 };
+    if (n <= 20) return { bg: "#f0f8ff", g: "#b0c4de", t: "#ffffff", grav: 0.8 };
+    if (n <= 32) return { bg: "#2a0000", lava: true, grav: 0.8 };
+    if (n <= 50) return { bg: "#4a7c82", g: "#444", t: "#666", grav: 0.9 };
+    if (n <= 70) return { bg: "#001a33", water: true, grav: 0.15 };
+    if (n <= 80) return { bg: "#050505", laser: true, grav: 0.85 };
+    if (n <= 95) return { bg: "#000011", space: true, grav: 0.05 };
+    return { bg: "#2ecc71", g: "#4d2600", t: "#27ae60", grav: 0.8 };
 }
 
 function generateLevel(n) {
@@ -81,7 +82,7 @@ function generateLevel(n) {
             lastX += gapX; lastY += gapY;
             if (lastY < 120) lastY = 150; if (lastY > 440) lastY = 400;
             if (lastX > 880) break;
-            let type = biome.laser ? 'spike' : 'normal';
+            let type = (biome.laser || biome.lava) && random() > 0.5 ? 'spike' : 'normal';
             lv.push({x: lastX, y: lastY, w: width, h: 25, c: type==='spike'?'#f00':(biome.g||"#555"), t: type==='spike'?'#f00':(biome.t||"#777"), type: type});
             lastX += width;
         }
@@ -105,12 +106,12 @@ function update() {
     player.x += player.vx; player.y += player.vy;
     player.angle += player.vx * 0.1;
 
-    // LÓGICA DAS BALAS
+    // ATUALIZAÇÃO DAS BALAS
     for (let i = bullets.length - 1; i >= 0; i--) {
         let bu = bullets[i];
         bu.x += bu.vx; bu.y += bu.vy;
         
-        // Colisão com Plataformas Vermelhas (Spikes)
+        // Congelar Blocos Vermelhos (Permanente)
         platforms.forEach(p => {
             if (bu.x > p.x && bu.x < p.x + p.w && bu.y > p.y && bu.y < p.y + p.h) {
                 if (p.type === 'spike') { 
@@ -120,21 +121,13 @@ function update() {
             }
         });
 
-        // Colisão com a LAVA (Cria bloco de gelo temporário)
+        // Criar Gelo na Lava (Permanente)
         if (b.lava && bu.y > 475) {
-            platforms.push({x: bu.x - 30, y: 475, w: 60, h: 25, c: '#add8e6', t: '#fff', type: 'normal', timer: 180});
+            platforms.push({x: bu.x - 35, y: 475, w: 70, h: 25, c: '#add8e6', t: '#fff', type: 'normal'});
             bullets.splice(i, 1);
         }
 
-        if (bu.x < 0 || bu.x > 1000 || bu.y < 0 || bu.y > 500) bullets.splice(i, 1);
-    }
-
-    // Remover blocos de gelo temporários da lava
-    for (let i = platforms.length - 1; i >= 0; i--) {
-        if (platforms[i].timer !== undefined) {
-            platforms[i].timer--;
-            if (platforms[i].timer <= 0) platforms.splice(i, 1);
-        }
+        if (bu.x < -50 || bu.x > 1050 || bu.y < -50 || bu.y > 550) bullets.splice(i, 1);
     }
 
     player.grounded = false;
@@ -178,7 +171,6 @@ function draw() {
     ctx.save(); ctx.translate(player.x, player.y); ctx.rotate(player.angle);
     ctx.drawImage(ballImg, -player.r, -player.r, player.r*2, player.r*2); ctx.restore();
 
-    // A ARMA SÓ APARECE NA FASE 21+
     if (currentLevel >= 21) {
         let a = Math.atan2(mouse.y - player.y, mouse.x - player.x);
         ctx.save(); ctx.translate(player.x, player.y); ctx.rotate(a);
@@ -203,7 +195,7 @@ window.addEventListener("keydown", e => {
 window.addEventListener("keyup", e => keys[e.keyCode] = false);
 
 window.addEventListener('mousedown', () => {
-    if(!gameRunning || currentLevel < 21) return; // Arma bloqueada antes da lava
+    if(!gameRunning || currentLevel < 21) return;
     let a = Math.atan2(mouse.y - player.y, mouse.x - player.x);
     bullets.push({x: player.x, y: player.y, vx: Math.cos(a)*15, vy: Math.sin(a)*15});
 });
