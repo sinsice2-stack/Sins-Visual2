@@ -2,7 +2,7 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Super Ball - Sinsice Mountain Edition</title>
+    <title>Super Ball - Sinsice Extreme Fix</title>
     <style>
         body { margin: 0; overflow: hidden; background: #000; font-family: 'Segoe UI', sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; }
         canvas { border: 2px solid #555; box-shadow: 0 0 60px rgba(0,0,0,0.9); cursor: crosshair; display: none; }
@@ -72,50 +72,32 @@ function generateLevel(n) {
     rngSeed = n * 54321;
     const biome = getBiome(n);
     const lv = [];
-    
-    // Início padrão
     lv.push({x: 0, y: 400, w: 120, h: 200, c: biome.g || "#555", t: biome.t || "#777", type: 'normal'});
     
+    let lastX = 120, lastY = 400;
+
     if (biome.isMountain) {
         let curX = 100, curY = 400;
-        // Criar uma sequência densa e irregular de rochas
         for(let i = 0; i < 60; i++) {
             let rW = 80 + (random() * 60);
             let rH = 50 + (random() * 40);
-            
-            // Lógica de Subida (até i=35) e Descida
-            if (i < 35) {
-                curX += 40 + (random() * 40);
-                curY -= 60 + (random() * 50);
-            } else {
-                curX += 60 + (random() * 50);
-                curY += 50 + (random() * 60);
-            }
-
-            // Impede que a montanha "fuja" muito para os lados do canvas
-            if(curX > 850) curX = 750;
-            if(curX < 50) curX = 150;
-
+            if (i < 35) { curX += 40 + (random() * 40); curY -= 60 + (random() * 50); }
+            else { curX += 60 + (random() * 50); curY += 50 + (random() * 60); }
+            if(curX > 850) curX = 750; if(curX < 50) curX = 150;
             lv.push({ x: curX, y: curY, w: rW, h: rH, type: 'mountain_rock' });
         }
-        // Bandeira no final de tudo
         lv.push({ x: curX + 30, y: curY - 60, type: 'goal' });
-
     } else {
-        // Geração padrão das outras fases (mantendo sua lógica original)
-        let lastX = 120, lastY = 400;
-        if (!biome.water) {
-            while (lastX < 850) {
-                let gapX = biome.space ? 180 : 120 + (random() * 80);
-                let gapY = (random() * 140) - 70;
-                let width = biome.laser ? 45 : 60 + (random() * 40);
-                lastX += gapX; lastY += gapY;
-                if (lastY < 120) lastY = 150; if (lastY > 440) lastY = 400;
-                if (lastX > 880) break;
-                let type = (biome.laser || biome.lava) && random() > 0.5 ? 'spike' : 'normal';
-                lv.push({x: lastX, y: lastY, w: width, h: 25, c: type==='spike'?'#f00':(biome.g||"#555"), t: type==='spike'?'#f00':(biome.t||"#777"), type: type});
-                lastX += width;
-            }
+        while (lastX < 850) {
+            let gapX = biome.space ? 180 : 120 + (random() * 80);
+            let gapY = (random() * 140) - 70;
+            let width = biome.laser ? 45 : 60 + (random() * 40);
+            lastX += gapX; lastY += gapY;
+            if (lastY < 120) lastY = 150; if (lastY > 440) lastY = 400;
+            if (lastX > 880) break;
+            let type = (biome.laser || (biome.lava && random() > 0.5)) ? 'spike' : 'normal';
+            lv.push({x: lastX, y: lastY, w: width, h: 25, c: type==='spike'?'#f00':(biome.g||"#555"), t: type==='spike'?'#f00':(biome.t||"#777"), type: type});
+            lastX += width;
         }
         lv.push({x: 920, y: biome.water ? 220 : lastY, w: 60, h: 300, c: biome.g || "#444", t: biome.t || "#666", type: 'normal'});
         lv.push({x: 950, y: biome.water ? 220 : lastY, type: 'goal'});
@@ -141,15 +123,10 @@ function update() {
     player.x += player.vx; player.y += player.vy;
     player.angle += player.vx * 0.1;
 
-    if(b.isMountain) {
-        let targetCam = player.y - 250;
-        camY += (targetCam - camY) * 0.1;
-    } else { camY = 0; }
+    if(b.isMountain) { camY += ((player.y - 250) - camY) * 0.1; } else { camY = 0; }
 
-    // Balas de Gelo
     for (let i = bullets.length - 1; i >= 0; i--) {
-        let bu = bullets[i];
-        bu.x += bu.vx; bu.y += bu.vy;
+        let bu = bullets[i]; bu.x += bu.vx; bu.y += bu.vy;
         platforms.forEach(p => {
             if (bu.x > p.x && bu.x < p.x + p.w && bu.y > p.y && bu.y < p.y + p.h) {
                 if (p.type === 'spike') { p.type = 'normal'; p.c = '#add8e6'; p.t = '#fff'; }
@@ -162,20 +139,15 @@ function update() {
     player.grounded = false;
     platforms.forEach(p => {
         if (p.type === 'goal' && Math.hypot(player.x - p.x, player.y - (p.y - 20)) < 45) loadLevel(currentLevel + 1);
-        
-        // Colisão com rochas ou blocos
         if (player.x + player.r > p.x && player.x - player.r < p.x + p.w && player.y + player.r > p.y && player.y - player.r < p.y + p.h) {
             if (p.type === 'spike') { deaths++; loadLevel(currentLevel); }
-            if (player.vy > 0 && player.y < p.y + 15) { 
-                player.grounded = true; player.canDoubleJump = true; 
-                player.vy = 0; player.y = p.y - player.r; 
-            } else { player.vx *= -0.5; }
+            if (player.vy > 0 && player.y < p.y + 15) { player.grounded = true; player.canDoubleJump = true; player.vy = 0; player.y = p.y - player.r; }
+            else { player.vx *= -0.5; }
         }
     });
 
-    if (b.lava && player.y > 465) { deaths++; loadLevel(currentLevel); }
-    if (player.y > camY + 700 || player.y < camY - 6000) { deaths++; loadLevel(currentLevel); }
-    if (player.x < 0) player.x = 0; if (player.x > 1000) player.x = 1000;
+    if (b.lava && player.y > 470) { deaths++; loadLevel(currentLevel); }
+    if (player.y > camY + 800) { deaths++; loadLevel(currentLevel); }
     
     document.getElementById("timer").innerText = new Date(Date.now() - startTime).toISOString().substr(14, 8);
     document.getElementById("deathCount").innerText = deaths;
@@ -184,25 +156,21 @@ function update() {
 function draw() {
     let b = getBiome(currentLevel);
     ctx.clearRect(0, 0, 1000, 500);
-    ctx.save();
-    ctx.translate(0, -camY);
+    ctx.save(); ctx.translate(0, -camY);
 
     ctx.fillStyle = b.bg; ctx.fillRect(0, camY, 1000, 500);
+    if(b.lava) { ctx.fillStyle = "#ff4500"; ctx.fillRect(0, 475, 1000, 200); }
 
     platforms.forEach(p => {
         if(p.type === 'goal') {
             ctx.fillStyle = "#fff"; ctx.fillRect(p.x-2, p.y-70, 4, 70);
             ctx.fillStyle = "red"; ctx.beginPath(); ctx.moveTo(p.x, p.y-70); ctx.lineTo(p.x+40, p.y-50); ctx.lineTo(p.x, p.y-30); ctx.fill();
         } else if (p.type === 'mountain_rock') {
-            // Visual 3D com Degradê para volume
-            let grd = ctx.createRadialGradient(p.x + p.w/3, p.y + rH/3, 10, p.x + p.w/2, p.y + p.h/2, p.w);
-            grd.addColorStop(0, "#888"); // Brilho da pedra
-            grd.addColorStop(1, "#333"); // Sombra da pedra
+            // Efeito de Rocha 3D
+            let grd = ctx.createRadialGradient(p.x + p.w/3, p.y + p.h/3, 5, p.x + p.w/2, p.y + p.h/2, p.w);
+            grd.addColorStop(0, "#888"); grd.addColorStop(1, "#333");
             ctx.fillStyle = grd;
-            
-            ctx.beginPath();
-            ctx.ellipse(p.x + p.w/2, p.y + p.h/2, p.w/2, p.h/2, 0, 0, Math.PI * 2);
-            ctx.fill();
+            ctx.beginPath(); ctx.ellipse(p.x + p.w/2, p.y + p.h/2, p.w/2, p.h/2, 0, 0, Math.PI * 2); ctx.fill();
             ctx.strokeStyle = "#222"; ctx.lineWidth = 2; ctx.stroke();
         } else {
             ctx.fillStyle = p.c; ctx.fillRect(p.x, p.y, p.w, p.h);
@@ -210,9 +178,8 @@ function draw() {
         }
     });
 
-    // Balas
     bullets.forEach(bu => {
-        ctx.fillStyle = "cyan"; ctx.beginPath(); ctx.arc(bu.x, bu.y, 6, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "cyan"; ctx.beginPath(); ctx.arc(bu.x, bu.y, 6, 0, Math.PI*2); ctx.fill();
         ctx.strokeStyle = "white"; ctx.stroke();
     });
 
@@ -224,7 +191,6 @@ function draw() {
         ctx.save(); ctx.translate(player.x, player.y); ctx.rotate(a);
         ctx.drawImage(gunImg, 15, -12, 40, 25); ctx.restore();
     }
-    
     ctx.restore();
 }
 
@@ -237,19 +203,15 @@ window.addEventListener("keydown", e => {
         if (player.grounded || b.water || b.space) {
             player.vy = b.water ? -6 : (b.space ? -4 : -13);
             player.grounded = false;
-        } else if (player.canDoubleJump) {
-            player.vy = -11; player.canDoubleJump = false;
-        }
+        } else if (player.canDoubleJump) { player.vy = -11; player.canDoubleJump = false; }
     }
 });
 window.addEventListener("keyup", e => keys[e.keyCode] = false);
-
 window.addEventListener('mousedown', () => {
     if(!gameRunning || currentLevel < 21) return;
     let a = Math.atan2((mouse.y + camY) - player.y, mouse.x - player.x);
     bullets.push({x: player.x, y: player.y, vx: Math.cos(a)*15, vy: Math.sin(a)*15});
 });
-
 canvas.addEventListener('mousemove', e => { 
     let r = canvas.getBoundingClientRect(); mouse.x = e.clientX - r.left; mouse.y = e.clientY - r.top; 
 });
