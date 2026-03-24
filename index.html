@@ -4,24 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sins Ice2 - Portfólio</title>
-    <link rel="icon" type="image/x-icon" href="logo sinsice2 site.webp">
-    
     <style>
-        /* TRAVAS DE SEGURANÇA */
-        * {
-            -webkit-user-select: none;
-            -webkit-touch-callout: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
-            user-select: none;
-        }
-
+        /* TRAVAS DE SEGURANÇA E GERAL */
+        * { -webkit-user-select: none; user-select: none; }
+        
         body {
             font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             margin: 0;
-            background: url('fundosite.webp') no-repeat center center fixed;
-            background-size: cover;
-            -webkit-background-size: cover;
+            background: url('fundosite.webp') no-repeat center top fixed;
+            background-size: 125%;
             color: #bc13fe; 
             line-height: 1.6;
             overflow-x: hidden;
@@ -35,7 +26,7 @@
         }
 
         .header-logo { max-width: 350px; margin: 0 auto 15px auto; }
-        .header-logo img { width: 100%; height: auto; display: block; pointer-events: none; }
+        .header-logo img { width: 100%; height: auto; display: block; }
 
         .subtitle {
             font-size: 1rem;
@@ -73,30 +64,51 @@
             gap: 20px;
         }
 
+        /* EFEITO DIAMONDY NOS CARDS */
         .gallery-item {
             background: rgba(0, 0, 0, 0.5);
             border-radius: 12px;
             overflow: hidden;
             border: 1px solid rgba(188, 19, 254, 0.2);
-            transition: 0.3s;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             cursor: pointer;
+            position: relative;
         }
 
-        .gallery-item:hover { transform: scale(1.02); border-color: #bc13fe; box-shadow: 0 0 15px rgba(188, 19, 254, 0.4); }
+        .gallery-item:hover { 
+            transform: translateY(-10px) scale(1.03); 
+            border-color: #bc13fe; 
+            box-shadow: 0 10px 25px rgba(188, 19, 254, 0.5);
+        }
+
+        /* BRILHO PULSANTE PARA O JOGO NOVO */
+        .new-game-glow {
+            border: 1px solid #bc13fe !important;
+            animation: pulse-glow 2s infinite;
+        }
+
+        @keyframes pulse-glow {
+            0% { box-shadow: 0 0 5px rgba(188, 19, 254, 0.4); }
+            50% { box-shadow: 0 0 20px rgba(188, 19, 254, 0.8); }
+            100% { box-shadow: 0 0 5px rgba(188, 19, 254, 0.4); }
+        }
 
         .gallery-item img, .gallery-item video {
             width: 100%;
-            height: 250px;
+            height: 200px;
             object-fit: cover;
             display: block;
-            pointer-events: none;
+            transition: 0.4s;
         }
+
+        .gallery-item:hover img { transform: scale(1.05); }
 
         .gallery-caption {
             padding: 12px;
             text-align: center;
             font-size: 0.9rem;
             font-weight: bold;
+            background: rgba(0,0,0,0.6);
         }
 
         /* LIGHTBOX */
@@ -105,71 +117,31 @@
             position: fixed;
             z-index: 1000;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.95);
+            background: rgba(0, 0, 0, 0.9);
             justify-content: center;
             align-items: center;
-            backdrop-filter: blur(8px);
+            backdrop-filter: blur(5px);
         }
 
         #lightbox img, #lightbox video {
             max-width: 90%;
-            max-height: 80%;
+            max-height: 90%;
             border: 2px solid #bc13fe;
             border-radius: 10px;
             box-shadow: 0 0 30px rgba(188, 19, 254, 0.5);
         }
 
-        .nav-btn {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            background: rgba(188, 19, 254, 0.2);
-            color: white;
-            border: 1px solid #bc13fe;
-            font-size: 2rem;
-            padding: 15px;
-            cursor: pointer;
-            border-radius: 50%;
-            transition: 0.3s;
-            z-index: 1010;
-        }
-
-        .nav-btn:hover { background: #bc13fe; box-shadow: 0 0 15px #bc13fe; }
-        .prev-btn { left: 20px; }
-        .next-btn { right: 20px; }
-
-        .close-btn {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            color: white;
-            font-size: 3rem;
-            cursor: pointer;
-        }
-
-        #counter {
-            position: absolute;
-            bottom: 30px;
-            color: #bc13fe;
-            font-weight: bold;
-        }
-
         .actions { text-align: center; padding: 40px 0; }
-        .btn-gif { 
-            display: inline-block; 
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
-            max-width: 500px; 
-            cursor: pointer; 
-            text-decoration: none;
-        }
+        .btn-gif { display: inline-block; transition: transform 0.3s ease; max-width: 400px; cursor: pointer; }
         .btn-gif:hover { transform: scale(1.1); }
-        .btn-gif img { width: 100%; height: auto; border-radius: 15px; pointer-events: none; border: none; }
+        .btn-gif img { width: 100%; height: auto; border-radius: 10px; }
 
         footer {
             text-align: center;
             padding: 40px;
             color: #bc13fe;
             font-size: 0.8rem;
+            background: rgba(0,0,0,0.6);
             border-top: 1px solid rgba(188, 19, 254, 0.3);
         }
     </style>
@@ -183,48 +155,60 @@
         <div class="header-logo">
             <img src="logo sinsice2 site.webp" alt="Sins Ice2 Logo">
         </div>
-        <div class="subtitle">13 anos • YouTuber • Animador • Compositor • Designer</div>
+        <div class="subtitle">14 anos • YouTuber • Animador • Compositor • Designer</div>
     </header>
 
     <div class="container">
+        
         <div class="info-box">
-            <h2>Portfólio</h2>
+            <h2>Galeria de Projetos</h2>
+            <div class="skills-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 30px;">
+                <div style="background: rgba(40, 40, 40, 0.6); padding: 10px; border-radius: 10px; text-align: center; border-bottom: 3px solid #bc13fe;">🎬 Animação</div>
+                <div style="background: rgba(40, 40, 40, 0.6); padding: 10px; border-radius: 10px; text-align: center; border-bottom: 3px solid #bc13fe;">🎵 Composição</div>
+                <div style="background: rgba(40, 40, 40, 0.6); padding: 10px; border-radius: 10px; text-align: center; border-bottom: 3px solid #bc13fe;">🎨 Arte Digital</div>
+                <div style="background: rgba(40, 40, 40, 0.6); padding: 10px; border-radius: 10px; text-align: center; border-bottom: 3px solid #bc13fe;">✒️ Design</div>
+            </div>
+
             <div class="gallery-grid">
-                
-                <div class="gallery-item" onclick="openGroup('animacao')">
+                <div class="gallery-item" onclick="playSelect(); openLightboxVideo('bixo de espada.mp4')">
                     <video autoplay loop muted playsinline>
                         <source src="bixo de espada.mp4" type="video/mp4">
                     </video>
                     <div class="gallery-caption">Minhas Animações</div>
                 </div>
 
-                <div class="gallery-item" onclick="openGroup('ilustracao')">
-                    <img src="soldado.webp" alt="Ilustrações">
+                <div class="gallery-item" onclick="playSelect(); openLightbox(this)">
+                    <img src="soldado.webp" alt="Soldado Zoiudo">
                     <div class="gallery-caption">Ilustrações</div>
                 </div>
 
-                <div class="gallery-item" onclick="openGroup('design')">
-                    <img src="Design1.webp" alt="Design">
+                <div class="gallery-item" onclick="playSelect(); openLightbox(this)">
+                    <img src="Design1.webp" alt="Meu Design">
                     <div class="gallery-caption">Assets & Design</div>
                 </div>
+            </div>
+        </div>
 
+        <div class="info-box">
+            <h2>Meus Jogos</h2>
+            <div class="gallery-grid">
+                <div class="gallery-item new-game-glow" onclick="playSelect(); window.open('ball game.html', '_blank');">
+                    <img src="Design1.webp" alt="Thumbnail Ball Game">
+                    <div class="gallery-caption">🟢 JOGAR BALL GAME</div>
+                </div>
             </div>
         </div>
 
         <div class="actions">
             <a href="https://www.youtube.com/@Sinsice2" target="_blank" class="btn-gif">
-                <img src="vireumgelo.gif" alt="Vire um Gelo">
+                <img src="vireumgelo.GIF" alt="Se inscreva no canal - Vire um Gelo">
             </a>
         </div>
     </div>
 
-    <div id="lightbox">
-        <span class="close-btn" onclick="closeLightbox()">&times;</span>
-        <button id="btn-prev" class="nav-btn prev-btn" onclick="changeItem(-1)">&#10094;</button>
-        <img id="lightbox-img" src="" style="display:none;" oncontextmenu="return false;">
-        <video id="lightbox-video" controls loop style="display:none;" oncontextmenu="return false;"></video>
-        <div id="counter"></div>
-        <button id="btn-next" class="nav-btn next-btn" onclick="changeItem(1)">&#10095;</button>
+    <div id="lightbox" onclick="closeLightbox()">
+        <img id="lightbox-img" src="" style="display:none;">
+        <video id="lightbox-video" controls loop style="display:none;"></video>
     </div>
 
     <footer>
@@ -235,92 +219,47 @@
         const clickSound = document.getElementById('click-sound');
         const selectSound = document.getElementById('select-sound');
 
-        // Garante que o som toque voltando ao início sempre
-        function playClick() {
-            if (clickSound) {
-                clickSound.currentTime = 0;
-                clickSound.play().catch(e => console.log("Som de seta aguardando clique"));
-            }
-        }
-
         function playSelect() {
             if (selectSound) {
                 selectSound.currentTime = 0;
-                selectSound.play().catch(e => console.log("Som de categoria aguardando clique"));
+                selectSound.play().catch(e => console.log("Aguardando interação"));
             }
         }
 
-        // Função extra para "acordar" os áudios no primeiro clique do usuário
         document.body.addEventListener('click', function() {
             clickSound.load();
             selectSound.load();
         }, { once: true });
 
-        document.addEventListener('keydown', function(e) {
-            if (e.key === "F12" || (e.ctrlKey && e.shiftKey && e.key === "I") || (e.ctrlKey && (e.key === "u" || e.key === "s"))) {
-                e.preventDefault();
-            }
-        });
-
-        const groups = {
-            'animacao': [{ type: 'video', src: 'bixo de espada.mp4' }],
-            'ilustracao': [
-                { type: 'img', src: 'soldado.webp' },
-                { type: 'img', src: 'Demencia.webp' }
-            ],
-            'design': [{ type: 'img', src: 'Design1.webp' }]
-        };
-
-        let currentGroup = [];
-        let currentIdx = 0;
-
-        function openGroup(groupName) {
-            playSelect(); // Toca o select.mp3
-            currentGroup = groups[groupName];
-            currentIdx = 0;
-            updateLightbox();
-            document.getElementById('lightbox').style.display = 'flex';
-            const showBtns = currentGroup.length > 1 ? 'block' : 'none';
-            document.getElementById('btn-prev').style.display = showBtns;
-            document.getElementById('btn-next').style.display = showBtns;
-        }
-
-        function updateLightbox() {
+        function openLightbox(element) {
+            const imgSrc = element.querySelector('img').src;
+            const lb = document.getElementById('lightbox');
             const lbImg = document.getElementById('lightbox-img');
             const lbVid = document.getElementById('lightbox-video');
-            const counter = document.getElementById('counter');
-            const item = currentGroup[currentIdx];
-            counter.innerText = (currentIdx + 1) + ' / ' + currentGroup.length;
-
-            if (item.type === 'img') {
-                lbVid.style.display = 'none'; lbVid.pause();
-                lbImg.src = item.src; lbImg.style.display = 'block';
-            } else {
-                lbImg.style.display = 'none';
-                lbVid.src = item.src; lbVid.style.display = 'block'; lbVid.play();
-            }
+            lbVid.style.display = 'none';
+            lbVid.pause();
+            lbImg.src = imgSrc;
+            lbImg.style.display = 'block';
+            lb.style.display = 'flex';
         }
 
-        function changeItem(dir) {
-            playClick(); // Toca o click.mp3
-            currentIdx += dir;
-            if (currentIdx < 0) currentIdx = currentGroup.length - 1;
-            if (currentIdx >= currentGroup.length) currentIdx = 0;
-            updateLightbox();
+        function openLightboxVideo(videoSrc) {
+            const lb = document.getElementById('lightbox');
+            const lbImg = document.getElementById('lightbox-img');
+            const lbVid = document.getElementById('lightbox-video');
+            lbImg.style.display = 'none';
+            lbVid.src = videoSrc;
+            lbVid.style.display = 'block';
+            lb.style.display = 'flex';
+            lbVid.play();
         }
 
         function closeLightbox() {
-            document.getElementById('lightbox').style.display = 'none';
-            document.getElementById('lightbox-video').pause();
+            const lb = document.getElementById('lightbox');
+            const lbVid = document.getElementById('lightbox-video');
+            lb.style.display = 'none';
+            lbVid.pause();
         }
-
-        document.addEventListener('keydown', (e) => {
-            if (e.key === "Escape") closeLightbox();
-            if (currentGroup.length > 1) {
-                if (e.key === "ArrowLeft") changeItem(-1);
-                if (e.key === "ArrowRight") changeItem(1);
-            }
-        });
     </script>
 </body>
 </html>
