@@ -2,7 +2,7 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Super Ball - Montanha Getting Over It</title>
+    <title>Super Ball - Sinsice Extreme</title>
     <style>
         body { margin: 0; overflow: hidden; background: #000; font-family: 'Segoe UI', sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; }
         canvas { border: 2px solid #555; box-shadow: 0 0 60px rgba(0,0,0,0.9); cursor: crosshair; display: none; }
@@ -61,7 +61,7 @@ function getBiome(n) {
     if (n <= 10) return { bg: "#87ceeb", g: "#5d4037", t: "#2ecc71", grav: 0.8 };
     if (n <= 20) return { bg: "#f0f8ff", g: "#b0c4de", t: "#ffffff", grav: 0.8 };
     if (n <= 32) return { bg: "#2a0000", lava: true, grav: 0.8 };
-    if (n <= 50) return { bg: "#7491b5", isMountain: true, grav: 0.9 }; // Fundo azulado do desenho
+    if (n <= 50) return { bg: "#7491b5", grav: 0.9, isMountain: true }; // Cor ajustada para o desenho
     if (n <= 70) return { bg: "#001a33", water: true, grav: 0.15 };
     if (n <= 80) return { bg: "#050505", laser: true, grav: 0.85 };
     if (n <= 95) return { bg: "#000011", space: true, grav: 0.05 };
@@ -74,35 +74,35 @@ function generateLevel(n) {
     const lv = [];
     
     if (biome.isMountain) {
-        // Base inicial sólida
-        lv.push({x: 0, y: 400, w: 200, h: 200, c: "#555", t: "#777", type: 'normal'});
+        // Base inicial
+        lv.push({x: 0, y: 400, w: 200, h: 500, c: "#555", t: "#777", type: 'normal'});
         
+        // --- GERAÇÃO DA ENCOSTA (BASEADA NO SEU DESENHO) ---
         let mX = 200, mY = 400;
-        // Gera os apoios/ganchos ao longo da encosta (Subida longa)
-        for(let i = 0; i < 45; i++) {
-            mX += 60 + (random() * 40); // Inclinação para a direita
-            mY -= 100 + (random() * 50); // Subida vertical
-            
-            // Desenha os ganchos pretos do seu desenho
-            lv.push({x: mX, y: mY, w: 35, h: 10, c: "#000", t: "#000", type: 'normal'});
+        for(let i = 0; i < 40; i++) {
+            mX += 70 + (random() * 30); // Inclinação constante
+            mY -= 110 + (random() * 40); // Subida íngreme
+            // Ganchos pretos (apoios)
+            lv.push({x: mX, y: mY, w: 35, h: 12, c: "#000", t: "#000", type: 'normal'});
         }
-        // Objetivo no final da rampa
-        lv.push({x: mX + 50, y: mY - 60, type: 'goal'});
+        lv.push({x: mX + 40, y: mY - 60, type: 'goal'});
     } else {
-        // Geração padrão para outras fases
         lv.push({x: 0, y: 400, w: 100, h: 100, c: biome.g || "#555", t: biome.t || "#777", type: 'normal'});
         let lastX = 100, lastY = 400;
         if (!biome.water) {
             while (lastX < 850) {
                 let gapX = biome.space ? 180 : 120 + (random() * 80);
                 let gapY = (random() * 140) - 70;
+                let width = biome.laser ? 45 : 60 + (random() * 40);
                 lastX += gapX; lastY += gapY;
                 if (lastY < 120) lastY = 150; if (lastY > 440) lastY = 400;
+                if (lastX > 880) break;
                 let type = (biome.laser || biome.lava) && random() > 0.5 ? 'spike' : 'normal';
-                lv.push({x: lastX, y: lastY, w: 60, h: 25, c: type==='spike'?'#f00':(biome.g||"#555"), t: type==='spike'?'#f00':(biome.t||"#777"), type: type});
-                lastX += 60;
+                lv.push({x: lastX, y: lastY, w: width, h: 25, c: type==='spike'?'#f00':(biome.g||"#555"), t: type==='spike'?'#f00':(biome.t||"#777"), type: type});
+                lastX += width;
             }
         }
+        lv.push({x: 920, y: biome.water ? 220 : lastY, w: 60, h: 300, c: biome.g || "#444", t: biome.t || "#666", type: 'normal'});
         lv.push({x: 950, y: biome.water ? 220 : lastY, type: 'goal'});
     }
     return lv;
@@ -111,7 +111,7 @@ function generateLevel(n) {
 function loadLevel(n) { 
     currentLevel = n; bullets = []; platforms = generateLevel(n); 
     player.x = 40; player.y = 350; player.vx = player.vy = 0; 
-    camY = 0;
+    camY = 0; 
     document.getElementById("lvlNum").innerText = n; 
 }
 
@@ -168,20 +168,19 @@ function draw() {
 
     ctx.fillStyle = b.bg; ctx.fillRect(0, camY, 1000, 500);
 
-    // Desenha a encosta da montanha sólida se for o bioma
+    // --- DESENHO EXCLUSIVO DA MONTANHA ---
     if(b.isMountain) {
-        ctx.fillStyle = "#808080";
+        ctx.fillStyle = "#888"; // Pedra cinza
         ctx.beginPath();
-        ctx.moveTo(200, 400); // Início da rampa
-        ctx.lineTo(5000, -4500); // Rampa longa
-        ctx.lineTo(5000, 5000); // Fecha polígono
+        ctx.moveTo(200, 400); 
+        ctx.lineTo(6000, -5000); // Rampa sólida gigante
+        ctx.lineTo(6000, 5000);
         ctx.lineTo(200, 5000);
         ctx.fill();
         
-        // Linha preta da encosta
-        ctx.strokeStyle = "#000";
+        ctx.strokeStyle = "#000"; // Linha preta da encosta
         ctx.lineWidth = 4;
-        ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(200, 400); ctx.lineTo(6000, -5000); ctx.stroke();
     }
     
     if(b.lava) { ctx.fillStyle = "#ff4500"; ctx.fillRect(0, 475, 1000, 25); }
@@ -192,6 +191,7 @@ function draw() {
             ctx.fillStyle = "red"; ctx.beginPath(); ctx.moveTo(p.x, p.y-70); ctx.lineTo(p.x+40, p.y-50); ctx.lineTo(p.x, p.y-30); ctx.fill();
         } else {
             ctx.fillStyle = p.c; ctx.fillRect(p.x, p.y, p.w, p.h);
+            if(!b.isMountain) { ctx.fillStyle = p.t; ctx.fillRect(p.x, p.y, p.w, 4); }
         }
     });
 
@@ -222,11 +222,13 @@ window.addEventListener("keydown", e => {
     }
 });
 window.addEventListener("keyup", e => keys[e.keyCode] = false);
+
 window.addEventListener('mousedown', () => {
     if(!gameRunning || currentLevel < 21) return;
     let a = Math.atan2((mouse.y + camY) - player.y, mouse.x - player.x);
     bullets.push({x: player.x, y: player.y, vx: Math.cos(a)*15, vy: Math.sin(a)*15});
 });
+
 canvas.addEventListener('mousemove', e => { 
     let r = canvas.getBoundingClientRect(); mouse.x = e.clientX - r.left; mouse.y = e.clientY - r.top; 
 });
