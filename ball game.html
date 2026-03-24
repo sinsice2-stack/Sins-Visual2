@@ -2,7 +2,7 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Super Ball - Sinsice Extreme Edition</title>
+    <title>Super Ball - Sinsice Mountain Real</title>
     <style>
         body { margin: 0; overflow: hidden; background: #000; font-family: 'Segoe UI', sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; }
         canvas { border: 2px solid #555; box-shadow: 0 0 60px rgba(0,0,0,0.9); cursor: crosshair; display: none; }
@@ -51,10 +51,7 @@ function startGame() {
     document.getElementById("gameHud").style.display = "flex";
     document.getElementById("displayName").innerText = input.toUpperCase();
     canvas.style.display = "block";
-    gameRunning = true; 
-    startTime = Date.now(); 
-    loadLevel(1); 
-    gameLoop();
+    gameRunning = true; startTime = Date.now(); loadLevel(1); gameLoop();
 }
 
 let rngSeed = 1;
@@ -64,7 +61,7 @@ function getBiome(n) {
     if (n <= 10) return { bg: "#87ceeb", g: "#5d4037", t: "#2ecc71", grav: 0.8 };
     if (n <= 20) return { bg: "#f0f8ff", g: "#b0c4de", t: "#ffffff", grav: 0.8 };
     if (n <= 32) return { bg: "#2a0000", lava: true, grav: 0.8 };
-    if (n <= 50) return { bg: "#3e4a59", grav: 0.9, isMountain: true }; 
+    if (n <= 50) return { bg: "#4a5b6d", grav: 0.9, isMountain: true }; 
     if (n <= 70) return { bg: "#001a33", water: true, grav: 0.15 };
     return { bg: "#2ecc71", g: "#4d2600", t: "#27ae60", grav: 0.8 };
 }
@@ -73,21 +70,33 @@ function generateLevel(n) {
     rngSeed = n * 54321;
     const biome = getBiome(n);
     const lv = [];
-    lv.push({x: 0, y: 400, w: 150, h: 200, c: biome.g || "#444", t: biome.t || "#666", type: 'normal'});
+    
+    // Início
+    lv.push({x: 0, y: 400, w: 150, h: 400, c: biome.g || "#444", t: biome.t || "#666", type: 'normal'});
     
     if (biome.isMountain) {
         let curX = 150, curY = 400;
-        for(let i = 0; i < 55; i++) {
-            let rW = 90 + (random() * 40);
-            let rH = 40 + (random() * 30);
-            if (i < 30) { curX += 50 + (random() * 40); curY -= 80 + (random() * 50); }
-            else { curX += 70 + (random() * 40); curY += 70 + (random() * 50); }
-            if(curX > 820) curX = 700; if(curX < 80) curX = 120;
-            lv.push({ x: curX, y: curY, w: rW, h: rH, type: 'rock3d' });
+        // SUBIDA (Densa)
+        for(let i = 0; i < 40; i++) {
+            curX += 30; // Avanço curto para ficar denso
+            curY -= 25 + (random() * 15); // Sobe inclinado
+            lv.push({ x: curX, y: curY, w: 100, h: 400, type: 'rock3d' });
         }
-        // APOIO DA BANDEIRA: Cria uma rocha extra exatamente onde a bandeira vai ficar
-        lv.push({ x: curX - 10, y: curY, w: 120, h: 40, type: 'rock3d' });
-        lv.push({ x: curX + 40, y: curY, type: 'goal' });
+        // CUME (Pequena reta)
+        for(let i = 0; i < 5; i++) {
+            curX += 60;
+            lv.push({ x: curX, y: curY, w: 100, h: 400, type: 'rock3d' });
+        }
+        // DESCIDA (Densa)
+        for(let i = 0; i < 40; i++) {
+            curX += 40;
+            curY += 25 + (random() * 20); // Desce inclinado
+            lv.push({ x: curX, y: curY, w: 100, h: 400, type: 'rock3d' });
+        }
+        // APOIO FINAL DA BANDEIRA
+        lv.push({ x: curX, y: curY, w: 250, h: 400, type: 'rock3d' });
+        lv.push({ x: curX + 100, y: curY, type: 'goal' });
+
     } else {
         let lastX = 150, lastY = 400;
         while (lastX < 850) {
@@ -96,8 +105,8 @@ function generateLevel(n) {
             lastX += gapX; lastY += gapY;
             if (lastY < 150) lastY = 200; if (lastY > 440) lastY = 400;
             let isSpike = (biome.lava && random() > 0.5);
-            lv.push({x: lastX, y: lastY, w: 80, h: 25, c: isSpike?'#f00':(biome.g||"#555"), t: isSpike?'#f00':(biome.t||"#777"), type: isSpike?'spike':'normal'});
-            lastX += 80;
+            lv.push({x: lastX, y: lastY, w: 85, h: 25, c: isSpike?'#f00':(biome.g||"#555"), t: isSpike?'#f00':(biome.t||"#777"), type: isSpike?'spike':'normal'});
+            lastX += 85;
         }
         lv.push({x: 950, y: lastY, type: 'goal'});
     }
@@ -106,7 +115,7 @@ function generateLevel(n) {
 
 function loadLevel(n) { 
     currentLevel = n; bullets = []; platforms = generateLevel(n); 
-    player.x = 50; player.y = 350; player.vx = player.vy = 0; 
+    player.x = 60; player.y = 350; player.vx = player.vy = 0; 
     camY = 0; 
     document.getElementById("lvlNum").innerText = n; 
 }
@@ -114,39 +123,36 @@ function loadLevel(n) {
 function update() {
     if (!gameRunning) return;
     let b = getBiome(currentLevel);
-    
-    if (keys[39]) player.vx += 0.8;
-    if (keys[37]) player.vx -= 0.8;
-    player.vy += b.grav;
-    player.vx *= 0.95;
+    if (keys[39]) player.vx += 0.8; if (keys[37]) player.vx -= 0.8;
+    player.vy += b.grav; player.vx *= 0.95;
     player.x += player.vx; player.y += player.vy;
     player.angle += player.vx * 0.1;
 
-    if(b.isMountain) { camY += ((player.y - 250) - camY) * 0.1; } else { camY = 0; }
+    if(b.isMountain) { camY += ((player.y - 250) - camY) * 0.15; } else { camY = 0; }
 
-    // CRONÔMETRO RÁPIDO (MILISSEGUNDOS)
-    let timeDiff = Date.now() - startTime;
-    let mins = Math.floor(timeDiff / 60000).toString().padStart(2, '0');
-    let secs = Math.floor((timeDiff % 60000) / 1000).toString().padStart(2, '0');
-    let ms = Math.floor((timeDiff % 1000) / 10).toString().padStart(2, '0');
+    // Cronômetro Turbo
+    let diff = Date.now() - startTime;
+    let mins = Math.floor(diff / 60000).toString().padStart(2, '0');
+    let secs = Math.floor((diff % 60000) / 1000).toString().padStart(2, '0');
+    let ms = Math.floor((diff % 1000) / 10).toString().padStart(2, '0');
     document.getElementById("timer").innerText = `${mins}:${secs}:${ms}`;
 
     player.grounded = false;
     platforms.forEach(p => {
-        if (p.type === 'goal' && Math.hypot(player.x - p.x, player.y - (p.y - 20)) < 45) loadLevel(currentLevel + 1);
+        if (p.type === 'goal' && Math.hypot(player.x - p.x, player.y - (p.y - 20)) < 50) loadLevel(currentLevel + 1);
         if (player.x + player.r > p.x && player.x - player.r < p.x + p.w && player.y + player.r > p.y && player.y - player.r < p.y + p.h) {
             if (p.type === 'spike') { deaths++; loadLevel(currentLevel); }
-            if (player.vy > 0 && player.y < p.y + 15) { 
+            if (player.vy > 0 && player.y < p.y + 20) { 
                 player.grounded = true; player.canDoubleJump = true; 
                 player.vy = 0; player.y = p.y - player.r; 
-            } else { player.vx *= -0.4; }
+            } else { player.vx *= -0.5; }
         }
     });
 
     if (b.lava && player.y > 475) { deaths++; loadLevel(currentLevel); }
-    if (player.y > camY + 850) { deaths++; loadLevel(currentLevel); }
+    if (player.y > camY + 900) { deaths++; loadLevel(currentLevel); }
     if (player.x < player.r) { player.x = player.r; player.vx = 0; }
-    if (player.x > 1000 - player.r) { player.x = 1000 - player.r; player.vx = 0; }
+    if (player.x > 5000) { player.vx = 0; } // Permite andar mais na montanha
     document.getElementById("deathCount").innerText = deaths;
 }
 
@@ -155,7 +161,8 @@ function draw() {
     ctx.clearRect(0, 0, 1000, 500);
     ctx.save(); ctx.translate(0, -camY);
 
-    ctx.fillStyle = b.bg; ctx.fillRect(0, camY, 1000, 500);
+    // Ajuste de horizonte infinito para a montanha
+    ctx.fillStyle = b.bg; ctx.fillRect(-2000, camY, 8000, 500);
     if(b.lava) { ctx.fillStyle = "#ff4500"; ctx.fillRect(0, 475, 1000, 300); }
 
     platforms.forEach(p => {
@@ -163,11 +170,10 @@ function draw() {
             ctx.fillStyle = "#fff"; ctx.fillRect(p.x-2, p.y-70, 4, 70);
             ctx.fillStyle = "red"; ctx.beginPath(); ctx.moveTo(p.x, p.y-70); ctx.lineTo(p.x+40, p.y-50); ctx.lineTo(p.x, p.y-30); ctx.fill();
         } else if (p.type === 'rock3d') {
-            ctx.fillStyle = "#444"; ctx.beginPath();
-            ctx.ellipse(p.x + p.w/2, p.y + p.h/2, p.w/2, p.h/2, 0, 0, Math.PI * 2); ctx.fill();
-            ctx.fillStyle = "#666"; ctx.beginPath();
-            ctx.ellipse(p.x + p.w/2, p.y + p.h/3, p.w/3, p.h/5, 0, 0, Math.PI * 2); ctx.fill();
-            ctx.strokeStyle = "#222"; ctx.lineWidth = 2; ctx.stroke();
+            // Relevo de Pedra
+            ctx.fillStyle = "#333"; ctx.fillRect(p.x, p.y, p.w, p.h);
+            ctx.fillStyle = "#555"; ctx.fillRect(p.x, p.y, p.w, 10); // Topo da pedra
+            ctx.strokeStyle = "#222"; ctx.strokeRect(p.x, p.y, p.w, p.h);
         } else {
             ctx.fillStyle = p.c || "#555"; ctx.fillRect(p.x, p.y, p.w, p.h);
             if(p.t) { ctx.fillStyle = p.t; ctx.fillRect(p.x, p.y, p.w, 4); }
