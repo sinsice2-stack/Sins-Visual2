@@ -2,7 +2,7 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Super Ball - Sinsice Rampa Edition</title>
+    <title>Super Ball - Sinsice Rampa Final</title>
     <style>
         body { margin: 0; overflow: hidden; background: #000; font-family: 'Segoe UI', sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; }
         canvas { border: 2px solid #555; box-shadow: 0 0 60px rgba(0,0,0,0.9); cursor: crosshair; display: none; }
@@ -62,6 +62,7 @@ function getBiome(n) {
     if (n <= 20) return { bg: "#f0f8ff", g: "#b0c4de", t: "#ffffff", grav: 0.8 };
     if (n <= 32) return { bg: "#2a0000", lava: true, grav: 0.8 };
     if (n <= 50) return { bg: "#576d85", grav: 0.9, isMountain: true }; 
+    if (n <= 70) return { bg: "#001a33", water: true, grav: 0.15 };
     return { bg: "#2ecc71", g: "#4d2600", t: "#27ae60", grav: 0.8 };
 }
 
@@ -69,25 +70,21 @@ function generateLevel(n) {
     rngSeed = n * 54321;
     const biome = getBiome(n);
     const lv = [];
-    
-    // Início
     lv.push({x: 0, y: 400, w: 120, h: 600, c: biome.g || "#555", t: biome.t || "#777", type: 'normal'});
     
     if (biome.isMountain) {
         let curX = 120, curY = 400;
-        let rampaWidth = 1200; // Comprimento total da rampa
-        
-        // Geração da RAMPA contínua (Subida)
-        for(let x = 0; x < rampaWidth; x += 5) {
-            let slope = x < rampaWidth/2 ? -1.5 : 1.5; // Sobe até metade, depois desce
-            curX += 5;
-            curY += slope * 5;
-            lv.push({ x: curX, y: curY, w: 6, h: 800, type: 'mountain_ramp' });
+        const segments = 80;
+        // Desenha a rampa como uma série de blocos finos para formar a diagonal
+        for(let i = 0; i < segments; i++) {
+            let slope = i < 40 ? -7 : 7; // Inclinação da subida e descida
+            curX += 15;
+            curY += slope;
+            lv.push({ x: curX, y: curY, w: 16, h: 800, type: 'mountain_rock' });
         }
-        
-        // Bandeira EXATAMENTE no final da descida
-        lv.push({ x: curX, y: curY, type: 'goal' });
-
+        // SUPORTE FINAL DA BANDEIRA
+        lv.push({ x: curX, y: curY, w: 100, h: 800, type: 'mountain_rock' });
+        lv.push({ x: curX + 30, y: curY, type: 'goal' });
     } else {
         let lastX = 120, lastY = 400;
         while (lastX < 850) {
@@ -120,16 +117,14 @@ function update() {
     player.x += player.vx; player.y += player.vy;
     player.angle += player.vx * 0.1;
 
-    if(b.isMountain) { camY += ((player.y - 250) - camY) * 0.15; } else { camY = 0; }
+    if(b.isMountain) { camY += ((player.y - 250) - camY) * 0.1; } else { camY = 0; }
 
-    // Cronômetro Milissegundos
-    let diff = Date.now() - startTime;
-    let mins = Math.floor(diff / 60000).toString().padStart(2, '0');
-    let secs = Math.floor((diff % 60000) / 1000).toString().padStart(2, '0');
-    let ms = Math.floor((diff % 1000) / 10).toString().padStart(2, '0');
+    let timeDiff = Date.now() - startTime;
+    let mins = Math.floor(timeDiff / 60000).toString().padStart(2, '0');
+    let secs = Math.floor((timeDiff % 60000) / 1000).toString().padStart(2, '0');
+    let ms = Math.floor((timeDiff % 1000) / 10).toString().padStart(2, '0');
     document.getElementById("timer").innerText = `${mins}:${secs}:${ms}`;
 
-    // Balas: Congelar Espinhos e Lava
     for (let i = bullets.length - 1; i >= 0; i--) {
         let bu = bullets[i]; bu.x += bu.vx; bu.y += bu.vy;
         if(b.lava && bu.y > 470) {
@@ -149,7 +144,7 @@ function update() {
         if (p.type === 'goal' && Math.hypot(player.x - p.x, player.y - (p.y - 20)) < 60) loadLevel(currentLevel + 1);
         if (player.x + player.r > p.x && player.x - player.r < p.x + p.w && player.y + player.r > p.y && player.y - player.r < p.y + p.h) {
             if (p.type === 'spike') { deaths++; loadLevel(currentLevel); }
-            if (player.vy > 0 && player.y < p.y + 25) { 
+            if (player.vy > 0 && player.y < p.y + 20) { 
                 player.grounded = true; player.canDoubleJump = true; 
                 player.vy = 0; player.y = p.y - player.r; 
             } else { player.vx *= -0.5; }
@@ -158,7 +153,6 @@ function update() {
 
     if (b.lava && player.y > 480) { deaths++; loadLevel(currentLevel); }
     if (player.y > camY + 1200) { deaths++; loadLevel(currentLevel); }
-    document.getElementById("deathCount").innerText = deaths;
 }
 
 function draw() {
@@ -166,16 +160,16 @@ function draw() {
     ctx.clearRect(0, 0, 1000, 500);
     ctx.save(); ctx.translate(0, -camY);
 
-    ctx.fillStyle = b.bg; ctx.fillRect(-2000, camY, 6000, 1000);
-    if(b.lava) { ctx.fillStyle = "#ff4500"; ctx.fillRect(-1000, 480, 4000, 200); }
+    ctx.fillStyle = b.bg; ctx.fillRect(-1000, camY, 4000, 1000);
+    if(b.lava) { ctx.fillStyle = "#ff4500"; ctx.fillRect(-500, 480, 2000, 200); }
 
     platforms.forEach(p => {
         if(p.type === 'goal') {
             ctx.fillStyle = "#fff"; ctx.fillRect(p.x-2, p.y-70, 4, 70);
             ctx.fillStyle = "red"; ctx.beginPath(); ctx.moveTo(p.x, p.y-70); ctx.lineTo(p.x+40, p.y-50); ctx.lineTo(p.x, p.y-30); ctx.fill();
-        } else if (p.type === 'mountain_ramp') {
+        } else if (p.type === 'mountain_rock') {
             ctx.fillStyle = "#444"; ctx.fillRect(p.x, p.y, p.w, p.h);
-            ctx.fillStyle = "#666"; ctx.fillRect(p.x, p.y, p.w, 5); // Linha do topo da rampa
+            ctx.fillStyle = "#666"; ctx.fillRect(p.x, p.y, p.w, 5);
         } else {
             ctx.fillStyle = p.c; ctx.fillRect(p.x, p.y, p.w, p.h);
             ctx.fillStyle = p.t; ctx.fillRect(p.x, p.y, p.w, 4);
@@ -195,6 +189,7 @@ function draw() {
         ctx.fillStyle = "cyan"; ctx.beginPath(); ctx.arc(bu.x, bu.y, 6, 0, Math.PI * 2); ctx.fill();
     });
     ctx.restore();
+    document.getElementById("deathCount").innerText = deaths;
 }
 
 function gameLoop() { update(); draw(); requestAnimationFrame(gameLoop); }
