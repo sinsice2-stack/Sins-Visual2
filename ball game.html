@@ -36,7 +36,8 @@ const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 canvas.width = 1000; canvas.height = 500;
 
-const ballImg = new Image(); ballImg.src = 'bola amarela.webp'; 
+// SPRITES - Ajuste os nomes dos arquivos no seu PC para ficarem iguais a estes (sem espaços)!
+const ballImg = new Image(); ballImg.src = 'bola-amarela.webp'; 
 const gunImg = new Image(); gunImg.src = 'arma-de-gelo.webp'; 
 const assasSprites = [];
 for (let i = 1; i <= 8; i++) {
@@ -218,18 +219,37 @@ function draw() {
 
     bullets.forEach(bu => { ctx.fillStyle = "cyan"; ctx.beginPath(); ctx.arc(bu.x, bu.y, 6, 0, Math.PI * 2); ctx.fill(); });
 
+    // RENDERIZAÇÃO BLINDADA DO JOGADOR
     ctx.save(); ctx.translate(player.x, player.y); 
     if(b.isAssas) {
-        if (assasSprites[spriteFrame].complete) ctx.drawImage(assasSprites[spriteFrame], -player.r * 1.6, -player.r, player.r * 3.2, player.r * 2);
+        let currentSprite = assasSprites[spriteFrame];
+        if (currentSprite && currentSprite.complete && currentSprite.naturalWidth > 0) {
+            ctx.drawImage(currentSprite, -player.r * 1.6, -player.r, player.r * 3.2, player.r * 2);
+        } else {
+            // Fallback se a imagem não carregar no GitHub
+            ctx.fillStyle = "yellow"; ctx.beginPath(); ctx.arc(0, 0, player.r, 0, Math.PI * 2); ctx.fill();
+        }
     } else {
-        ctx.rotate(player.angle); if (ballImg.complete) ctx.drawImage(ballImg, -player.r, -player.r, player.r * 2, player.r * 2);
+        ctx.rotate(player.angle); 
+        if (ballImg && ballImg.complete && ballImg.naturalWidth > 0) {
+            ctx.drawImage(ballImg, -player.r, -player.r, player.r * 2, player.r * 2);
+        } else {
+            // Fallback se a imagem não carregar no GitHub
+            ctx.fillStyle = "yellow"; ctx.beginPath(); ctx.arc(0, 0, player.r, 0, Math.PI * 2); ctx.fill();
+        }
     }
     ctx.restore();
 
+    // RENDERIZAÇÃO BLINDADA DA ARMA
     if(b.hasGun) {
         ctx.save(); ctx.translate(player.x, player.y);
         let angle = Math.atan2(mouse.y - player.y, mouse.x - player.x);
-        ctx.rotate(angle); if (gunImg.complete) ctx.drawImage(gunImg, 10, -10, 30, 20);
+        ctx.rotate(angle); 
+        if (gunImg && gunImg.complete && gunImg.naturalWidth > 0) {
+            ctx.drawImage(gunImg, 10, -10, 30, 20);
+        } else {
+            ctx.fillStyle = "cyan"; ctx.fillRect(10, -5, 20, 10); // Arma improvisada se a imagem falhar
+        }
         ctx.restore();
     }
 }
