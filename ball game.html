@@ -166,7 +166,7 @@ function getBiome(n) {
     if (n <= 10) return { bg: "#87ceeb", g: "#5d4037", t: "#2ecc71", grav: 0.8 };
     if (n <= 20) return { bg: "#f0f8ff", g: "#b0c4de", t: "#ffffff", grav: 0.8 };
     if (n <= 32) return { bg: "#2a0000", g: "#440000", t: "#ff4500", lava: true, hasGun: true, grav: 0.8 };
-    // FASES DE MONTANHA (33-40) - Física NORMAL, sem aceleração automática
+    // FASES DE MONTANHA (33-40)
     if (n === 33) return { bg: "#1a2a3a", g: "#2C1810", t: "#CD853F", grav: 0.8, isMountain: true, mountainType: "vertical" };
     if (n === 34) return { bg: "#2a1a2a", g: "#2C1810", t: "#CD853F", grav: 0.8, isMountain: true, mountainType: "zigzag" };
     if (n === 35) return { bg: "#1a3a2a", g: "#2C1810", t: "#CD853F", grav: 0.8, isMountain: true, mountainType: "floating" };
@@ -253,58 +253,43 @@ function loadLevel(n) {
     
     player.vx = 0;
     player.vy = 0;
+    player.angle = 0; // Reseta o ângulo ao carregar fase
     player.grounded = false;
     player.canDoubleJump = true;
     
     document.getElementById("lvlNum").innerText = n; 
 }
 
-// CORREÇÃO: Terrenos que exigem MOVIMENTO ATIVO do jogador
 function getMountainHeight(x, phase) {
     let t = x / mountainWidth;
     
-    // FASE 33: VERTICAL - Subida reta, exige movimento constante
     if (phase === 33) {
         return 480 - t * 400;
     }
-    
-    // FASE 34: ZIGZAG - Vai e volta, exige controle direcional
     if (phase === 34) {
         let zig = Math.sin(t * Math.PI * 3);
         return 380 - zig * 180;
     }
-    
-    // FASE 35: PLATAFORMAS FLUTUANTES - Precisa pular entre elas
     if (phase === 35) {
         let platform = Math.floor(t * 10);
         let platformY = [480, 420, 360, 300, 260, 220, 180, 140, 100, 80];
         return platformY[Math.min(platform, 9)];
     }
-    
-    // FASE 36: CAVERNA - Passagens estreitas
     if (phase === 36) {
         let ceiling = 200 + Math.sin(t * Math.PI * 3) * 60;
         let floor = 480 - t * 300;
         return Math.min(floor, ceiling - 50);
     }
-    
-    // FASE 37: ESPIRAL - Voltas que exigem ida e volta
     if (phase === 37) {
         let spiral = Math.sin(t * Math.PI * 5) * 120;
         return 300 + spiral;
     }
-    
-    // FASE 38: INVERSO - Começa alto termina baixo
     if (phase === 38) {
         return 150 + t * 330;
     }
-    
-    // FASE 39: CAOS - Terreno imprevisível
     if (phase === 39) {
         return 300 + Math.sin(t * Math.PI * 12) * 180;
     }
-    
-    // FASE 40: FINAL - Desafio extremo
     if (phase === 40) {
         if (t < 0.3) return 480 - t * 500;
         if (t < 0.6) return 330 - Math.sin((t - 0.3) * Math.PI * 4) * 150;
@@ -325,6 +310,9 @@ function update() {
         player.x += player.vx;
         player.y += player.vy;
         
+        // CORREÇÃO: Rotação também na fase final
+        player.angle += player.vx * 0.15;
+        
         if (player.x < player.r) player.x = player.r;
         if (player.x > 1000 - player.r) player.x = 1000 - player.r;
         
@@ -343,55 +331,58 @@ function update() {
     
     if(b.isAssas) { spriteTimer++; if(spriteTimer % 5 === 0) spriteFrame = (spriteFrame + 1) % 8; }
 
-    // CORREÇÃO: Controles NORMais - só anda se apertar as setas
-    // Força de aceleração reduzida para controle manual
+    // Controles
     if (keys[39]) player.vx += 0.65;
     if (keys[37]) player.vx -= 0.65;
     
-    // CORREÇÃO: Física da montanha SEM aceleração automática
+    // CORREÇÃO: ROTAÇÃO DA BOLA - funciona em TODAS as fases!
+    // A bola gira baseado na velocidade horizontal e também ao pular
+    if (b.isMountain || !b.isMountain) {
+        // Rotação baseada no movimento horizontal
+        player.angle += player.vx * 0.12;
+        
+        // Efeito extra ao pular (quando não está no chão e tem velocidade vertical)
+        if (!player.grounded && Math.abs(player.vy) > 3) {
+            player.angle += (player.vy > 0 ? 0.08 : -0.08);
+        }
+        
+        // Mantém o ângulo dentro de um limite razoável para não ficar louco
+        if (player.angle > Math.PI * 2) player.angle -= Math.PI * 2;
+        if (player.angle < 0) player.angle += Math.PI * 2;
+    }
+    
+    // Física da montanha
     if (b.isMountain) {
         let groundY = getMountainHeight(player.x, currentLevel);
         
-        // Gravidade normal
         player.vy += b.grav;
         player.x += player.vx;
         player.y += player.vy;
         
-        // Colisão com o chão
         if (player.y + player.r > groundY) {
             player.grounded = true;
             player.canDoubleJump = true;
             player.vy = 0;
             player.y = groundY - player.r;
             
-            // Atrito NORMAL - só perde velocidade gradualmente
             player.vx *= 0.96;
-            
-            // Limites
             player.x = Math.max(player.r, Math.min(mountainWidth - player.r, player.x));
         } else {
             player.grounded = false;
         }
         
-        // SEM aceleração automática por inclinação
-        // O jogador só ganha velocidade se apertar as setas
-        
-        // Limita velocidade máxima (mais baixa para controle manual)
         let maxSpeed = 11;
         player.vx = Math.min(Math.max(player.vx, -maxSpeed), maxSpeed);
         
-        // Câmera
         cameraX = player.x - canvas.width / 2;
         cameraX = Math.max(0, Math.min(mountainWidth - canvas.width, cameraX));
         
-        // Verifica goal
         if (player.x > mountainWidth - 100 && player.y + player.r > getMountainHeight(mountainWidth - 80, currentLevel) - 15) {
             if (Math.abs(player.x - (mountainWidth - 80)) < 80) {
                 loadLevel(currentLevel + 1);
             }
         }
         
-        // Se cair muito baixo, morre
         if (player.y > 550) {
             deaths++;
             loadLevel(currentLevel);
@@ -402,7 +393,12 @@ function update() {
         player.vx *= 0.95; 
         player.x += player.vx; 
         player.y += player.vy;
-        player.angle += player.vx * 0.1;
+        
+        // Rotação adicional para fases normais (já tem no bloco acima, mas garantindo)
+        player.angle += player.vx * 0.12;
+        if (!player.grounded && Math.abs(player.vy) > 3) {
+            player.angle += (player.vy > 0 ? 0.08 : -0.08);
+        }
 
         if (player.x < player.r) player.x = player.r;
         if (player.x > 1000 - player.r) player.x = 1000 - player.r;
@@ -495,7 +491,6 @@ function draw() {
     }
     
     if (b.isMountain) {
-        // Céu diferente para cada fase
         const skyColors = {
             33: ["#1a2a3a", "#2a3a4a"],
             34: ["#2a1a2a", "#3a2a3a"],
@@ -537,7 +532,6 @@ function draw() {
         ctx.lineWidth = 2.5;
         ctx.stroke();
         
-        // Nome da fase
         ctx.font = "bold 24px monospace";
         ctx.fillStyle = "#FFD700";
         ctx.shadowBlur = 5;
@@ -630,6 +624,7 @@ function draw() {
         bullets.forEach(bu => { ctx.fillStyle = "cyan"; ctx.beginPath(); ctx.arc(bu.x, bu.y, 6, 0, Math.PI * 2); ctx.fill(); });
     }
     
+    // Renderização do jogador com rotação
     ctx.save();
     if (b.isMountain) {
         ctx.translate(player.x - cameraX, player.y);
@@ -640,7 +635,8 @@ function draw() {
     if(b.isAssas) {
         ctx.drawImage(assasSprites[spriteFrame], -player.r * 1.6, -player.r, player.r * 3.2, player.r * 2);
     } else {
-        ctx.rotate(player.angle); 
+        // Aplica a rotação da bola
+        ctx.rotate(player.angle);
         ctx.drawImage(ballImg, -player.r, -player.r, player.r * 2, player.r * 2);
     }
     ctx.restore();
@@ -674,10 +670,14 @@ window.addEventListener("keydown", e => {
                 let jumpForce = -12;
                 player.vy = jumpForce; 
                 player.grounded = false;
+                // Efeito de rotação extra ao pular
+                player.angle += 0.3;
             }
             else if (player.canDoubleJump) { 
                 player.vy = -10; 
-                player.canDoubleJump = false; 
+                player.canDoubleJump = false;
+                // Efeito de rotação no pulo duplo
+                player.angle += 0.5;
             }
         }
     }
