@@ -18,9 +18,9 @@
 
     <div class="hud" id="gameHud" style="display:none">
         <span>PLAYER: <b id="displayName">---</b></span>
-        <span>FASE <b id="lvlNum">1</b></span>
-        <span>⏱️ <b id="timer">00:00:00</b></span>
-        <span>MORTES <b id="deathCount">0</b></span>
+        <span>FASE: <b id="lvlNum">1</b></span>
+        <span>TEMPO: <b id="timer">00:00:00</b></span>
+        <span>MORTES: <b id="deathCount">0</b></span>
     </div>
 
     <div id="startMenu" class="overlay">
@@ -36,7 +36,6 @@ const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 canvas.width = 1000; canvas.height = 500;
 
-// SPRITES
 const ballImg = new Image(); ballImg.src = 'bola amarela.webp'; 
 const gunImg = new Image(); gunImg.src = 'arma-de-gelo.webp'; 
 const assasSprites = [];
@@ -84,20 +83,15 @@ function generateLevel(n) {
     lasers = [];
     
     if (b.laser) {
-        let numLasers = 8;
-        for(let i=0; i < numLasers; i++) {
+        for(let i=0; i < 8; i++) {
             lasers.push({ 
-                x: 100 + (i * 120), 
-                y: 50 + (random() * 400), 
-                angle: random() * Math.PI, 
-                rotSpeed: 0.015, 
-                len: 90 
+                x: 100 + (i * 120), y: 50 + (random() * 400), 
+                angle: random() * Math.PI, rotSpeed: 0.015, len: 90 
             });
         }
     }
 
     if (b.isMountain) {
-        // Calcula o Y exato do chão na posição X=950 para a bandeira não flutuar
         let goalY = 480 - Math.sin((950 / 1000) * Math.PI) * 350;
         lv.push({x: 950, y: goalY, type: 'goal'});
         return lv;
@@ -130,8 +124,7 @@ function update() {
     if (keys[39]) player.vx += 0.8; if (keys[37]) player.vx -= 0.8;
     
     if (b.isMountain) {
-        if (player.x < 700) player.vx -= 0.22; 
-        else player.vx += 0.35;
+        if (player.x < 700) player.vx -= 0.22; else player.vx += 0.35;
         let groundY = 480 - Math.sin((player.x / 1000) * Math.PI) * 350;
         if (player.y + player.r > groundY) {
             player.grounded = true; player.vy = 0; player.y = groundY - player.r;
@@ -148,7 +141,7 @@ function update() {
     let mins = Math.floor(timeDiff / 60000).toString().padStart(2, '0');
     let secs = Math.floor((timeDiff % 60000) / 1000).toString().padStart(2, '0');
     let msecs = Math.floor((timeDiff % 1000) / 10).toString().padStart(2, '0');
-    document.getElementById("timer").innerText = `${mins}:${secs}:${msecs}`;
+    document.getElementById("timer").innerText = mins+":"+secs+":"+msecs;
 
     for (let i = bullets.length - 1; i >= 0; i--) {
         let bu = bullets[i]; bu.x += bu.vx; bu.y += bu.vy;
@@ -179,7 +172,7 @@ function update() {
     });
 
     if (b.lava && player.y > 480) { deaths++; loadLevel(currentLevel); }
-    if (player.y > 600 || player.y < -100) { deaths++; loadLevel(currentLevel); }
+    if (player.y > 600 || player.y < -150) { deaths++; loadLevel(currentLevel); }
     document.getElementById("deathCount").innerText = deaths;
 }
 
@@ -227,16 +220,16 @@ function draw() {
 
     ctx.save(); ctx.translate(player.x, player.y); 
     if(b.isAssas) {
-        ctx.drawImage(assasSprites[spriteFrame], -player.r * 1.6, -player.r, player.r * 3.2, player.r * 2);
+        if (assasSprites[spriteFrame].complete) ctx.drawImage(assasSprites[spriteFrame], -player.r * 1.6, -player.r, player.r * 3.2, player.r * 2);
     } else {
-        ctx.rotate(player.angle); ctx.drawImage(ballImg, -player.r, -player.r, player.r * 2, player.r * 2);
+        ctx.rotate(player.angle); if (ballImg.complete) ctx.drawImage(ballImg, -player.r, -player.r, player.r * 2, player.r * 2);
     }
     ctx.restore();
 
     if(b.hasGun) {
         ctx.save(); ctx.translate(player.x, player.y);
         let angle = Math.atan2(mouse.y - player.y, mouse.x - player.x);
-        ctx.rotate(angle); ctx.drawImage(gunImg, 10, -10, 30, 20);
+        ctx.rotate(angle); if (gunImg.complete) ctx.drawImage(gunImg, 10, -10, 30, 20);
         ctx.restore();
     }
 }
@@ -247,9 +240,8 @@ window.addEventListener("keydown", e => {
     keys[e.keyCode] = true;
     if (e.keyCode === 32) {
         let b = getBiome(currentLevel);
-        if (b.flappy) {
-            player.vy = -7; 
-        } else {
+        if (b.flappy) { player.vy = -7; } 
+        else {
             if (player.grounded) { player.vy = -13; player.grounded = false; }
             else if (player.canDoubleJump) { player.vy = -11; player.canDoubleJump = false; }
         }
