@@ -99,7 +99,7 @@ ballImg.src = 'bola amarela.webp';
 const gunImg = new Image(); 
 gunImg.src = 'arma-de-gelo.webp'; 
 
-// Sprites do Assas com escala proporcional e maior (sem distorção)
+// Sprites do Assas (usados apenas nas fases 51-70)
 const assasSprites = [];
 const assasSpriteData = [];
 let assasLoadedCount = 0;
@@ -110,11 +110,9 @@ for (let i = 1; i <= 8; i++) {
     img.src = `bola-amarela-assas${i.toString().padStart(4, '0')}.webp`;
     img.onload = (function(idx) {
         return function() {
-            // Define um tamanho alvo maior que o diâmetro da bola para ficar mais visível
-            const targetSize = 52; // 36 * 1.44 ≈ 52px – ajuste conforme preferir
+            const targetSize = 52; // Tamanho visual maior sem distorção
             const imgW = this.width;
             const imgH = this.height;
-            // Escala baseada no maior lado para que o sprite ocupe o targetSize
             const scale = targetSize / Math.max(imgW, imgH);
             assasSpriteData[idx] = { w: imgW, h: imgH, scale: scale };
             assasLoadedCount++;
@@ -188,17 +186,14 @@ function getBiome(n) {
     if (n <= 10) return { bg: "#87ceeb", g: "#5d4037", t: "#2ecc71", grav: 0.8 };
     if (n <= 20) return { bg: "#f0f8ff", g: "#b0c4de", t: "#ffffff", grav: 0.8 };
     if (n <= 32) return { bg: "#2a0000", g: "#440000", t: "#ff4500", lava: true, hasGun: true, grav: 0.8 };
-    if (n === 33) return { bg: "#1a2a3a", g: "#2C1810", t: "#CD853F", grav: 0.8, isMountain: true, mountainType: "vertical" };
-    if (n === 34) return { bg: "#2a1a2a", g: "#2C1810", t: "#CD853F", grav: 0.8, isMountain: true, mountainType: "zigzag" };
-    if (n === 35) return { bg: "#1a3a2a", g: "#2C1810", t: "#CD853F", grav: 0.8, isMountain: true, mountainType: "floating" };
-    if (n === 36) return { bg: "#3a2a1a", g: "#2C1810", t: "#CD853F", grav: 0.8, isMountain: true, mountainType: "cave" };
-    if (n === 37) return { bg: "#2a1a3a", g: "#2C1810", t: "#CD853F", grav: 0.8, isMountain: true, mountainType: "spiral" };
-    if (n === 38) return { bg: "#1a2a2a", g: "#2C1810", t: "#CD853F", grav: 0.8, isMountain: true, mountainType: "inverse" };
-    if (n === 39) return { bg: "#3a1a2a", g: "#2C1810", t: "#CD853F", grav: 0.8, isMountain: true, mountainType: "chaos" };
-    if (n === 40) return { bg: "#0a0f1a", g: "#2C1810", t: "#CD853F", grav: 0.8, isMountain: true, mountainType: "final" };
+    // Montanhas (33-40)
+    if (n >= 33 && n <= 40) return { bg: "#1a2a3a", g: "#2C1810", t: "#CD853F", grav: 0.8, isMountain: true };
     if (n <= 50) return { bg: "#001a33", g: "#003366", t: "#00d4ff", water: true, grav: 0.2 }; 
-    if (n <= 70) return { bg: "#050505", g: "#111", t: "#f00", laser: true, grav: 0.8, isAssas: true, flappy: true }; 
-    if (n <= 90) return { bg: "#4a1a2a", g: "#2a0a1a", t: "#ff66cc", grav: 0.85, hasGun: true, isAssas: true };
+    // Lasers (51-70) – aqui usa o sprite Assas e tem arma?
+    if (n <= 70) return { bg: "#050505", g: "#111", t: "#f00", laser: true, grav: 0.8, isAssas: true, flappy: true, hasGun: true }; 
+    // Depois dos lasers (71-99) – volta ao normal (sem Assas, sem arma)
+    if (n <= 90) return { bg: "#4a1a2a", g: "#2a0a1a", t: "#ff66cc", grav: 0.85 }; 
+    if (n <= 99) return { bg: "#000011", g: "#000", t: "#fff", space: true, grav: 0.05 };
     return { bg: "#000011", g: "#000", t: "#fff", space: true, grav: 0.05 };
 }
 
@@ -281,28 +276,54 @@ function loadLevel(n) {
     document.getElementById("lvlNum").innerText = n; 
 }
 
+// Terreno da montanha – agora muito mais íngreme e exigente
 function getMountainHeight(x, phase) {
     let t = x / mountainWidth;
     
-    if (phase === 33) return 480 - t * 400;
-    if (phase === 34) return 380 - Math.sin(t * Math.PI * 3) * 180;
+    // Fases 33-40: cada uma com perfil único, mas todas com subidas íngremes
+    // que exigem impulso para subir (não sobem automaticamente)
+    if (phase === 33) {
+        // Subida vertical com degraus íngremes
+        if (t < 0.4) return 480 - t * 400;
+        if (t < 0.7) return 320 - (t-0.4)*200;
+        return 220 - (t-0.7)*140;
+    }
+    if (phase === 34) {
+        // Zigzag com paredes quase verticais
+        let zig = Math.sin(t * Math.PI * 3);
+        return 400 - zig * 250;
+    }
     if (phase === 35) {
-        let platform = Math.floor(t * 10);
-        let platformY = [480, 420, 360, 300, 260, 220, 180, 140, 100, 80];
-        return platformY[Math.min(platform, 9)];
+        // Platôs separados por quedas – precisa pular
+        let platform = Math.floor(t * 12);
+        let platformY = [480, 420, 360, 300, 260, 220, 180, 140, 100, 80, 80, 80];
+        return platformY[Math.min(platform, 11)];
     }
     if (phase === 36) {
-        let ceiling = 200 + Math.sin(t * Math.PI * 3) * 60;
-        let floor = 480 - t * 300;
-        return Math.min(floor, ceiling - 50);
+        // Caverna com tetos baixos e paredes lisas
+        let ceiling = 180 + Math.sin(t * Math.PI * 4) * 50;
+        let floor = 480 - t * 400;
+        return Math.min(floor, ceiling - 40);
     }
-    if (phase === 37) return 300 + Math.sin(t * Math.PI * 5) * 120;
-    if (phase === 38) return 150 + t * 330;
-    if (phase === 39) return 300 + Math.sin(t * Math.PI * 12) * 180;
+    if (phase === 37) {
+        // Espiral com rampas que exigem velocidade
+        return 300 + Math.sin(t * Math.PI * 6) * 150;
+    }
+    if (phase === 38) {
+        // Inversão – começa alto e termina baixo
+        return 150 + t * 330;
+    }
+    if (phase === 39) {
+        // Caos – picos e vales abruptos
+        let base = 480 - t * 400;
+        if (base < 100) base = 100 + Math.sin(t * Math.PI * 12) * 60;
+        return base;
+    }
     if (phase === 40) {
+        // Final – subida quase vertical nos últimos 30%
         if (t < 0.3) return 480 - t * 500;
-        if (t < 0.6) return 330 - Math.sin((t - 0.3) * Math.PI * 4) * 150;
-        return 180 - (t - 0.6) * 200;
+        if (t < 0.6) return 330 - (t-0.3)*300;
+        return 180 - (t-0.6)*200;
     }
     return 480;
 }
@@ -337,9 +358,11 @@ function update() {
     
     if(b.isAssas) { spriteTimer++; if(spriteTimer % 5 === 0) spriteFrame = (spriteFrame + 1) % 8; }
 
+    // Controles manuais
     if (keys[39]) player.vx += 0.65;
     if (keys[37]) player.vx -= 0.65;
     
+    // Rotação
     player.angle += player.vx * 0.12;
     if (!player.grounded && Math.abs(player.vy) > 3) {
         player.angle += (player.vy > 0 ? 0.08 : -0.08);
@@ -350,38 +373,66 @@ function update() {
     if (b.isMountain) {
         let groundY = getMountainHeight(player.x, currentLevel);
         
+        // Gravidade
         player.vy += b.grav;
         player.x += player.vx;
         player.y += player.vy;
         
+        // Colisão com o chão
         if (player.y + player.r > groundY) {
             player.grounded = true;
             player.canDoubleJump = true;
             player.vy = 0;
             player.y = groundY - player.r;
-            player.vx *= 0.96;
+            
+            // Atrito e efeito de inclinação (estilo Getting Over It)
+            let nextX = player.x + (player.vx > 0 ? 12 : -12);
+            let nextGroundY = getMountainHeight(nextX, currentLevel);
+            let slope = (nextGroundY - groundY) / 12;
+            
+            // Subidas íngremes: se a velocidade horizontal for baixa, escorrega para trás
+            if (slope > 0.1) {
+                if (player.vx < 2.5) {
+                    player.vx -= slope * 1.2; // desliza para trás
+                } else {
+                    player.vx -= slope * 0.8; // perde velocidade
+                }
+            } else if (slope < -0.1) {
+                // Descidas: ganha velocidade
+                player.vx += Math.abs(slope) * 1.5;
+            }
+            
+            // Atrito normal
+            player.vx *= 0.95;
+            
+            // Limite de velocidade
+            let maxSpeed = 14;
+            player.vx = Math.min(Math.max(player.vx, -maxSpeed), maxSpeed);
+            
+            // Garante que não ultrapasse os limites do terreno
             player.x = Math.max(player.r, Math.min(mountainWidth - player.r, player.x));
         } else {
             player.grounded = false;
         }
         
-        let maxSpeed = 11;
-        player.vx = Math.min(Math.max(player.vx, -maxSpeed), maxSpeed);
-        
+        // Câmera
         cameraX = player.x - canvas.width / 2;
         cameraX = Math.max(0, Math.min(mountainWidth - canvas.width, cameraX));
         
+        // Verifica goal
         if (player.x > mountainWidth - 100 && player.y + player.r > getMountainHeight(mountainWidth - 80, currentLevel) - 15) {
             if (Math.abs(player.x - (mountainWidth - 80)) < 80) {
                 loadLevel(currentLevel + 1);
             }
         }
         
+        // Morte por queda
         if (player.y > 550) {
             deaths++;
             loadLevel(currentLevel);
         }
     } else {
+        // Física normal para outras fases
         player.vy += b.grav; 
         player.vx *= 0.95; 
         player.x += player.vx; 
@@ -391,12 +442,14 @@ function update() {
         if (player.x > 1000 - player.r) player.x = 1000 - player.r;
     }
 
+    // Timer
     let timeDiff = Date.now() - startTime;
     let mins = Math.floor(timeDiff / 60000).toString().padStart(2, '0');
     let secs = Math.floor((timeDiff % 60000) / 1000).toString().padStart(2, '0');
     let msecs = Math.floor((timeDiff % 1000) / 10).toString().padStart(2, '0');
     document.getElementById("timer").innerText = mins+":"+secs+":"+msecs;
 
+    // Balas
     for (let i = bullets.length - 1; i >= 0; i--) {
         let bu = bullets[i]; bu.x += bu.vx; bu.y += bu.vy;
         if(b.lava && bu.y > 480) {
@@ -406,6 +459,7 @@ function update() {
         if (bu.x < 0 || bu.x > 1000 || bu.y < 0 || bu.y > 500) bullets.splice(i, 1);
     }
 
+    // Lasers
     lasers.forEach(l => {
         l.angle += l.rotSpeed;
         let x2 = l.x + Math.cos(l.angle) * l.len;
@@ -418,6 +472,7 @@ function update() {
         }
     });
 
+    // Colisões com plataformas (exceto montanha)
     if (!b.isMountain) {
         player.grounded = false;
         platforms.forEach(p => {
@@ -431,6 +486,7 @@ function update() {
         });
     }
 
+    // Morte por lava ou fora dos limites
     if (b.lava && player.y > 480) { deaths++; loadLevel(currentLevel); }
     if (player.y > 600 || player.y < -150) { deaths++; loadLevel(currentLevel); }
     document.getElementById("deathCount").innerText = deaths;
@@ -448,50 +504,35 @@ function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
     if (currentLevel === 100) {
+        // Fase final
         ctx.fillStyle = "#FFD700";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
         for (let i = 0; i < 50; i++) {
             ctx.fillStyle = `hsl(${Date.now() + i * 100}, 100%, 50%)`;
             ctx.fillRect((i * 20 + Date.now() * 0.01) % canvas.width, (i * 10) % canvas.height, 5, 5);
         }
-        
         ctx.fillStyle = "#FFA500";
         ctx.fillRect(0, 300, canvas.width, 200);
-        
         ctx.font = "bold 36px Arial";
         ctx.fillStyle = "#FFF";
         ctx.shadowBlur = 10;
-        ctx.shadowColor = "black";
         ctx.fillText("✨ FASE FINAL! ✨", canvas.width/2 - 150, 80);
         ctx.font = "20px Arial";
         ctx.fillText("Vá até o portal dourado!", canvas.width/2 - 130, 140);
-        
         ctx.fillStyle = "#FFD700";
         ctx.fillRect(450, 200, 100, 50);
         ctx.fillStyle = "#FFA500";
         ctx.fillRect(470, 210, 60, 30);
-        ctx.font = "16px Arial";
         ctx.fillStyle = "#FFF";
         ctx.fillText("GOAL", 485, 240);
         ctx.shadowBlur = 0;
     }
     
     if (b.isMountain) {
-        const skyColors = {
-            33: ["#1a2a3a", "#2a3a4a"],
-            34: ["#2a1a2a", "#3a2a3a"],
-            35: ["#1a3a2a", "#2a4a3a"],
-            36: ["#3a2a1a", "#4a3a2a"],
-            37: ["#2a1a3a", "#3a2a4a"],
-            38: ["#1a2a2a", "#2a3a3a"],
-            39: ["#3a1a2a", "#4a2a3a"],
-            40: ["#0a0f1a", "#1a1f2a"]
-        };
-        let colors = skyColors[currentLevel] || ["#0A0F1A", "#1A1F2A"];
+        // Desenho da montanha
         let grad = ctx.createLinearGradient(0, 0, 0, 500);
-        grad.addColorStop(0, colors[0]);
-        grad.addColorStop(1, colors[1]);
+        grad.addColorStop(0, "#1a2a3a");
+        grad.addColorStop(1, "#2a1a0a");
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
@@ -501,8 +542,7 @@ function draw() {
         ctx.beginPath();
         ctx.moveTo(0, getMountainHeight(0, currentLevel));
         for (let x = 0; x <= mountainWidth; x += 8) {
-            let y = getMountainHeight(x, currentLevel);
-            ctx.lineTo(x, y);
+            ctx.lineTo(x, getMountainHeight(x, currentLevel));
         }
         ctx.lineTo(mountainWidth, 500);
         ctx.lineTo(0, 500);
@@ -510,58 +550,38 @@ function draw() {
         
         let groundGrad = ctx.createLinearGradient(0, 400, 0, 100);
         groundGrad.addColorStop(0, "#2C1810");
-        groundGrad.addColorStop(0.5, "#4A2A1A");
         groundGrad.addColorStop(1, "#6B3E1A");
         ctx.fillStyle = groundGrad;
         ctx.fill();
-        
         ctx.strokeStyle = "#CD853F";
         ctx.lineWidth = 2.5;
         ctx.stroke();
         
         ctx.font = "bold 24px monospace";
         ctx.fillStyle = "#FFD700";
-        ctx.shadowBlur = 5;
         ctx.fillText(`FASE ${currentLevel}`, cameraX + 20, 50);
         ctx.font = "14px monospace";
         ctx.fillStyle = "#FFF";
-        const phaseNames = {
-            33: "⬆️ VERTICAL",
-            34: "🌀 ZIGZAG",
-            35: "☁️ PLATAFORMAS",
-            36: "🕳️ CAVERNA",
-            37: "🌀 ESPIRAL",
-            38: "⬇️ INVERSO",
-            39: "💥 CAOS",
-            40: "👑 FINAL"
-        };
-        ctx.fillText(phaseNames[currentLevel] || "MONTANHA", cameraX + 20, 80);
+        ctx.fillText("⚡ ESTILO GETTING OVER IT ⚡", cameraX + 20, 80);
         ctx.fillStyle = "#AAA";
-        ctx.font = "12px monospace";
         ctx.fillText("←  USE AS SETAS PARA MOVER  →", cameraX + 20, 110);
-        ctx.shadowBlur = 0;
         
         let goalX = mountainWidth - 80;
         let goalY = getMountainHeight(goalX, currentLevel);
-        
         ctx.fillStyle = "#fff";
         ctx.fillRect(goalX - 2, goalY - 45, 4, 45);
-        
         ctx.fillStyle = "#ffd700";
         ctx.beginPath();
         ctx.moveTo(goalX, goalY - 50);
         ctx.lineTo(goalX + 25, goalY - 60);
         ctx.lineTo(goalX, goalY - 70);
         ctx.fill();
-        
         ctx.shadowBlur = 20;
-        ctx.shadowColor = "gold";
-        ctx.fillStyle = "rgba(255, 215, 0, 0.4)";
+        ctx.fillStyle = "rgba(255,215,0,0.4)";
         ctx.beginPath();
-        ctx.arc(goalX, goalY - 60, 15, 0, Math.PI * 2);
+        ctx.arc(goalX, goalY - 60, 15, 0, Math.PI*2);
         ctx.fill();
         ctx.shadowBlur = 0;
-        
         ctx.restore();
         
         let progress = (player.x / mountainWidth) * 100;
@@ -570,14 +590,13 @@ function draw() {
         ctx.fillStyle = "#ffd700";
         ctx.fillRect(10, 10, progress * 2, 15);
         ctx.fillStyle = "white";
-        ctx.font = "12px monospace";
         ctx.fillText(`PROGRESSO: ${Math.floor(progress)}%`, 10, 28);
         
     } else if (currentLevel !== 100) {
+        // Fases normais
         ctx.fillStyle = b.bg;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
-        if(b.lava) { ctx.fillStyle = "#ff4500"; ctx.fillRect(0, 480, canvas.width, 20); }
+        if(b.lava) ctx.fillStyle = "#ff4500"; ctx.fillRect(0, 480, canvas.width, 20);
         
         lasers.forEach(l => {
             ctx.save();
@@ -586,72 +605,70 @@ function draw() {
             ctx.strokeStyle = "#ff3366";
             ctx.lineWidth = 4;
             ctx.shadowBlur = 8;
-            ctx.shadowColor = "#ff0000";
             ctx.beginPath();
             ctx.moveTo(0, 0);
             ctx.lineTo(l.len, 0);
             ctx.stroke();
             ctx.fillStyle = "#ff6699";
             ctx.beginPath();
-            ctx.arc(l.len, 0, 3, 0, Math.PI * 2);
+            ctx.arc(l.len, 0, 3, 0, Math.PI*2);
             ctx.fill();
             ctx.restore();
         });
         
         platforms.forEach(p => {
             if(p.type === 'goal') {
-                ctx.fillStyle = "#fff"; ctx.fillRect(p.x-2, p.y-70, 4, 70);
-                ctx.fillStyle = "red"; ctx.beginPath(); ctx.moveTo(p.x, p.y-70); ctx.lineTo(p.x+40, p.y-50); ctx.lineTo(p.x, p.y-30); ctx.fill();
+                ctx.fillStyle = "#fff";
+                ctx.fillRect(p.x-2, p.y-70, 4, 70);
+                ctx.fillStyle = "red";
+                ctx.beginPath();
+                ctx.moveTo(p.x, p.y-70);
+                ctx.lineTo(p.x+40, p.y-50);
+                ctx.lineTo(p.x, p.y-30);
+                ctx.fill();
             } else {
-                ctx.fillStyle = p.c; ctx.fillRect(p.x, p.y, p.w, p.h);
-                ctx.fillStyle = p.t; ctx.fillRect(p.x, p.y, p.w, 4);
+                ctx.fillStyle = p.c;
+                ctx.fillRect(p.x, p.y, p.w, p.h);
+                ctx.fillStyle = p.t;
+                ctx.fillRect(p.x, p.y, p.w, 4);
             }
         });
         
-        bullets.forEach(bu => { ctx.fillStyle = "cyan"; ctx.beginPath(); ctx.arc(bu.x, bu.y, 6, 0, Math.PI * 2); ctx.fill(); });
+        bullets.forEach(bu => { ctx.fillStyle = "cyan"; ctx.beginPath(); ctx.arc(bu.x, bu.y, 6, 0, Math.PI*2); ctx.fill(); });
     }
     
-    // Renderização do jogador com escala proporcional para os sprites do Assas
+    // Jogador
     ctx.save();
-    if (b.isMountain) {
-        ctx.translate(player.x - cameraX, player.y);
-    } else {
-        ctx.translate(player.x, player.y);
-    }
+    if (b.isMountain) ctx.translate(player.x - cameraX, player.y);
+    else ctx.translate(player.x, player.y);
     
     if(b.isAssas) {
-        // Usa os dados de escala calculados com base nas dimensões reais da imagem
         const data = assasSpriteData[spriteFrame];
         if (data) {
-            const scale = data.scale;
-            const w = data.w * scale;
-            const h = data.h * scale;
+            const w = data.w * data.scale;
+            const h = data.h * data.scale;
             ctx.drawImage(assasSprites[spriteFrame], -w/2, -h/2, w, h);
         } else {
-            // Fallback enquanto não carregou
             ctx.drawImage(assasSprites[spriteFrame], -player.r, -player.r, player.r*2, player.r*2);
         }
     } else {
         ctx.rotate(player.angle);
-        ctx.drawImage(ballImg, -player.r, -player.r, player.r * 2, player.r * 2);
+        ctx.drawImage(ballImg, -player.r, -player.r, player.r*2, player.r*2);
     }
     ctx.restore();
 
     if(b.hasGun && !b.isMountain && currentLevel !== 100) {
-        ctx.save(); 
+        ctx.save();
         ctx.translate(player.x, player.y);
         let angle = Math.atan2(mouse.y - player.y, mouse.x - player.x);
-        ctx.rotate(angle); 
+        ctx.rotate(angle);
         ctx.drawImage(gunImg, 10, -10, 30, 20);
         ctx.restore();
     }
 }
 
 function gameLoop() { 
-    if (gameRunning) {
-        update(); 
-        draw(); 
-    }
+    if (gameRunning) { update(); draw(); }
     requestAnimationFrame(gameLoop); 
 }
 
@@ -663,8 +680,7 @@ window.addEventListener("keydown", e => {
         if (b.flappy) { player.vy = -7; } 
         else {
             if (player.grounded) { 
-                let jumpForce = -12;
-                player.vy = jumpForce; 
+                player.vy = -12; 
                 player.grounded = false;
                 player.angle += 0.3;
             }
