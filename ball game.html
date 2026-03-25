@@ -109,7 +109,6 @@ let spriteFrame = 0, spriteTimer = 0;
 let cameraX = 0;
 let mountainWidth = 3000;
 let playerName = "";
-let currentMountainPhase = 0;
 
 function startGame() {
     const input = document.getElementById("playerNameInput").value.trim();
@@ -167,15 +166,15 @@ function getBiome(n) {
     if (n <= 10) return { bg: "#87ceeb", g: "#5d4037", t: "#2ecc71", grav: 0.8 };
     if (n <= 20) return { bg: "#f0f8ff", g: "#b0c4de", t: "#ffffff", grav: 0.8 };
     if (n <= 32) return { bg: "#2a0000", g: "#440000", t: "#ff4500", lava: true, hasGun: true, grav: 0.8 };
-    // CORREÇÃO: Cada fase de montanha (33-40) é ÚNICA
-    if (n === 33) return { bg: "#1a2a3a", g: "#2C1810", t: "#CD853F", grav: 0.88, isMountain: true, mountainType: "vertical" };
-    if (n === 34) return { bg: "#2a1a2a", g: "#2C1810", t: "#CD853F", grav: 0.88, isMountain: true, mountainType: "zigzag" };
-    if (n === 35) return { bg: "#1a3a2a", g: "#2C1810", t: "#CD853F", grav: 0.88, isMountain: true, mountainType: "floating" };
-    if (n === 36) return { bg: "#3a2a1a", g: "#2C1810", t: "#CD853F", grav: 0.88, isMountain: true, mountainType: "cave" };
-    if (n === 37) return { bg: "#2a1a3a", g: "#2C1810", t: "#CD853F", grav: 0.88, isMountain: true, mountainType: "spiral" };
-    if (n === 38) return { bg: "#1a2a2a", g: "#2C1810", t: "#CD853F", grav: 0.88, isMountain: true, mountainType: "inverse" };
-    if (n === 39) return { bg: "#3a1a2a", g: "#2C1810", t: "#CD853F", grav: 0.88, isMountain: true, mountainType: "chaos" };
-    if (n === 40) return { bg: "#0a0f1a", g: "#2C1810", t: "#CD853F", grav: 0.88, isMountain: true, mountainType: "final" };
+    // FASES DE MONTANHA (33-40) - Física NORMAL, sem aceleração automática
+    if (n === 33) return { bg: "#1a2a3a", g: "#2C1810", t: "#CD853F", grav: 0.8, isMountain: true, mountainType: "vertical" };
+    if (n === 34) return { bg: "#2a1a2a", g: "#2C1810", t: "#CD853F", grav: 0.8, isMountain: true, mountainType: "zigzag" };
+    if (n === 35) return { bg: "#1a3a2a", g: "#2C1810", t: "#CD853F", grav: 0.8, isMountain: true, mountainType: "floating" };
+    if (n === 36) return { bg: "#3a2a1a", g: "#2C1810", t: "#CD853F", grav: 0.8, isMountain: true, mountainType: "cave" };
+    if (n === 37) return { bg: "#2a1a3a", g: "#2C1810", t: "#CD853F", grav: 0.8, isMountain: true, mountainType: "spiral" };
+    if (n === 38) return { bg: "#1a2a2a", g: "#2C1810", t: "#CD853F", grav: 0.8, isMountain: true, mountainType: "inverse" };
+    if (n === 39) return { bg: "#3a1a2a", g: "#2C1810", t: "#CD853F", grav: 0.8, isMountain: true, mountainType: "chaos" };
+    if (n === 40) return { bg: "#0a0f1a", g: "#2C1810", t: "#CD853F", grav: 0.8, isMountain: true, mountainType: "final" };
     if (n <= 50) return { bg: "#001a33", g: "#003366", t: "#00d4ff", water: true, grav: 0.2 }; 
     if (n <= 70) return { bg: "#050505", g: "#111", t: "#f00", laser: true, grav: 0.8, isAssas: true, flappy: true }; 
     if (n <= 90) return { bg: "#4a1a2a", g: "#2a0a1a", t: "#ff66cc", grav: 0.85, hasGun: true, isAssas: true };
@@ -236,7 +235,6 @@ function loadLevel(n) {
     bullets = []; 
     platforms = generateLevel(n); 
     cameraX = 0;
-    currentMountainPhase = n;
     
     let b = getBiome(n);
     if (b.laser) {
@@ -253,75 +251,64 @@ function loadLevel(n) {
         player.y = 300;
     }
     
-    player.vx = player.vy = 0;
+    player.vx = 0;
+    player.vy = 0;
     player.grounded = false;
     player.canDoubleJump = true;
     
     document.getElementById("lvlNum").innerText = n; 
 }
 
-// CORREÇÃO: 8 fases de montanha COMPLETAMENTE DIFERENTES e IMPOSSÍVEIS de passar parado
+// CORREÇÃO: Terrenos que exigem MOVIMENTO ATIVO do jogador
 function getMountainHeight(x, phase) {
     let t = x / mountainWidth;
     
-    // FASE 33: VERTICAL - Subida reta com paredes, precisa pular ativamente
+    // FASE 33: VERTICAL - Subida reta, exige movimento constante
     if (phase === 33) {
-        if (t < 0.3) return 480 - t * 400;
-        if (t < 0.6) return 360 + Math.sin(x * 0.04) * 50;
-        if (t < 0.8) return 310 - (t - 0.6) * 200;
-        return 110 + Math.sin(x * 0.06) * 30;
+        return 480 - t * 400;
     }
     
-    // FASE 34: ZIGZAG - Vai e volta, NÃO anda sozinho
+    // FASE 34: ZIGZAG - Vai e volta, exige controle direcional
     if (phase === 34) {
-        let zig = Math.sin(t * Math.PI * 4);
-        if (zig > 0) return 480 - t * 200;
-        return 280 + Math.abs(zig) * 150;
+        let zig = Math.sin(t * Math.PI * 3);
+        return 380 - zig * 180;
     }
     
-    // FASE 35: PLATAFORMAS FLUTUANTES - Precisa pular de uma em uma
+    // FASE 35: PLATAFORMAS FLUTUANTES - Precisa pular entre elas
     if (phase === 35) {
-        let platform = Math.floor(t * 8);
-        let platformY = [480, 400, 320, 280, 240, 200, 160, 120];
-        return platformY[Math.min(platform, 7)] + Math.sin(x * 0.08) * 15;
+        let platform = Math.floor(t * 10);
+        let platformY = [480, 420, 360, 300, 260, 220, 180, 140, 100, 80];
+        return platformY[Math.min(platform, 9)];
     }
     
-    // FASE 36: CAVERNA - Tetos baixos, precisa agachar (controlar altura)
+    // FASE 36: CAVERNA - Passagens estreitas
     if (phase === 36) {
-        let ceiling = 150 + Math.sin(t * Math.PI * 3) * 80;
-        let floor = 480 - t * 200;
-        return Math.min(floor, ceiling - 80);
+        let ceiling = 200 + Math.sin(t * Math.PI * 3) * 60;
+        let floor = 480 - t * 300;
+        return Math.min(floor, ceiling - 50);
     }
     
-    // FASE 37: ESPIRAL - Forma de caracol, voltas completas
+    // FASE 37: ESPIRAL - Voltas que exigem ida e volta
     if (phase === 37) {
-        let spiral = Math.sin(t * Math.PI * 6) * 100;
-        return 290 + spiral;
+        let spiral = Math.sin(t * Math.PI * 5) * 120;
+        return 300 + spiral;
     }
     
-    // FASE 38: INVERSO - Começa alto, termina baixo, precisa controlar descida
+    // FASE 38: INVERSO - Começa alto termina baixo
     if (phase === 38) {
-        if (t < 0.4) return 150 + t * 200;
-        if (t < 0.7) return 230 - (t - 0.4) * 300;
-        return 80 + Math.sin(t * Math.PI * 10) * 40;
+        return 150 + t * 330;
     }
     
-    // FASE 39: CAOS - Aleatório e imprevisível, requer reflexo
+    // FASE 39: CAOS - Terreno imprevisível
     if (phase === 39) {
-        let chaos = Math.sin(t * Math.PI * 15) * 60;
-        let base = 480 - t * 500;
-        if (base < 80) base = 80 + Math.sin(t * Math.PI * 8) * 50;
-        return base + chaos;
+        return 300 + Math.sin(t * Math.PI * 12) * 180;
     }
     
-    // FASE 40: FINAL - Desafio máximo com vários obstáculos
+    // FASE 40: FINAL - Desafio extremo
     if (phase === 40) {
-        if (t < 0.2) return 480 - t * 400;
-        if (t < 0.35) return 400 - (t - 0.2) * 800;
-        if (t < 0.5) return 280 + Math.sin(t * Math.PI * 12) * 50;
-        if (t < 0.7) return 230 - (t - 0.5) * 500;
-        if (t < 0.85) return 80 + Math.sin(t * Math.PI * 20) * 30;
-        return 80 + (t - 0.85) * 200;
+        if (t < 0.3) return 480 - t * 500;
+        if (t < 0.6) return 330 - Math.sin((t - 0.3) * Math.PI * 4) * 150;
+        return 180 - (t - 0.6) * 200;
     }
     
     return 480;
@@ -356,15 +343,17 @@ function update() {
     
     if(b.isAssas) { spriteTimer++; if(spriteTimer % 5 === 0) spriteFrame = (spriteFrame + 1) % 8; }
 
-    if (keys[39]) player.vx += 0.9; 
-    if (keys[37]) player.vx -= 0.9;
+    // CORREÇÃO: Controles NORMais - só anda se apertar as setas
+    // Força de aceleração reduzida para controle manual
+    if (keys[39]) player.vx += 0.65;
+    if (keys[37]) player.vx -= 0.65;
     
-    // CORREÇÃO: Física da montanha - IMPOSSÍVEL passar sem jogar
+    // CORREÇÃO: Física da montanha SEM aceleração automática
     if (b.isMountain) {
         let groundY = getMountainHeight(player.x, currentLevel);
         
-        // Gravidade mais forte para dificultar
-        player.vy += b.grav + 0.05;
+        // Gravidade normal
+        player.vy += b.grav;
         player.x += player.vx;
         player.y += player.vy;
         
@@ -375,47 +364,23 @@ function update() {
             player.vy = 0;
             player.y = groundY - player.r;
             
-            // Atrito variável - impede de ficar parado em inclinações
-            let nextX = player.x + (player.vx > 0 ? 15 : -15);
-            let nextGroundY = getMountainHeight(nextX, currentLevel);
-            let slope = (nextGroundY - groundY) / 15;
+            // Atrito NORMAL - só perde velocidade gradualmente
+            player.vx *= 0.96;
             
-            // Em subidas íngremes, o jogador escorrega para trás se não estiver se movendo
-            if (slope > 0.1 && Math.abs(player.vx) < 0.5) {
-                player.vx -= slope * 0.8;
-            }
-            
-            // Atrito base reduzido - não mantém velocidade parado
-            let friction = 0.94 - Math.abs(slope) * 0.12;
-            player.vx *= Math.max(0.88, Math.min(0.96, friction));
-            
+            // Limites
             player.x = Math.max(player.r, Math.min(mountainWidth - player.r, player.x));
         } else {
             player.grounded = false;
         }
         
-        // Efeito de inclinação na velocidade - descidas forçam movimento
-        let nextGroundY = getMountainHeight(player.x + (player.vx > 0 ? 12 : -12), currentLevel);
-        let slope = (nextGroundY - groundY) / 12;
+        // SEM aceleração automática por inclinação
+        // O jogador só ganha velocidade se apertar as setas
         
-        if (!player.grounded) {
-            player.vx += slope * 0.6;
-        } else {
-            if (slope < -0.1) {
-                // Descida - ganha velocidade automaticamente
-                player.vx += Math.abs(slope) * 2.5;
-            } else if (slope > 0.1) {
-                // Subida - perde velocidade rapidamente e pode parar
-                player.vx *= 0.92;
-                player.vx -= slope * 1.2;
-            }
-        }
-        
-        // Limita velocidade
-        let maxSpeed = 20;
+        // Limita velocidade máxima (mais baixa para controle manual)
+        let maxSpeed = 11;
         player.vx = Math.min(Math.max(player.vx, -maxSpeed), maxSpeed);
         
-        // CAMERA - segue o jogador
+        // Câmera
         cameraX = player.x - canvas.width / 2;
         cameraX = Math.max(0, Math.min(mountainWidth - canvas.width, cameraX));
         
@@ -432,6 +397,7 @@ function update() {
             loadLevel(currentLevel);
         }
     } else {
+        // Física normal para outras fases
         player.vy += b.grav; 
         player.vx *= 0.95; 
         player.x += player.vx; 
@@ -579,7 +545,7 @@ function draw() {
         ctx.font = "14px monospace";
         ctx.fillStyle = "#FFF";
         const phaseNames = {
-            33: "⚡ VERTICAL",
+            33: "⬆️ VERTICAL",
             34: "🌀 ZIGZAG",
             35: "☁️ PLATAFORMAS",
             36: "🕳️ CAVERNA",
@@ -589,6 +555,9 @@ function draw() {
             40: "👑 FINAL"
         };
         ctx.fillText(phaseNames[currentLevel] || "MONTANHA", cameraX + 20, 80);
+        ctx.fillStyle = "#AAA";
+        ctx.font = "12px monospace";
+        ctx.fillText("←  USE AS SETAS PARA MOVER  →", cameraX + 20, 110);
         ctx.shadowBlur = 0;
         
         let goalX = mountainWidth - 80;
@@ -702,13 +671,12 @@ window.addEventListener("keydown", e => {
         if (b.flappy) { player.vy = -7; } 
         else {
             if (player.grounded) { 
-                let jumpForce = -13;
-                if (b.isMountain) jumpForce = -15;
+                let jumpForce = -12;
                 player.vy = jumpForce; 
                 player.grounded = false;
             }
             else if (player.canDoubleJump) { 
-                player.vy = -12; 
+                player.vy = -10; 
                 player.canDoubleJump = false; 
             }
         }
