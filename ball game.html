@@ -99,12 +99,40 @@ ballImg.src = 'bola amarela.webp';
 const gunImg = new Image(); 
 gunImg.src = 'arma-de-gelo.webp'; 
 
-// Sprites do Assas
+// Sprites do Assas com controle de escala proporcional
 const assasSprites = [];
+const assasSpriteData = []; // armazena dimensões e escala calculada
+let assasLoadedCount = 0;
+const totalAssasSprites = 8;
+
+function onAssasSpriteLoaded(index) {
+    assasLoadedCount++;
+    if (assasLoadedCount === totalAssasSprites) {
+        // todos carregados, podemos iniciar o jogo se já não tiver iniciado
+        if (gameRunning) {
+            // já começou, mas as imagens terminaram de carregar depois
+        }
+    }
+}
+
 for (let i = 1; i <= 8; i++) {
     const img = new Image();
     img.src = `bola-amarela-assas${i.toString().padStart(4, '0')}.webp`;
+    img.onload = (function(idx) {
+        return function() {
+            // Calcula escala uniforme para que o sprite caiba dentro do diâmetro da bola (36px)
+            // ou um pouco maior, mantendo proporção
+            const targetSize = player.r * 2; // 36px
+            const imgW = this.width;
+            const imgH = this.height;
+            // Escala baseada no maior lado para que o sprite caiba dentro do targetSize
+            const scale = targetSize / Math.max(imgW, imgH);
+            assasSpriteData[idx] = { w: imgW, h: imgH, scale: scale };
+            onAssasSpriteLoaded(idx);
+        };
+    })(i-1);
     assasSprites.push(img);
+    assasSpriteData.push(null);
 }
 
 let currentLevel = 1, deaths = 0, startTime, gameRunning = false;
@@ -594,7 +622,7 @@ function draw() {
         bullets.forEach(bu => { ctx.fillStyle = "cyan"; ctx.beginPath(); ctx.arc(bu.x, bu.y, 6, 0, Math.PI * 2); ctx.fill(); });
     }
     
-    // CORREÇÃO: Renderização do jogador com proporção adequada
+    // Renderização do jogador com escala proporcional para os sprites do Assas
     ctx.save();
     if (b.isMountain) {
         ctx.translate(player.x - cameraX, player.y);
@@ -603,14 +631,17 @@ function draw() {
     }
     
     if(b.isAssas) {
-        // CORREÇÃO: Mantém a proporção original do sprite do Assas
-        // Usa um tamanho ligeiramente maior para não ficar fino, mas mantém a hitbox
-        const spriteScale = 1.2;
-        ctx.drawImage(assasSprites[spriteFrame], 
-            -player.r * spriteScale, 
-            -player.r * spriteScale, 
-            player.r * 2 * spriteScale, 
-            player.r * 2 * spriteScale);
+        // Usa os dados de escala calculados com base nas dimensões reais da imagem
+        const data = assasSpriteData[spriteFrame];
+        if (data) {
+            const scale = data.scale;
+            const w = data.w * scale;
+            const h = data.h * scale;
+            ctx.drawImage(assasSprites[spriteFrame], -w/2, -h/2, w, h);
+        } else {
+            // Fallback enquanto não carregou
+            ctx.drawImage(assasSprites[spriteFrame], -player.r, -player.r, player.r*2, player.r*2);
+        }
     } else {
         ctx.rotate(player.angle);
         ctx.drawImage(ballImg, -player.r, -player.r, player.r * 2, player.r * 2);
