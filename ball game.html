@@ -99,7 +99,7 @@ ballImg.src = 'bola amarela.webp';
 const gunImg = new Image(); 
 gunImg.src = 'arma-de-gelo.webp'; 
 
-// CORREÇÃO: Sprites do Assas com tamanho corrigido
+// Sprites do Assas
 const assasSprites = [];
 for (let i = 1; i <= 8; i++) {
     const img = new Image();
@@ -323,7 +323,6 @@ function update() {
     if (keys[39]) player.vx += 0.65;
     if (keys[37]) player.vx -= 0.65;
     
-    // Rotação da bola
     player.angle += player.vx * 0.12;
     if (!player.grounded && Math.abs(player.vy) > 3) {
         player.angle += (player.vy > 0 ? 0.08 : -0.08);
@@ -595,7 +594,7 @@ function draw() {
         bullets.forEach(bu => { ctx.fillStyle = "cyan"; ctx.beginPath(); ctx.arc(bu.x, bu.y, 6, 0, Math.PI * 2); ctx.fill(); });
     }
     
-    // CORREÇÃO: Renderização do jogador com tamanho proporcional
+    // CORREÇÃO: Renderização do jogador com proporção adequada
     ctx.save();
     if (b.isMountain) {
         ctx.translate(player.x - cameraX, player.y);
@@ -604,11 +603,15 @@ function draw() {
     }
     
     if(b.isAssas) {
-        // CORREÇÃO: Desenha os sprites do assas com o MESMO tamanho da bola amarela
-        // Agora usa o mesmo raio (player.r) para largura e altura, mantendo a proporção
-        ctx.drawImage(assasSprites[spriteFrame], -player.r, -player.r, player.r * 2, player.r * 2);
+        // CORREÇÃO: Mantém a proporção original do sprite do Assas
+        // Usa um tamanho ligeiramente maior para não ficar fino, mas mantém a hitbox
+        const spriteScale = 1.2;
+        ctx.drawImage(assasSprites[spriteFrame], 
+            -player.r * spriteScale, 
+            -player.r * spriteScale, 
+            player.r * 2 * spriteScale, 
+            player.r * 2 * spriteScale);
     } else {
-        // Bola amarela normal com rotação
         ctx.rotate(player.angle);
         ctx.drawImage(ballImg, -player.r, -player.r, player.r * 2, player.r * 2);
     }
