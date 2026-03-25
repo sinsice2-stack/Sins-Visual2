@@ -99,36 +99,25 @@ ballImg.src = 'bola amarela.webp';
 const gunImg = new Image(); 
 gunImg.src = 'arma-de-gelo.webp'; 
 
-// Sprites do Assas com controle de escala proporcional
+// Sprites do Assas com escala proporcional e maior (sem distorção)
 const assasSprites = [];
-const assasSpriteData = []; // armazena dimensões e escala calculada
+const assasSpriteData = [];
 let assasLoadedCount = 0;
 const totalAssasSprites = 8;
-
-function onAssasSpriteLoaded(index) {
-    assasLoadedCount++;
-    if (assasLoadedCount === totalAssasSprites) {
-        // todos carregados, podemos iniciar o jogo se já não tiver iniciado
-        if (gameRunning) {
-            // já começou, mas as imagens terminaram de carregar depois
-        }
-    }
-}
 
 for (let i = 1; i <= 8; i++) {
     const img = new Image();
     img.src = `bola-amarela-assas${i.toString().padStart(4, '0')}.webp`;
     img.onload = (function(idx) {
         return function() {
-            // Calcula escala uniforme para que o sprite caiba dentro do diâmetro da bola (36px)
-            // ou um pouco maior, mantendo proporção
-            const targetSize = player.r * 2; // 36px
+            // Define um tamanho alvo maior que o diâmetro da bola para ficar mais visível
+            const targetSize = 52; // 36 * 1.44 ≈ 52px – ajuste conforme preferir
             const imgW = this.width;
             const imgH = this.height;
-            // Escala baseada no maior lado para que o sprite caiba dentro do targetSize
+            // Escala baseada no maior lado para que o sprite ocupe o targetSize
             const scale = targetSize / Math.max(imgW, imgH);
             assasSpriteData[idx] = { w: imgW, h: imgH, scale: scale };
-            onAssasSpriteLoaded(idx);
+            assasLoadedCount++;
         };
     })(i-1);
     assasSprites.push(img);
