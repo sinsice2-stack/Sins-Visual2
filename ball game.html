@@ -73,7 +73,7 @@ function getBiome(n) {
     if (n <= 32) return { bg: "#2a0000", g: "#440000", t: "#ff4500", lava: true, hasGun: true, grav: 0.8 };
     if (n === 33) return { bg: "#4a5b6d", g: "#2c3e50", t: "#ecf0f1", grav: 0.95, isMountain: true }; 
     if (n <= 50) return { bg: "#001a33", g: "#003366", t: "#00d4ff", water: true, grav: 0.2 }; 
-    if (n <= 70) return { bg: "#050505", g: "#111", t: "#f00", laser: true, grav: 0.85, isAssas: true }; 
+    if (n <= 70) return { bg: "#050505", g: "#111", t: "#f00", laser: true, grav: 0.8, isAssas: true, flappy: true }; 
     return { bg: "#000011", g: "#000", t: "#fff", space: true, grav: 0.05 };
 }
 
@@ -84,20 +84,20 @@ function generateLevel(n) {
     lasers = [];
     
     if (b.laser) {
-        let numLasers = 7;
+        let numLasers = 8;
         for(let i=0; i < numLasers; i++) {
             lasers.push({ 
-                x: 100 + (i * 130), 
-                y: 100 + (random() * 300), 
+                x: 100 + (i * 120), 
+                y: 50 + (random() * 400), 
                 angle: random() * Math.PI, 
-                rotSpeed: 0.012, 
-                len: 85 
+                rotSpeed: 0.015, 
+                len: 90 
             });
         }
     }
 
     if (b.isMountain) {
-        lv.push({x: 950, y: 400, type: 'goal'});
+        lv.push({x: 950, y: 150, type: 'goal'}); // Bandeira bem alta no topo
         return lv;
     }
 
@@ -127,12 +127,16 @@ function update() {
 
     if (keys[39]) player.vx += 0.8; if (keys[37]) player.vx -= 0.8;
     
+    // RAMPA DA MONTANHA LONGA E ÍNGREME
     if (b.isMountain) {
-        if (player.x < 500) player.vx -= 0.18; 
-        else player.vx += 0.25;
-        let groundY = 460 - Math.sin((player.x / 1000) * Math.PI) * 280;
+        // Puxa mais para trás quanto mais alto sobe
+        if (player.x < 700) player.vx -= 0.22; 
+        else player.vx += 0.35;
+        
+        // Curva mais alta (A rampa agora sobe até quase o topo da tela)
+        let groundY = 480 - Math.sin((player.x / 1000) * Math.PI) * 350;
         if (player.y + player.r > groundY) {
-            player.grounded = true; player.canDoubleJump = true; player.vy = 0; player.y = groundY - player.r;
+            player.grounded = true; player.vy = 0; player.y = groundY - player.r;
         }
     }
 
@@ -142,14 +146,12 @@ function update() {
     if (player.x < player.r) player.x = player.r;
     if (player.x > 1000 - player.r) player.x = 1000 - player.r;
 
-    // Cronômetro
     let timeDiff = Date.now() - startTime;
     let mins = Math.floor(timeDiff / 60000).toString().padStart(2, '0');
     let secs = Math.floor((timeDiff % 60000) / 1000).toString().padStart(2, '0');
     let msecs = Math.floor((timeDiff % 1000) / 10).toString().padStart(2, '0');
     document.getElementById("timer").innerText = `${mins}:${secs}:${msecs}`;
 
-    // Lógica das balas (Arma de Gelo)
     for (let i = bullets.length - 1; i >= 0; i--) {
         let bu = bullets[i]; bu.x += bu.vx; bu.y += bu.vy;
         if(b.lava && bu.y > 480) {
@@ -179,7 +181,7 @@ function update() {
     });
 
     if (b.lava && player.y > 480) { deaths++; loadLevel(currentLevel); }
-    if (player.y > 600) { deaths++; loadLevel(currentLevel); }
+    if (player.y > 600 || player.y < -100) { deaths++; loadLevel(currentLevel); }
     document.getElementById("deathCount").innerText = deaths;
 }
 
@@ -195,13 +197,12 @@ function draw() {
     ctx.clearRect(0, 0, 1000, 500);
     ctx.fillStyle = b.bg; ctx.fillRect(0, 0, 1000, 500);
 
-    // LAVA (DESENHO)
     if(b.lava) { ctx.fillStyle = "#ff4500"; ctx.fillRect(0, 480, 1000, 20); }
 
     if (b.isMountain) {
         ctx.beginPath(); ctx.moveTo(0, 500);
         for (let x = 0; x <= 1000; x += 5) {
-            let y = 460 - Math.sin((x / 1000) * Math.PI) * 280;
+            let y = 480 - Math.sin((x / 1000) * Math.PI) * 350;
             ctx.lineTo(x, y);
         }
         ctx.lineTo(1000, 500);
@@ -234,7 +235,6 @@ function draw() {
     }
     ctx.restore();
 
-    // ARMA (DESENHO)
     if(b.hasGun) {
         ctx.save(); ctx.translate(player.x, player.y);
         let angle = Math.atan2(mouse.y - player.y, mouse.x - player.x);
@@ -248,14 +248,19 @@ function gameLoop() { update(); draw(); requestAnimationFrame(gameLoop); }
 window.addEventListener("keydown", e => {
     keys[e.keyCode] = true;
     if (e.keyCode === 32) {
-        if (player.grounded) { player.vy = -13; player.grounded = false; }
-        else if (player.canDoubleJump) { player.vy = -11; player.canDoubleJump = false; }
+        let b = getBiome(currentLevel);
+        // PULO INFINITO (FLAPPY BIRD) PARA BIOMA LASER
+        if (b.flappy) {
+            player.vy = -7; 
+        } else {
+            if (player.grounded) { player.vy = -13; player.grounded = false; }
+            else if (player.canDoubleJump) { player.vy = -11; player.canDoubleJump = false; }
+        }
     }
     if (e.keyCode === 82) platforms = platforms.filter(p => p.type !== 'ice');
 });
 window.addEventListener("keyup", e => keys[e.keyCode] = false);
 
-// EVENTO DE TIRO (DISPARAR ARMA)
 window.addEventListener('mousedown', () => {
     let b = getBiome(currentLevel);
     if(!gameRunning || !b.hasGun) return;
@@ -269,3 +274,4 @@ canvas.addEventListener('mousemove', e => {
 </script>
 </body>
 </html>
+
