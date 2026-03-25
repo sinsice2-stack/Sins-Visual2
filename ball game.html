@@ -97,7 +97,9 @@ function generateLevel(n) {
     }
 
     if (b.isMountain) {
-        lv.push({x: 950, y: 150, type: 'goal'}); // Bandeira bem alta no topo
+        // Calcula o Y exato do chão na posição X=950 para a bandeira não flutuar
+        let goalY = 480 - Math.sin((950 / 1000) * Math.PI) * 350;
+        lv.push({x: 950, y: goalY, type: 'goal'});
         return lv;
     }
 
@@ -127,13 +129,9 @@ function update() {
 
     if (keys[39]) player.vx += 0.8; if (keys[37]) player.vx -= 0.8;
     
-    // RAMPA DA MONTANHA LONGA E ÍNGREME
     if (b.isMountain) {
-        // Puxa mais para trás quanto mais alto sobe
         if (player.x < 700) player.vx -= 0.22; 
         else player.vx += 0.35;
-        
-        // Curva mais alta (A rampa agora sobe até quase o topo da tela)
         let groundY = 480 - Math.sin((player.x / 1000) * Math.PI) * 350;
         if (player.y + player.r > groundY) {
             player.grounded = true; player.vy = 0; player.y = groundY - player.r;
@@ -249,7 +247,6 @@ window.addEventListener("keydown", e => {
     keys[e.keyCode] = true;
     if (e.keyCode === 32) {
         let b = getBiome(currentLevel);
-        // PULO INFINITO (FLAPPY BIRD) PARA BIOMA LASER
         if (b.flappy) {
             player.vy = -7; 
         } else {
@@ -274,4 +271,3 @@ canvas.addEventListener('mousemove', e => {
 </script>
 </body>
 </html>
-
