@@ -83,7 +83,6 @@ function generateLevel(n) {
     const lv = [];
     lasers = [];
     
-    // CORREÇÃO LASERS (Fase 62 corrigida)
     if (b.laser) {
         let numLasers = 7;
         for(let i=0; i < numLasers; i++) {
@@ -97,13 +96,11 @@ function generateLevel(n) {
         }
     }
 
-    // MONSTANHA: Remove degraus e deixa rampa limpa
     if (b.isMountain) {
         lv.push({x: 950, y: 400, type: 'goal'});
         return lv;
     }
 
-    // Geração de plataformas normal com cores seguras
     lv.push({x: 0, y: 400, w: 120, h: 500, c: b.g, t: b.t, type: 'normal'});
     let lx = 120, ly = 400;
     while (lx < 850) {
@@ -130,11 +127,9 @@ function update() {
 
     if (keys[39]) player.vx += 0.8; if (keys[37]) player.vx -= 0.8;
     
-    // FÍSICA MONTANHA LONGA E LISA
     if (b.isMountain) {
-        if (player.x < 500) player.vx -= 0.2; // Subida pesada
-        else player.vx += 0.3; // Descida rápida
-        
+        if (player.x < 500) player.vx -= 0.18; 
+        else player.vx += 0.25;
         let groundY = 460 - Math.sin((player.x / 1000) * Math.PI) * 280;
         if (player.y + player.r > groundY) {
             player.grounded = true; player.canDoubleJump = true; player.vy = 0; player.y = groundY - player.r;
@@ -144,16 +139,25 @@ function update() {
     player.vy += b.grav; player.vx *= 0.95; player.x += player.vx; player.y += player.vy;
     player.angle += player.vx * 0.1;
 
-    // Bloqueios de tela
     if (player.x < player.r) player.x = player.r;
     if (player.x > 1000 - player.r) player.x = 1000 - player.r;
 
-    // Timer
+    // Cronômetro
     let timeDiff = Date.now() - startTime;
     let mins = Math.floor(timeDiff / 60000).toString().padStart(2, '0');
     let secs = Math.floor((timeDiff % 60000) / 1000).toString().padStart(2, '0');
     let msecs = Math.floor((timeDiff % 1000) / 10).toString().padStart(2, '0');
     document.getElementById("timer").innerText = `${mins}:${secs}:${msecs}`;
+
+    // Lógica das balas (Arma de Gelo)
+    for (let i = bullets.length - 1; i >= 0; i--) {
+        let bu = bullets[i]; bu.x += bu.vx; bu.y += bu.vy;
+        if(b.lava && bu.y > 480) {
+            platforms.push({x: bu.x - 35, y: 480, w: 70, h: 20, c: '#add8e6', t: '#fff', type: 'ice'});
+            bullets.splice(i, 1); continue;
+        }
+        if (bu.x < 0 || bu.x > 1000 || bu.y < 0 || bu.y > 500) bullets.splice(i, 1);
+    }
 
     lasers.forEach(l => {
         l.angle += l.rotSpeed;
@@ -174,6 +178,7 @@ function update() {
         }
     });
 
+    if (b.lava && player.y > 480) { deaths++; loadLevel(currentLevel); }
     if (player.y > 600) { deaths++; loadLevel(currentLevel); }
     document.getElementById("deathCount").innerText = deaths;
 }
@@ -190,7 +195,9 @@ function draw() {
     ctx.clearRect(0, 0, 1000, 500);
     ctx.fillStyle = b.bg; ctx.fillRect(0, 0, 1000, 500);
 
-    // Desenha a Rampa da Montanha (Sem degraus)
+    // LAVA (DESENHO)
+    if(b.lava) { ctx.fillStyle = "#ff4500"; ctx.fillRect(0, 480, 1000, 20); }
+
     if (b.isMountain) {
         ctx.beginPath(); ctx.moveTo(0, 500);
         for (let x = 0; x <= 1000; x += 5) {
@@ -217,6 +224,8 @@ function draw() {
         }
     });
 
+    bullets.forEach(bu => { ctx.fillStyle = "cyan"; ctx.beginPath(); ctx.arc(bu.x, bu.y, 6, 0, Math.PI * 2); ctx.fill(); });
+
     ctx.save(); ctx.translate(player.x, player.y); 
     if(b.isAssas) {
         ctx.drawImage(assasSprites[spriteFrame], -player.r * 1.6, -player.r, player.r * 3.2, player.r * 2);
@@ -224,6 +233,14 @@ function draw() {
         ctx.rotate(player.angle); ctx.drawImage(ballImg, -player.r, -player.r, player.r * 2, player.r * 2);
     }
     ctx.restore();
+
+    // ARMA (DESENHO)
+    if(b.hasGun) {
+        ctx.save(); ctx.translate(player.x, player.y);
+        let angle = Math.atan2(mouse.y - player.y, mouse.x - player.x);
+        ctx.rotate(angle); ctx.drawImage(gunImg, 10, -10, 30, 20);
+        ctx.restore();
+    }
 }
 
 function gameLoop() { update(); draw(); requestAnimationFrame(gameLoop); }
@@ -234,8 +251,21 @@ window.addEventListener("keydown", e => {
         if (player.grounded) { player.vy = -13; player.grounded = false; }
         else if (player.canDoubleJump) { player.vy = -11; player.canDoubleJump = false; }
     }
+    if (e.keyCode === 82) platforms = platforms.filter(p => p.type !== 'ice');
 });
 window.addEventListener("keyup", e => keys[e.keyCode] = false);
+
+// EVENTO DE TIRO (DISPARAR ARMA)
+window.addEventListener('mousedown', () => {
+    let b = getBiome(currentLevel);
+    if(!gameRunning || !b.hasGun) return;
+    let a = Math.atan2(mouse.y - player.y, mouse.x - player.x);
+    bullets.push({x: player.x, y: player.y, vx: Math.cos(a)*15, vy: Math.sin(a)*15});
+});
+
+canvas.addEventListener('mousemove', e => { 
+    let r = canvas.getBoundingClientRect(); mouse.x = e.clientX - r.left; mouse.y = e.clientY - r.top; 
+});
 </script>
 </body>
 </html>
