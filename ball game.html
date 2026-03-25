@@ -70,48 +70,49 @@ function random() { rngSeed = (rngSeed * 9301 + 49297) % 233280; return rngSeed 
 function getBiome(n) {
     if (n <= 10) return { bg: "#87ceeb", g: "#5d4037", t: "#2ecc71", grav: 0.8 };
     if (n <= 20) return { bg: "#f0f8ff", g: "#b0c4de", t: "#ffffff", grav: 0.8 };
-    if (n <= 32) return { bg: "#2a0000", lava: true, hasGun: true, grav: 0.8 };
-    if (n === 33) return { bg: "#4a5b6d", grav: 0.95, isMountain: true }; 
-    if (n <= 50) return { bg: "#001a33", water: true, grav: 0.2 }; 
-    if (n <= 70) return { bg: "#050505", laser: true, grav: 0.85, isAssas: true }; 
-    return { bg: "#000011", space: true, grav: 0.05 };
+    if (n <= 32) return { bg: "#2a0000", g: "#440000", t: "#ff4500", lava: true, hasGun: true, grav: 0.8 };
+    if (n === 33) return { bg: "#4a5b6d", g: "#2c3e50", t: "#ecf0f1", grav: 0.95, isMountain: true }; 
+    if (n <= 50) return { bg: "#001a33", g: "#003366", t: "#00d4ff", water: true, grav: 0.2 }; 
+    if (n <= 70) return { bg: "#050505", g: "#111", t: "#f00", laser: true, grav: 0.85, isAssas: true }; 
+    return { bg: "#000011", g: "#000", t: "#fff", space: true, grav: 0.05 };
 }
 
 function generateLevel(n) {
     rngSeed = n * 54321;
     const b = getBiome(n);
-    let lv = [];
+    const lv = [];
     lasers = [];
     
-    // CORREÇÃO LASERS (FASE 62 INCLUSA)
+    // CORREÇÃO LASERS (Fase 62 corrigida)
     if (b.laser) {
-        let numLasers = 7; // Quantidade fixa para evitar bugs de spawn
+        let numLasers = 7;
         for(let i=0; i < numLasers; i++) {
             lasers.push({ 
-                x: 150 + (i * 120), 
+                x: 100 + (i * 130), 
                 y: 100 + (random() * 300), 
                 angle: random() * Math.PI, 
                 rotSpeed: 0.012, 
-                len: 75 
+                len: 85 
             });
         }
     }
 
-    // Se for montanha, não gera degraus (plataformas normais)
+    // MONSTANHA: Remove degraus e deixa rampa limpa
     if (b.isMountain) {
-        lv.push({x: 960, y: 450, type: 'goal'}); // Apenas o objetivo
+        lv.push({x: 950, y: 400, type: 'goal'});
         return lv;
     }
 
-    lv.push({x: 0, y: 400, w: 120, h: 500, c: b.g || "#555", t: b.t || "#777", type: 'normal'});
+    // Geração de plataformas normal com cores seguras
+    lv.push({x: 0, y: 400, w: 120, h: 500, c: b.g, t: b.t, type: 'normal'});
     let lx = 120, ly = 400;
     while (lx < 850) {
         lx += 110 + (random()*80); ly += (random()*120)-60;
         if (ly < 150) ly = 150; if (ly > 440) ly = 400;
         let type = (b.lava || b.laser) && random() > 0.8 ? 'spike' : 'normal';
-        lv.push({x: lx, y: ly, w: 70, h: 25, c: type==='spike'?'#f00':(b.g||"#555"), t: type==='spike'?'#f00':(b.t||"#777"), type: type});
+        lv.push({x: lx, y: ly, w: 70, h: 25, c: type==='spike'?'#f00':b.g, t: type==='spike'?'#f00':b.t, type: type});
     }
-    lv.push({x: 930, y: ly, w: 70, h: 500, c: b.g || "#444", t: b.t || "#666", type: 'normal'});
+    lv.push({x: 930, y: ly, w: 70, h: 500, c: b.g, t: b.t, type: 'normal'});
     lv.push({x: 960, y: ly, type: 'goal'});
     return lv;
 }
@@ -128,14 +129,13 @@ function update() {
     if(b.isAssas) { spriteTimer++; if(spriteTimer % 5 === 0) spriteFrame = (spriteFrame + 1) % 8; }
 
     if (keys[39]) player.vx += 0.8; if (keys[37]) player.vx -= 0.8;
-
-    // FÍSICA DA MONTANHA (RAMPA LISA)
+    
+    // FÍSICA MONTANHA LONGA E LISA
     if (b.isMountain) {
-        // Se X < 500 Subida, se X > 500 Descida
-        if (player.x < 500) player.vx -= 0.18; 
-        else player.vx += 0.22;
+        if (player.x < 500) player.vx -= 0.2; // Subida pesada
+        else player.vx += 0.3; // Descida rápida
         
-        let groundY = 460 - Math.sin((player.x / 1000) * Math.PI) * 250;
+        let groundY = 460 - Math.sin((player.x / 1000) * Math.PI) * 280;
         if (player.y + player.r > groundY) {
             player.grounded = true; player.canDoubleJump = true; player.vy = 0; player.y = groundY - player.r;
         }
@@ -144,7 +144,7 @@ function update() {
     player.vy += b.grav; player.vx *= 0.95; player.x += player.vx; player.y += player.vy;
     player.angle += player.vx * 0.1;
 
-    // Bloqueios
+    // Bloqueios de tela
     if (player.x < player.r) player.x = player.r;
     if (player.x > 1000 - player.r) player.x = 1000 - player.r;
 
@@ -168,7 +168,9 @@ function update() {
         if (p.type === 'goal' && Math.hypot(player.x - p.x, player.y - (p.y - 20)) < 45) loadLevel(currentLevel + 1);
         if (player.x + player.r > p.x && player.x - player.r < p.x + p.w && player.y + player.r > p.y && player.y - player.r < p.y + p.h) {
             if (p.type === 'spike') { deaths++; loadLevel(currentLevel); }
-            if (player.vy > 0 && player.y < p.y + 15) { player.grounded = true; player.canDoubleJump = true; player.vy = 0; player.y = p.y - player.r; }
+            if (player.vy > 0 && player.y < p.y + 15) { 
+                player.grounded = true; player.canDoubleJump = true; player.vy = 0; player.y = p.y - player.r; 
+            }
         }
     });
 
@@ -188,16 +190,16 @@ function draw() {
     ctx.clearRect(0, 0, 1000, 500);
     ctx.fillStyle = b.bg; ctx.fillRect(0, 0, 1000, 500);
 
-    // Desenho da Montanha Lisa
+    // Desenha a Rampa da Montanha (Sem degraus)
     if (b.isMountain) {
         ctx.beginPath(); ctx.moveTo(0, 500);
         for (let x = 0; x <= 1000; x += 5) {
-            let y = 460 - Math.sin((x / 1000) * Math.PI) * 250;
+            let y = 460 - Math.sin((x / 1000) * Math.PI) * 280;
             ctx.lineTo(x, y);
         }
         ctx.lineTo(1000, 500);
-        ctx.fillStyle = "#2c3e50"; ctx.fill();
-        ctx.strokeStyle = "#ecf0f1"; ctx.lineWidth = 4; ctx.stroke();
+        ctx.fillStyle = b.g; ctx.fill();
+        ctx.strokeStyle = b.t; ctx.lineWidth = 4; ctx.stroke();
     }
 
     lasers.forEach(l => {
@@ -211,6 +213,7 @@ function draw() {
             ctx.fillStyle = "red"; ctx.beginPath(); ctx.moveTo(p.x, p.y-70); ctx.lineTo(p.x+40, p.y-50); ctx.lineTo(p.x, p.y-30); ctx.fill();
         } else {
             ctx.fillStyle = p.c; ctx.fillRect(p.x, p.y, p.w, p.h);
+            ctx.fillStyle = p.t; ctx.fillRect(p.x, p.y, p.w, 4);
         }
     });
 
