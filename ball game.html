@@ -93,8 +93,13 @@ const ctx = canvas.getContext("2d");
 canvas.width = 1000; canvas.height = 500;
 
 // SPRITES
-const ballImg = new Image(); ballImg.src = 'bola amarela.webp'; 
-const gunImg = new Image(); gunImg.src = 'arma-de-gelo.webp'; 
+const ballImg = new Image(); 
+ballImg.src = 'bola amarela.webp'; 
+
+const gunImg = new Image(); 
+gunImg.src = 'arma-de-gelo.webp'; 
+
+// CORREÇÃO: Sprites do Assas com tamanho corrigido
 const assasSprites = [];
 for (let i = 1; i <= 8; i++) {
     const img = new Image();
@@ -166,7 +171,6 @@ function getBiome(n) {
     if (n <= 10) return { bg: "#87ceeb", g: "#5d4037", t: "#2ecc71", grav: 0.8 };
     if (n <= 20) return { bg: "#f0f8ff", g: "#b0c4de", t: "#ffffff", grav: 0.8 };
     if (n <= 32) return { bg: "#2a0000", g: "#440000", t: "#ff4500", lava: true, hasGun: true, grav: 0.8 };
-    // FASES DE MONTANHA (33-40)
     if (n === 33) return { bg: "#1a2a3a", g: "#2C1810", t: "#CD853F", grav: 0.8, isMountain: true, mountainType: "vertical" };
     if (n === 34) return { bg: "#2a1a2a", g: "#2C1810", t: "#CD853F", grav: 0.8, isMountain: true, mountainType: "zigzag" };
     if (n === 35) return { bg: "#1a3a2a", g: "#2C1810", t: "#CD853F", grav: 0.8, isMountain: true, mountainType: "floating" };
@@ -253,7 +257,7 @@ function loadLevel(n) {
     
     player.vx = 0;
     player.vy = 0;
-    player.angle = 0; // Reseta o ângulo ao carregar fase
+    player.angle = 0;
     player.grounded = false;
     player.canDoubleJump = true;
     
@@ -263,13 +267,8 @@ function loadLevel(n) {
 function getMountainHeight(x, phase) {
     let t = x / mountainWidth;
     
-    if (phase === 33) {
-        return 480 - t * 400;
-    }
-    if (phase === 34) {
-        let zig = Math.sin(t * Math.PI * 3);
-        return 380 - zig * 180;
-    }
+    if (phase === 33) return 480 - t * 400;
+    if (phase === 34) return 380 - Math.sin(t * Math.PI * 3) * 180;
     if (phase === 35) {
         let platform = Math.floor(t * 10);
         let platformY = [480, 420, 360, 300, 260, 220, 180, 140, 100, 80];
@@ -280,22 +279,14 @@ function getMountainHeight(x, phase) {
         let floor = 480 - t * 300;
         return Math.min(floor, ceiling - 50);
     }
-    if (phase === 37) {
-        let spiral = Math.sin(t * Math.PI * 5) * 120;
-        return 300 + spiral;
-    }
-    if (phase === 38) {
-        return 150 + t * 330;
-    }
-    if (phase === 39) {
-        return 300 + Math.sin(t * Math.PI * 12) * 180;
-    }
+    if (phase === 37) return 300 + Math.sin(t * Math.PI * 5) * 120;
+    if (phase === 38) return 150 + t * 330;
+    if (phase === 39) return 300 + Math.sin(t * Math.PI * 12) * 180;
     if (phase === 40) {
         if (t < 0.3) return 480 - t * 500;
         if (t < 0.6) return 330 - Math.sin((t - 0.3) * Math.PI * 4) * 150;
         return 180 - (t - 0.6) * 200;
     }
-    
     return 480;
 }
 
@@ -309,8 +300,6 @@ function update() {
         player.vx *= 0.98;
         player.x += player.vx;
         player.y += player.vy;
-        
-        // CORREÇÃO: Rotação também na fase final
         player.angle += player.vx * 0.15;
         
         if (player.x < player.r) player.x = player.r;
@@ -331,27 +320,17 @@ function update() {
     
     if(b.isAssas) { spriteTimer++; if(spriteTimer % 5 === 0) spriteFrame = (spriteFrame + 1) % 8; }
 
-    // Controles
     if (keys[39]) player.vx += 0.65;
     if (keys[37]) player.vx -= 0.65;
     
-    // CORREÇÃO: ROTAÇÃO DA BOLA - funciona em TODAS as fases!
-    // A bola gira baseado na velocidade horizontal e também ao pular
-    if (b.isMountain || !b.isMountain) {
-        // Rotação baseada no movimento horizontal
-        player.angle += player.vx * 0.12;
-        
-        // Efeito extra ao pular (quando não está no chão e tem velocidade vertical)
-        if (!player.grounded && Math.abs(player.vy) > 3) {
-            player.angle += (player.vy > 0 ? 0.08 : -0.08);
-        }
-        
-        // Mantém o ângulo dentro de um limite razoável para não ficar louco
-        if (player.angle > Math.PI * 2) player.angle -= Math.PI * 2;
-        if (player.angle < 0) player.angle += Math.PI * 2;
+    // Rotação da bola
+    player.angle += player.vx * 0.12;
+    if (!player.grounded && Math.abs(player.vy) > 3) {
+        player.angle += (player.vy > 0 ? 0.08 : -0.08);
     }
+    if (player.angle > Math.PI * 2) player.angle -= Math.PI * 2;
+    if (player.angle < 0) player.angle += Math.PI * 2;
     
-    // Física da montanha
     if (b.isMountain) {
         let groundY = getMountainHeight(player.x, currentLevel);
         
@@ -364,7 +343,6 @@ function update() {
             player.canDoubleJump = true;
             player.vy = 0;
             player.y = groundY - player.r;
-            
             player.vx *= 0.96;
             player.x = Math.max(player.r, Math.min(mountainWidth - player.r, player.x));
         } else {
@@ -388,17 +366,10 @@ function update() {
             loadLevel(currentLevel);
         }
     } else {
-        // Física normal para outras fases
         player.vy += b.grav; 
         player.vx *= 0.95; 
         player.x += player.vx; 
         player.y += player.vy;
-        
-        // Rotação adicional para fases normais (já tem no bloco acima, mas garantindo)
-        player.angle += player.vx * 0.12;
-        if (!player.grounded && Math.abs(player.vy) > 3) {
-            player.angle += (player.vy > 0 ? 0.08 : -0.08);
-        }
 
         if (player.x < player.r) player.x = player.r;
         if (player.x > 1000 - player.r) player.x = 1000 - player.r;
@@ -624,7 +595,7 @@ function draw() {
         bullets.forEach(bu => { ctx.fillStyle = "cyan"; ctx.beginPath(); ctx.arc(bu.x, bu.y, 6, 0, Math.PI * 2); ctx.fill(); });
     }
     
-    // Renderização do jogador com rotação
+    // CORREÇÃO: Renderização do jogador com tamanho proporcional
     ctx.save();
     if (b.isMountain) {
         ctx.translate(player.x - cameraX, player.y);
@@ -633,9 +604,11 @@ function draw() {
     }
     
     if(b.isAssas) {
-        ctx.drawImage(assasSprites[spriteFrame], -player.r * 1.6, -player.r, player.r * 3.2, player.r * 2);
+        // CORREÇÃO: Desenha os sprites do assas com o MESMO tamanho da bola amarela
+        // Agora usa o mesmo raio (player.r) para largura e altura, mantendo a proporção
+        ctx.drawImage(assasSprites[spriteFrame], -player.r, -player.r, player.r * 2, player.r * 2);
     } else {
-        // Aplica a rotação da bola
+        // Bola amarela normal com rotação
         ctx.rotate(player.angle);
         ctx.drawImage(ballImg, -player.r, -player.r, player.r * 2, player.r * 2);
     }
@@ -670,13 +643,11 @@ window.addEventListener("keydown", e => {
                 let jumpForce = -12;
                 player.vy = jumpForce; 
                 player.grounded = false;
-                // Efeito de rotação extra ao pular
                 player.angle += 0.3;
             }
             else if (player.canDoubleJump) { 
                 player.vy = -10; 
                 player.canDoubleJump = false;
-                // Efeito de rotação no pulo duplo
                 player.angle += 0.5;
             }
         }
