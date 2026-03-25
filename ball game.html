@@ -107,8 +107,9 @@ let keys = {}, mouse = { x: 0, y: 0 }, platforms = [], bullets = [], lasers = []
 let player = { x: 60, y: 300, r: 18, vx: 0, vy: 0, angle: 0, grounded: false, canDoubleJump: true };
 let spriteFrame = 0, spriteTimer = 0;
 let cameraX = 0;
-let mountainWidth = 4000;
+let mountainWidth = 3000;
 let playerName = "";
+let currentMountainPhase = 0;
 
 function startGame() {
     const input = document.getElementById("playerNameInput").value.trim();
@@ -162,12 +163,19 @@ let rngSeed = 1;
 function random() { rngSeed = (rngSeed * 9301 + 49297) % 233280; return rngSeed / 233280; }
 
 function getBiome(n) {
-    // FASE 100 - Final do jogo
     if (n === 100) return { bg: "#FFD700", g: "#FFA500", t: "#FFFFFF", grav: 0.8, isFinal: true };
     if (n <= 10) return { bg: "#87ceeb", g: "#5d4037", t: "#2ecc71", grav: 0.8 };
     if (n <= 20) return { bg: "#f0f8ff", g: "#b0c4de", t: "#ffffff", grav: 0.8 };
     if (n <= 32) return { bg: "#2a0000", g: "#440000", t: "#ff4500", lava: true, hasGun: true, grav: 0.8 };
-    if (n >= 33 && n <= 40) return { bg: "#0A0F1A", g: "#2C1810", t: "#CD853F", grav: 0.88, isMountain: true, gettingOverIt: true, longMountain: true }; 
+    // CORREÇÃO: Cada fase de montanha (33-40) é ÚNICA
+    if (n === 33) return { bg: "#1a2a3a", g: "#2C1810", t: "#CD853F", grav: 0.88, isMountain: true, mountainType: "vertical" };
+    if (n === 34) return { bg: "#2a1a2a", g: "#2C1810", t: "#CD853F", grav: 0.88, isMountain: true, mountainType: "zigzag" };
+    if (n === 35) return { bg: "#1a3a2a", g: "#2C1810", t: "#CD853F", grav: 0.88, isMountain: true, mountainType: "floating" };
+    if (n === 36) return { bg: "#3a2a1a", g: "#2C1810", t: "#CD853F", grav: 0.88, isMountain: true, mountainType: "cave" };
+    if (n === 37) return { bg: "#2a1a3a", g: "#2C1810", t: "#CD853F", grav: 0.88, isMountain: true, mountainType: "spiral" };
+    if (n === 38) return { bg: "#1a2a2a", g: "#2C1810", t: "#CD853F", grav: 0.88, isMountain: true, mountainType: "inverse" };
+    if (n === 39) return { bg: "#3a1a2a", g: "#2C1810", t: "#CD853F", grav: 0.88, isMountain: true, mountainType: "chaos" };
+    if (n === 40) return { bg: "#0a0f1a", g: "#2C1810", t: "#CD853F", grav: 0.88, isMountain: true, mountainType: "final" };
     if (n <= 50) return { bg: "#001a33", g: "#003366", t: "#00d4ff", water: true, grav: 0.2 }; 
     if (n <= 70) return { bg: "#050505", g: "#111", t: "#f00", laser: true, grav: 0.8, isAssas: true, flappy: true }; 
     if (n <= 90) return { bg: "#4a1a2a", g: "#2a0a1a", t: "#ff66cc", grav: 0.85, hasGun: true, isAssas: true };
@@ -180,7 +188,6 @@ function generateLevel(n) {
     const lv = [];
     lasers = [];
     
-    // FASE FINAL (100)
     if (n === 100) {
         lv.push({x: 0, y: 300, w: 1000, h: 200, c: "#FFD700", t: "#FFA500", type: 'normal'});
         lv.push({x: 450, y: 200, type: 'goal'});
@@ -220,7 +227,6 @@ function generateLevel(n) {
 }
 
 function loadLevel(n) { 
-    // VERIFICA SE COMPLETOU O JOGO (FASE 100)
     if (n > 100) {
         showVictory();
         return;
@@ -230,6 +236,7 @@ function loadLevel(n) {
     bullets = []; 
     platforms = generateLevel(n); 
     cameraX = 0;
+    currentMountainPhase = n;
     
     let b = getBiome(n);
     if (b.laser) {
@@ -253,63 +260,71 @@ function loadLevel(n) {
     document.getElementById("lvlNum").innerText = n; 
 }
 
-function getMountainHeight(x) {
+// CORREÇÃO: 8 fases de montanha COMPLETAMENTE DIFERENTES e IMPOSSÍVEIS de passar parado
+function getMountainHeight(x, phase) {
     let t = x / mountainWidth;
     
-    if (t < 0.15) {
-        let progress = t / 0.15;
-        let baseY = 480 - progress * 200;
-        let bumps = Math.sin(x * 0.025) * 8;
-        return baseY + bumps;
+    // FASE 33: VERTICAL - Subida reta com paredes, precisa pular ativamente
+    if (phase === 33) {
+        if (t < 0.3) return 480 - t * 400;
+        if (t < 0.6) return 360 + Math.sin(x * 0.04) * 50;
+        if (t < 0.8) return 310 - (t - 0.6) * 200;
+        return 110 + Math.sin(x * 0.06) * 30;
     }
-    else if (t < 0.25) {
-        let progress = (t - 0.15) / 0.10;
-        let baseY = 280;
-        let bumps = Math.sin(x * 0.035) * 12 + Math.cos(x * 0.018) * 8;
-        return baseY + bumps;
+    
+    // FASE 34: ZIGZAG - Vai e volta, NÃO anda sozinho
+    if (phase === 34) {
+        let zig = Math.sin(t * Math.PI * 4);
+        if (zig > 0) return 480 - t * 200;
+        return 280 + Math.abs(zig) * 150;
     }
-    else if (t < 0.35) {
-        let progress = (t - 0.25) / 0.10;
-        let baseY = 280 - progress * 140;
-        let oscillation = Math.sin(x * 0.045) * 18;
-        return baseY + oscillation;
+    
+    // FASE 35: PLATAFORMAS FLUTUANTES - Precisa pular de uma em uma
+    if (phase === 35) {
+        let platform = Math.floor(t * 8);
+        let platformY = [480, 400, 320, 280, 240, 200, 160, 120];
+        return platformY[Math.min(platform, 7)] + Math.sin(x * 0.08) * 15;
     }
-    else if (t < 0.50) {
-        let progress = (t - 0.35) / 0.15;
-        let firstPeak = 140 - progress * 60;
-        let valley = Math.sin(progress * Math.PI * 3) * 45;
-        return firstPeak + valley;
+    
+    // FASE 36: CAVERNA - Tetos baixos, precisa agachar (controlar altura)
+    if (phase === 36) {
+        let ceiling = 150 + Math.sin(t * Math.PI * 3) * 80;
+        let floor = 480 - t * 200;
+        return Math.min(floor, ceiling - 80);
     }
-    else if (t < 0.62) {
-        let progress = (t - 0.50) / 0.12;
-        let baseY = 80 + progress * 80;
-        let traps = Math.sin(x * 0.03) * 15 + Math.cos(x * 0.05) * 12;
-        return baseY + traps;
+    
+    // FASE 37: ESPIRAL - Forma de caracol, voltas completas
+    if (phase === 37) {
+        let spiral = Math.sin(t * Math.PI * 6) * 100;
+        return 290 + spiral;
     }
-    else if (t < 0.72) {
-        let progress = (t - 0.62) / 0.10;
-        let stepY = 160 - Math.floor(progress * 5) * 20;
-        let wobble = Math.sin(x * 0.08) * 6;
-        return stepY + wobble;
+    
+    // FASE 38: INVERSO - Começa alto, termina baixo, precisa controlar descida
+    if (phase === 38) {
+        if (t < 0.4) return 150 + t * 200;
+        if (t < 0.7) return 230 - (t - 0.4) * 300;
+        return 80 + Math.sin(t * Math.PI * 10) * 40;
     }
-    else if (t < 0.82) {
-        let progress = (t - 0.72) / 0.10;
-        let baseY = 140 - progress * 70;
-        let sharpPeaks = Math.sin(x * 0.055) * 22;
-        return baseY + sharpPeaks;
+    
+    // FASE 39: CAOS - Aleatório e imprevisível, requer reflexo
+    if (phase === 39) {
+        let chaos = Math.sin(t * Math.PI * 15) * 60;
+        let base = 480 - t * 500;
+        if (base < 80) base = 80 + Math.sin(t * Math.PI * 8) * 50;
+        return base + chaos;
     }
-    else if (t < 0.90) {
-        let progress = (t - 0.82) / 0.08;
-        let baseY = 70;
-        let chaos = Math.sin(x * 0.07) * 18 + Math.cos(x * 0.04) * 14;
-        return baseY + chaos;
+    
+    // FASE 40: FINAL - Desafio máximo com vários obstáculos
+    if (phase === 40) {
+        if (t < 0.2) return 480 - t * 400;
+        if (t < 0.35) return 400 - (t - 0.2) * 800;
+        if (t < 0.5) return 280 + Math.sin(t * Math.PI * 12) * 50;
+        if (t < 0.7) return 230 - (t - 0.5) * 500;
+        if (t < 0.85) return 80 + Math.sin(t * Math.PI * 20) * 30;
+        return 80 + (t - 0.85) * 200;
     }
-    else {
-        let progress = (t - 0.90) / 0.10;
-        let baseY = 70 + progress * 35;
-        let gentleSwing = Math.sin(x * 0.02) * 8;
-        return baseY + gentleSwing;
-    }
+    
+    return 480;
 }
 
 function update() {
@@ -317,9 +332,7 @@ function update() {
     
     let b = getBiome(currentLevel);
     
-    // VERIFICA FASE FINAL
     if (currentLevel === 100) {
-        // Fase comemoração - só atravessar
         player.vy += 0.5;
         player.vx *= 0.98;
         player.x += player.vx;
@@ -328,9 +341,8 @@ function update() {
         if (player.x < player.r) player.x = player.r;
         if (player.x > 1000 - player.r) player.x = 1000 - player.r;
         
-        // Goal da fase final
         if (player.x > 450 && player.y + player.r > 180 && player.y - player.r < 220) {
-            loadLevel(101); // Vai para a vitória
+            loadLevel(101);
         }
         
         if (player.y > 500) {
@@ -344,59 +356,80 @@ function update() {
     
     if(b.isAssas) { spriteTimer++; if(spriteTimer % 5 === 0) spriteFrame = (spriteFrame + 1) % 8; }
 
-    if (keys[39]) player.vx += 0.85; 
-    if (keys[37]) player.vx -= 0.85;
+    if (keys[39]) player.vx += 0.9; 
+    if (keys[37]) player.vx -= 0.9;
     
+    // CORREÇÃO: Física da montanha - IMPOSSÍVEL passar sem jogar
     if (b.isMountain) {
-        let groundY = getMountainHeight(player.x);
+        let groundY = getMountainHeight(player.x, currentLevel);
         
-        player.vy += b.grav;
+        // Gravidade mais forte para dificultar
+        player.vy += b.grav + 0.05;
         player.x += player.vx;
         player.y += player.vy;
         
+        // Colisão com o chão
         if (player.y + player.r > groundY) {
             player.grounded = true;
             player.canDoubleJump = true;
             player.vy = 0;
             player.y = groundY - player.r;
             
-            let nextX = player.x + (player.vx > 0 ? 12 : -12);
-            let nextGroundY = getMountainHeight(nextX);
-            let slope = (nextGroundY - groundY) / 12;
+            // Atrito variável - impede de ficar parado em inclinações
+            let nextX = player.x + (player.vx > 0 ? 15 : -15);
+            let nextGroundY = getMountainHeight(nextX, currentLevel);
+            let slope = (nextGroundY - groundY) / 15;
             
-            let friction = 0.96 - Math.abs(slope) * 0.08;
-            player.vx *= Math.max(0.92, Math.min(0.98, friction));
+            // Em subidas íngremes, o jogador escorrega para trás se não estiver se movendo
+            if (slope > 0.1 && Math.abs(player.vx) < 0.5) {
+                player.vx -= slope * 0.8;
+            }
+            
+            // Atrito base reduzido - não mantém velocidade parado
+            let friction = 0.94 - Math.abs(slope) * 0.12;
+            player.vx *= Math.max(0.88, Math.min(0.96, friction));
             
             player.x = Math.max(player.r, Math.min(mountainWidth - player.r, player.x));
         } else {
             player.grounded = false;
         }
         
-        let nextGroundY = getMountainHeight(player.x + (player.vx > 0 ? 10 : -10));
-        let slope = (nextGroundY - groundY) / 10;
+        // Efeito de inclinação na velocidade - descidas forçam movimento
+        let nextGroundY = getMountainHeight(player.x + (player.vx > 0 ? 12 : -12), currentLevel);
+        let slope = (nextGroundY - groundY) / 12;
         
         if (!player.grounded) {
-            player.vx += slope * 0.45;
+            player.vx += slope * 0.6;
         } else {
-            if (slope < -0.15) {
-                player.vx += Math.abs(slope) * 2.2;
-            } else if (slope > 0.15) {
-                player.vx *= 0.94;
-                player.vx -= slope * 0.8;
+            if (slope < -0.1) {
+                // Descida - ganha velocidade automaticamente
+                player.vx += Math.abs(slope) * 2.5;
+            } else if (slope > 0.1) {
+                // Subida - perde velocidade rapidamente e pode parar
+                player.vx *= 0.92;
+                player.vx -= slope * 1.2;
             }
         }
         
-        let maxSpeed = 18;
-        if (Math.abs(slope) > 0.2) maxSpeed = 22;
+        // Limita velocidade
+        let maxSpeed = 20;
         player.vx = Math.min(Math.max(player.vx, -maxSpeed), maxSpeed);
         
+        // CAMERA - segue o jogador
         cameraX = player.x - canvas.width / 2;
         cameraX = Math.max(0, Math.min(mountainWidth - canvas.width, cameraX));
         
-        if (player.x > mountainWidth - 100 && player.y + player.r > getMountainHeight(mountainWidth - 80) - 15) {
-            if (Math.abs(player.x - (mountainWidth - 80)) < 60) {
+        // Verifica goal
+        if (player.x > mountainWidth - 100 && player.y + player.r > getMountainHeight(mountainWidth - 80, currentLevel) - 15) {
+            if (Math.abs(player.x - (mountainWidth - 80)) < 80) {
                 loadLevel(currentLevel + 1);
             }
+        }
+        
+        // Se cair muito baixo, morre
+        if (player.y > 550) {
+            deaths++;
+            loadLevel(currentLevel);
         }
     } else {
         player.vy += b.grav; 
@@ -465,12 +498,10 @@ function draw() {
     let b = getBiome(currentLevel);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // FASE FINAL (100)
     if (currentLevel === 100) {
         ctx.fillStyle = "#FFD700";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
-        // Confetes animados
         for (let i = 0; i < 50; i++) {
             ctx.fillStyle = `hsl(${Date.now() + i * 100}, 100%, 50%)`;
             ctx.fillRect((i * 20 + Date.now() * 0.01) % canvas.width, (i * 10) % canvas.height, 5, 5);
@@ -498,10 +529,21 @@ function draw() {
     }
     
     if (b.isMountain) {
+        // Céu diferente para cada fase
+        const skyColors = {
+            33: ["#1a2a3a", "#2a3a4a"],
+            34: ["#2a1a2a", "#3a2a3a"],
+            35: ["#1a3a2a", "#2a4a3a"],
+            36: ["#3a2a1a", "#4a3a2a"],
+            37: ["#2a1a3a", "#3a2a4a"],
+            38: ["#1a2a2a", "#2a3a3a"],
+            39: ["#3a1a2a", "#4a2a3a"],
+            40: ["#0a0f1a", "#1a1f2a"]
+        };
+        let colors = skyColors[currentLevel] || ["#0A0F1A", "#1A1F2A"];
         let grad = ctx.createLinearGradient(0, 0, 0, 500);
-        grad.addColorStop(0, "#0A0F1A");
-        grad.addColorStop(0.5, "#1A1F2A");
-        grad.addColorStop(1, "#2A1A0F");
+        grad.addColorStop(0, colors[0]);
+        grad.addColorStop(1, colors[1]);
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
@@ -509,9 +551,9 @@ function draw() {
         ctx.translate(-cameraX, 0);
         
         ctx.beginPath();
-        ctx.moveTo(0, getMountainHeight(0));
+        ctx.moveTo(0, getMountainHeight(0, currentLevel));
         for (let x = 0; x <= mountainWidth; x += 8) {
-            let y = getMountainHeight(x);
+            let y = getMountainHeight(x, currentLevel);
             ctx.lineTo(x, y);
         }
         ctx.lineTo(mountainWidth, 500);
@@ -525,32 +567,32 @@ function draw() {
         ctx.fillStyle = groundGrad;
         ctx.fill();
         
-        ctx.fillStyle = "#3A2218";
-        for (let x = 0; x <= mountainWidth; x += 35) {
-            let y = getMountainHeight(x);
-            if (y < 400 && Math.sin(x * 0.03) > 0.5) {
-                ctx.beginPath();
-                ctx.ellipse(x, y - 4, 5, 3, 0, 0, Math.PI * 2);
-                ctx.fill();
-            }
-        }
-        
         ctx.strokeStyle = "#CD853F";
         ctx.lineWidth = 2.5;
         ctx.stroke();
         
-        ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
-        for (let x = 0; x <= mountainWidth; x += 20) {
-            let y = getMountainHeight(x);
-            if (y < 110) {
-                ctx.beginPath();
-                ctx.ellipse(x, y - 2, 6, 3, 0, 0, Math.PI * 2);
-                ctx.fill();
-            }
-        }
+        // Nome da fase
+        ctx.font = "bold 24px monospace";
+        ctx.fillStyle = "#FFD700";
+        ctx.shadowBlur = 5;
+        ctx.fillText(`FASE ${currentLevel}`, cameraX + 20, 50);
+        ctx.font = "14px monospace";
+        ctx.fillStyle = "#FFF";
+        const phaseNames = {
+            33: "⚡ VERTICAL",
+            34: "🌀 ZIGZAG",
+            35: "☁️ PLATAFORMAS",
+            36: "🕳️ CAVERNA",
+            37: "🌀 ESPIRAL",
+            38: "⬇️ INVERSO",
+            39: "💥 CAOS",
+            40: "👑 FINAL"
+        };
+        ctx.fillText(phaseNames[currentLevel] || "MONTANHA", cameraX + 20, 80);
+        ctx.shadowBlur = 0;
         
         let goalX = mountainWidth - 80;
-        let goalY = getMountainHeight(goalX);
+        let goalY = getMountainHeight(goalX, currentLevel);
         
         ctx.fillStyle = "#fff";
         ctx.fillRect(goalX - 2, goalY - 45, 4, 45);
@@ -661,12 +703,12 @@ window.addEventListener("keydown", e => {
         else {
             if (player.grounded) { 
                 let jumpForce = -13;
-                if (b.isMountain) jumpForce = -14.5;
+                if (b.isMountain) jumpForce = -15;
                 player.vy = jumpForce; 
                 player.grounded = false;
             }
             else if (player.canDoubleJump) { 
-                player.vy = -11.5; 
+                player.vy = -12; 
                 player.canDoubleJump = false; 
             }
         }
