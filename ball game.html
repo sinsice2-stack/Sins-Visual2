@@ -12,6 +12,62 @@
         input { padding: 12px; font-size: 18px; border-radius: 5px; border: none; margin-bottom: 20px; text-align: center; width: 250px; }
         .hud { color: white; position: absolute; top: 20px; font-size: 18px; width: 100%; pointer-events: none; display: flex; justify-content: space-around; z-index: 10; font-weight: bold; text-shadow: 2px 2px 4px #000; }
         b { color: #00fbff; font-size: 24px; }
+        .victory-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #1a0033, #000000);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            animation: fadeIn 1s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes glow {
+            0% { text-shadow: 0 0 10px gold; }
+            100% { text-shadow: 0 0 30px orange; }
+        }
+        .victory-title {
+            font-size: 72px;
+            font-weight: bold;
+            color: gold;
+            animation: glow 0.5s infinite alternate;
+            margin-bottom: 20px;
+        }
+        .victory-stats {
+            font-size: 24px;
+            margin: 20px;
+            text-align: center;
+            line-height: 2;
+        }
+        .victory-stats span {
+            color: #00fbff;
+            font-weight: bold;
+            font-size: 32px;
+        }
+        .restart-btn {
+            padding: 15px 40px;
+            margin-top: 30px;
+            font-size: 20px;
+            cursor: pointer;
+            background: gold;
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+        .restart-btn:hover {
+            transform: scale(1.1);
+            background: orange;
+            box-shadow: 0 0 30px gold;
+        }
     </style>
 </head>
 <body>
@@ -50,32 +106,71 @@ let currentLevel = 1, deaths = 0, startTime, gameRunning = false;
 let keys = {}, mouse = { x: 0, y: 0 }, platforms = [], bullets = [], lasers = [];
 let player = { x: 60, y: 300, r: 18, vx: 0, vy: 0, angle: 0, grounded: false, canDoubleJump: true };
 let spriteFrame = 0, spriteTimer = 0;
+let cameraX = 0;
+let mountainWidth = 4000;
+let playerName = "";
 
 function startGame() {
     const input = document.getElementById("playerNameInput").value.trim();
     if (input === "") return;
+    playerName = input.toUpperCase();
     document.getElementById("startMenu").style.display = "none";
     document.getElementById("gameHud").style.display = "flex";
-    document.getElementById("displayName").innerText = input.toUpperCase();
+    document.getElementById("displayName").innerText = playerName;
     canvas.style.display = "block";
     gameRunning = true; 
     startTime = Date.now();
+    deaths = 0;
+    document.getElementById("deathCount").innerText = deaths;
     loadLevel(1); 
     gameLoop();
+}
+
+function showVictory() {
+    gameRunning = false;
+    canvas.style.display = "none";
+    document.getElementById("gameHud").style.display = "none";
+    
+    const timeDiff = Date.now() - startTime;
+    const mins = Math.floor(timeDiff / 60000);
+    const secs = Math.floor((timeDiff % 60000) / 1000);
+    const totalDeaths = deaths;
+    
+    const victoryDiv = document.createElement("div");
+    victoryDiv.className = "victory-overlay";
+    victoryDiv.innerHTML = `
+        <div class="victory-title">✨ VITÓRIA! ✨</div>
+        <div class="victory-stats">
+            🎮 JOGADOR: <span>${playerName}</span><br>
+            ⭐ FASES COMPLETAS: <span>100</span><br>
+            💀 TOTAL DE MORTES: <span>${totalDeaths}</span><br>
+            ⏱️ TEMPO TOTAL: <span>${mins} minutos e ${secs} segundos</span><br>
+            🏆 VOCÊ CONQUISTOU A SUPER BALL! 🏆
+        </div>
+        <button class="restart-btn" onclick="restartGame()">▶ JOGAR NOVAMENTE</button>
+    `;
+    document.body.appendChild(victoryDiv);
+}
+
+function restartGame() {
+    const victoryDiv = document.querySelector(".victory-overlay");
+    if (victoryDiv) victoryDiv.remove();
+    startGame();
 }
 
 let rngSeed = 1;
 function random() { rngSeed = (rngSeed * 9301 + 49297) % 233280; return rngSeed / 233280; }
 
 function getBiome(n) {
+    // FASE 100 - Final do jogo
+    if (n === 100) return { bg: "#FFD700", g: "#FFA500", t: "#FFFFFF", grav: 0.8, isFinal: true };
     if (n <= 10) return { bg: "#87ceeb", g: "#5d4037", t: "#2ecc71", grav: 0.8 };
     if (n <= 20) return { bg: "#f0f8ff", g: "#b0c4de", t: "#ffffff", grav: 0.8 };
     if (n <= 32) return { bg: "#2a0000", g: "#440000", t: "#ff4500", lava: true, hasGun: true, grav: 0.8 };
-    // CORREÇÃO: Fase 33-40 - Montanha estilo Getting Over It
-    if (n >= 33 && n <= 40) return { bg: "#8B5A2B", g: "#5D3A1A", t: "#CD853F", grav: 0.85, isMountain: true, gettingOverIt: true }; 
+    if (n >= 33 && n <= 40) return { bg: "#0A0F1A", g: "#2C1810", t: "#CD853F", grav: 0.88, isMountain: true, gettingOverIt: true, longMountain: true }; 
     if (n <= 50) return { bg: "#001a33", g: "#003366", t: "#00d4ff", water: true, grav: 0.2 }; 
-    // CORREÇÃO: Fases dos Lasers (51-70) com spawn seguro
     if (n <= 70) return { bg: "#050505", g: "#111", t: "#f00", laser: true, grav: 0.8, isAssas: true, flappy: true }; 
+    if (n <= 90) return { bg: "#4a1a2a", g: "#2a0a1a", t: "#ff66cc", grav: 0.85, hasGun: true, isAssas: true };
     return { bg: "#000011", g: "#000", t: "#fff", space: true, grav: 0.05 };
 }
 
@@ -85,10 +180,15 @@ function generateLevel(n) {
     const lv = [];
     lasers = [];
     
-    // CORREÇÃO: Lasers com spawn seguro - posicionados longe do início
+    // FASE FINAL (100)
+    if (n === 100) {
+        lv.push({x: 0, y: 300, w: 1000, h: 200, c: "#FFD700", t: "#FFA500", type: 'normal'});
+        lv.push({x: 450, y: 200, type: 'goal'});
+        return lv;
+    }
+    
     if (b.laser) {
         for(let i = 0; i < 12; i++) {
-            // Garante que nenhum laser nasça nos primeiros 150 pixels (área segura)
             let safeX = 150 + (random() * 800);
             lasers.push({ 
                 x: safeX, 
@@ -100,11 +200,9 @@ function generateLevel(n) {
         }
     }
 
-    // CORREÇÃO: Fase Montanha estilo Getting Over It - terreno desafiador
     if (b.isMountain) {
-        lv.push({x: 0, y: 480, w: 1000, h: 20, type: 'ground'});
-        // Goal no topo do penhasco (difícil de alcançar)
-        lv.push({x: 920, y: 80, type: 'goal'});
+        lv.push({x: 0, y: 480, w: mountainWidth, h: 20, type: 'ground'});
+        lv.push({x: mountainWidth - 80, y: 80, type: 'goal'});
         return lv;
     }
 
@@ -122,15 +220,26 @@ function generateLevel(n) {
 }
 
 function loadLevel(n) { 
+    // VERIFICA SE COMPLETOU O JOGO (FASE 100)
+    if (n > 100) {
+        showVictory();
+        return;
+    }
+    
     currentLevel = n; 
     bullets = []; 
     platforms = generateLevel(n); 
+    cameraX = 0;
     
-    // CORREÇÃO: Spawn seguro para fases de laser - posiciona o jogador longe dos lasers
     let b = getBiome(n);
     if (b.laser) {
-        // Spawn no canto esquerdo, longe dos lasers que nascem a partir de 150px
         player.x = 40;
+        player.y = 250;
+    } else if (b.isMountain) {
+        player.x = 50;
+        player.y = 300;
+    } else if (n === 100) {
+        player.x = 100;
         player.y = 250;
     } else {
         player.x = 60;
@@ -144,111 +253,152 @@ function loadLevel(n) {
     document.getElementById("lvlNum").innerText = n; 
 }
 
-// CORREÇÃO: Função para altura da montanha estilo Getting Over It
 function getMountainHeight(x) {
-    let t = x / 1000;
-    
-    // Terreno extremamente desafiador estilo Getting Over It
-    // Subidas íngremes, platôs traiçoeiros e quedas brutais
+    let t = x / mountainWidth;
     
     if (t < 0.15) {
-        // Primeira subida íngreme
-        return 480 - (t / 0.15) * 200;
-    } 
-    else if (t < 0.28) {
-        // Platô traiçoeiro
-        return 280 + Math.sin(t * Math.PI * 8) * 15;
+        let progress = t / 0.15;
+        let baseY = 480 - progress * 200;
+        let bumps = Math.sin(x * 0.025) * 8;
+        return baseY + bumps;
     }
-    else if (t < 0.42) {
-        // Segunda subida desafiadora
-        let progress = (t - 0.28) / 0.14;
-        return 280 - progress * 120;
+    else if (t < 0.25) {
+        let progress = (t - 0.15) / 0.10;
+        let baseY = 280;
+        let bumps = Math.sin(x * 0.035) * 12 + Math.cos(x * 0.018) * 8;
+        return baseY + bumps;
     }
-    else if (t < 0.55) {
-        // Área de pedras instáveis
-        return 160 + Math.sin(t * Math.PI * 12) * 20;
+    else if (t < 0.35) {
+        let progress = (t - 0.25) / 0.10;
+        let baseY = 280 - progress * 140;
+        let oscillation = Math.sin(x * 0.045) * 18;
+        return baseY + oscillation;
     }
-    else if (t < 0.70) {
-        // Subida final íngreme
-        let progress = (t - 0.55) / 0.15;
-        return 160 - progress * 80;
+    else if (t < 0.50) {
+        let progress = (t - 0.35) / 0.15;
+        let firstPeak = 140 - progress * 60;
+        let valley = Math.sin(progress * Math.PI * 3) * 45;
+        return firstPeak + valley;
     }
-    else if (t < 0.85) {
-        // Crista da montanha - área perigosa
-        return 80 + Math.sin(t * Math.PI * 10) * 15;
+    else if (t < 0.62) {
+        let progress = (t - 0.50) / 0.12;
+        let baseY = 80 + progress * 80;
+        let traps = Math.sin(x * 0.03) * 15 + Math.cos(x * 0.05) * 12;
+        return baseY + traps;
+    }
+    else if (t < 0.72) {
+        let progress = (t - 0.62) / 0.10;
+        let stepY = 160 - Math.floor(progress * 5) * 20;
+        let wobble = Math.sin(x * 0.08) * 6;
+        return stepY + wobble;
+    }
+    else if (t < 0.82) {
+        let progress = (t - 0.72) / 0.10;
+        let baseY = 140 - progress * 70;
+        let sharpPeaks = Math.sin(x * 0.055) * 22;
+        return baseY + sharpPeaks;
+    }
+    else if (t < 0.90) {
+        let progress = (t - 0.82) / 0.08;
+        let baseY = 70;
+        let chaos = Math.sin(x * 0.07) * 18 + Math.cos(x * 0.04) * 14;
+        return baseY + chaos;
     }
     else {
-        // Descida para o goal
-        let progress = (t - 0.85) / 0.15;
-        return 80 + progress * 20;
+        let progress = (t - 0.90) / 0.10;
+        let baseY = 70 + progress * 35;
+        let gentleSwing = Math.sin(x * 0.02) * 8;
+        return baseY + gentleSwing;
     }
 }
 
 function update() {
     if (!gameRunning) return;
+    
     let b = getBiome(currentLevel);
+    
+    // VERIFICA FASE FINAL
+    if (currentLevel === 100) {
+        // Fase comemoração - só atravessar
+        player.vy += 0.5;
+        player.vx *= 0.98;
+        player.x += player.vx;
+        player.y += player.vy;
+        
+        if (player.x < player.r) player.x = player.r;
+        if (player.x > 1000 - player.r) player.x = 1000 - player.r;
+        
+        // Goal da fase final
+        if (player.x > 450 && player.y + player.r > 180 && player.y - player.r < 220) {
+            loadLevel(101); // Vai para a vitória
+        }
+        
+        if (player.y > 500) {
+            deaths++;
+            loadLevel(100);
+        }
+        
+        document.getElementById("deathCount").innerText = deaths;
+        return;
+    }
+    
     if(b.isAssas) { spriteTimer++; if(spriteTimer % 5 === 0) spriteFrame = (spriteFrame + 1) % 8; }
 
-    // Controles do jogador
-    if (keys[39]) player.vx += 0.8; 
-    if (keys[37]) player.vx -= 0.8;
+    if (keys[39]) player.vx += 0.85; 
+    if (keys[37]) player.vx -= 0.85;
     
-    // CORREÇÃO: Física da montanha estilo Getting Over It
     if (b.isMountain) {
-        // Obtém altura do terreno
         let groundY = getMountainHeight(player.x);
         
-        // Aplica gravidade mais pesada
         player.vy += b.grav;
         player.x += player.vx;
         player.y += player.vy;
         
-        // Colisão com o chão
         if (player.y + player.r > groundY) {
             player.grounded = true;
             player.canDoubleJump = true;
             player.vy = 0;
             player.y = groundY - player.r;
             
-            // Efeito de atrito no chão (menos controle)
-            player.vx *= 0.96;
+            let nextX = player.x + (player.vx > 0 ? 12 : -12);
+            let nextGroundY = getMountainHeight(nextX);
+            let slope = (nextGroundY - groundY) / 12;
             
-            // Impede que saia dos limites
-            player.x = Math.max(player.r, Math.min(1000 - player.r, player.x));
+            let friction = 0.96 - Math.abs(slope) * 0.08;
+            player.vx *= Math.max(0.92, Math.min(0.98, friction));
+            
+            player.x = Math.max(player.r, Math.min(mountainWidth - player.r, player.x));
         } else {
             player.grounded = false;
         }
         
-        // CORREÇÃO: Efeito de inclinação - se estiver descendo rápido, ganha mais velocidade
-        let nextGroundY = getMountainHeight(player.x + (player.vx > 0 ? 8 : -8));
-        let slope = (nextGroundY - groundY) / 8;
+        let nextGroundY = getMountainHeight(player.x + (player.vx > 0 ? 10 : -10));
+        let slope = (nextGroundY - groundY) / 10;
         
         if (!player.grounded) {
-            // No ar, mantém inércia realista
-            player.vx += slope * 0.3;
+            player.vx += slope * 0.45;
         } else {
-            // No chão, inclinação afeta movimento
-            if (slope < -0.1) {
-                // Descida - ganha velocidade
-                player.vx += Math.abs(slope) * 1.5;
-            } else if (slope > 0.1) {
-                // Subida - perde velocidade
-                player.vx *= 0.97;
-                player.vx -= slope * 0.5;
+            if (slope < -0.15) {
+                player.vx += Math.abs(slope) * 2.2;
+            } else if (slope > 0.15) {
+                player.vx *= 0.94;
+                player.vx -= slope * 0.8;
             }
         }
         
-        // Limita velocidade máxima
-        player.vx = Math.min(Math.max(player.vx, -14), 16);
+        let maxSpeed = 18;
+        if (Math.abs(slope) > 0.2) maxSpeed = 22;
+        player.vx = Math.min(Math.max(player.vx, -maxSpeed), maxSpeed);
         
-        // Verifica goal na fase montanha
-        if (player.x > 890 && player.y + player.r > getMountainHeight(920) - 15) {
-            if (Math.abs(player.x - 920) < 50) {
+        cameraX = player.x - canvas.width / 2;
+        cameraX = Math.max(0, Math.min(mountainWidth - canvas.width, cameraX));
+        
+        if (player.x > mountainWidth - 100 && player.y + player.r > getMountainHeight(mountainWidth - 80) - 15) {
+            if (Math.abs(player.x - (mountainWidth - 80)) < 60) {
                 loadLevel(currentLevel + 1);
             }
         }
     } else {
-        // Movimento normal para outras fases
         player.vy += b.grav; 
         player.vx *= 0.95; 
         player.x += player.vx; 
@@ -274,21 +424,18 @@ function update() {
         if (bu.x < 0 || bu.x > 1000 || bu.y < 0 || bu.y > 500) bullets.splice(i, 1);
     }
 
-    // CORREÇÃO: Verificação de colisão com lasers com margem de segurança
     lasers.forEach(l => {
         l.angle += l.rotSpeed;
         let x2 = l.x + Math.cos(l.angle) * l.len;
         let y2 = l.y + Math.sin(l.angle) * l.len;
         let dist = distToSegment({x: player.x, y: player.y}, {x: l.x, y: l.y}, {x: x2, y: y2});
         
-        // Margem extra de segurança (3px) para evitar mortes injustas
         if (dist < player.r - 3) { 
             deaths++; 
             loadLevel(currentLevel); 
         }
     });
 
-    // Colisões com plataformas (apenas para fases não-montanha)
     if (!b.isMountain) {
         player.grounded = false;
         platforms.forEach(p => {
@@ -316,109 +463,169 @@ function distToSegment(p, v, w) {
 
 function draw() {
     let b = getBiome(currentLevel);
-    ctx.clearRect(0, 0, 1000, 500);
-    ctx.fillStyle = b.bg; ctx.fillRect(0, 0, 1000, 500);
-
-    if(b.lava) { ctx.fillStyle = "#ff4500"; ctx.fillRect(0, 480, 1000, 20); }
-
-    // CORREÇÃO: Desenho da montanha estilo Getting Over It
-    if (b.isMountain) {
-        // Desenha céu dramático
-        let grad = ctx.createLinearGradient(0, 0, 0, 500);
-        grad.addColorStop(0, "#4A2A1A");
-        grad.addColorStop(1, "#2A1A0A");
-        ctx.fillStyle = grad;
-        ctx.fillRect(0, 0, 1000, 500);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // FASE FINAL (100)
+    if (currentLevel === 100) {
+        ctx.fillStyle = "#FFD700";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
         
-        // Desenha o terreno montanhoso
+        // Confetes animados
+        for (let i = 0; i < 50; i++) {
+            ctx.fillStyle = `hsl(${Date.now() + i * 100}, 100%, 50%)`;
+            ctx.fillRect((i * 20 + Date.now() * 0.01) % canvas.width, (i * 10) % canvas.height, 5, 5);
+        }
+        
+        ctx.fillStyle = "#FFA500";
+        ctx.fillRect(0, 300, canvas.width, 200);
+        
+        ctx.font = "bold 36px Arial";
+        ctx.fillStyle = "#FFF";
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = "black";
+        ctx.fillText("✨ FASE FINAL! ✨", canvas.width/2 - 150, 80);
+        ctx.font = "20px Arial";
+        ctx.fillText("Vá até o portal dourado!", canvas.width/2 - 130, 140);
+        
+        ctx.fillStyle = "#FFD700";
+        ctx.fillRect(450, 200, 100, 50);
+        ctx.fillStyle = "#FFA500";
+        ctx.fillRect(470, 210, 60, 30);
+        ctx.font = "16px Arial";
+        ctx.fillStyle = "#FFF";
+        ctx.fillText("GOAL", 485, 240);
+        ctx.shadowBlur = 0;
+    }
+    
+    if (b.isMountain) {
+        let grad = ctx.createLinearGradient(0, 0, 0, 500);
+        grad.addColorStop(0, "#0A0F1A");
+        grad.addColorStop(0.5, "#1A1F2A");
+        grad.addColorStop(1, "#2A1A0F");
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        ctx.save();
+        ctx.translate(-cameraX, 0);
+        
         ctx.beginPath();
         ctx.moveTo(0, getMountainHeight(0));
-        for (let x = 0; x <= 1000; x += 5) {
+        for (let x = 0; x <= mountainWidth; x += 8) {
             let y = getMountainHeight(x);
             ctx.lineTo(x, y);
         }
-        ctx.lineTo(1000, 500);
+        ctx.lineTo(mountainWidth, 500);
         ctx.lineTo(0, 500);
         ctx.closePath();
         
-        // Gradiente do terreno
         let groundGrad = ctx.createLinearGradient(0, 400, 0, 100);
-        groundGrad.addColorStop(0, "#5D3A1A");
-        groundGrad.addColorStop(1, "#8B5A2B");
+        groundGrad.addColorStop(0, "#2C1810");
+        groundGrad.addColorStop(0.5, "#4A2A1A");
+        groundGrad.addColorStop(1, "#6B3E1A");
         ctx.fillStyle = groundGrad;
         ctx.fill();
         
-        // Detalhes de textura (pedras)
-        ctx.fillStyle = "#4A2A1A";
-        for (let x = 0; x <= 1000; x += 25) {
+        ctx.fillStyle = "#3A2218";
+        for (let x = 0; x <= mountainWidth; x += 35) {
             let y = getMountainHeight(x);
-            if (y < 400) {
+            if (y < 400 && Math.sin(x * 0.03) > 0.5) {
                 ctx.beginPath();
-                ctx.ellipse(x, y - 3, 4, 2, 0, 0, Math.PI * 2);
+                ctx.ellipse(x, y - 4, 5, 3, 0, 0, Math.PI * 2);
                 ctx.fill();
             }
         }
         
-        // Contorno do terreno
         ctx.strokeStyle = "#CD853F";
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 2.5;
         ctx.stroke();
         
-        // Desenha o goal (bandeira no topo)
-        let goalY = getMountainHeight(920);
+        ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
+        for (let x = 0; x <= mountainWidth; x += 20) {
+            let y = getMountainHeight(x);
+            if (y < 110) {
+                ctx.beginPath();
+                ctx.ellipse(x, y - 2, 6, 3, 0, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        let goalX = mountainWidth - 80;
+        let goalY = getMountainHeight(goalX);
+        
         ctx.fillStyle = "#fff";
-        ctx.fillRect(918, goalY - 35, 4, 35);
+        ctx.fillRect(goalX - 2, goalY - 45, 4, 45);
+        
         ctx.fillStyle = "#ffd700";
         ctx.beginPath();
-        ctx.moveTo(920, goalY - 40);
-        ctx.lineTo(940, goalY - 50);
-        ctx.lineTo(920, goalY - 60);
+        ctx.moveTo(goalX, goalY - 50);
+        ctx.lineTo(goalX + 25, goalY - 60);
+        ctx.lineTo(goalX, goalY - 70);
         ctx.fill();
         
-        // Efeito de brilho no goal
-        ctx.shadowBlur = 15;
+        ctx.shadowBlur = 20;
         ctx.shadowColor = "gold";
-        ctx.fillStyle = "rgba(255, 215, 0, 0.5)";
+        ctx.fillStyle = "rgba(255, 215, 0, 0.4)";
         ctx.beginPath();
-        ctx.arc(920, goalY - 50, 12, 0, Math.PI * 2);
+        ctx.arc(goalX, goalY - 60, 15, 0, Math.PI * 2);
         ctx.fill();
         ctx.shadowBlur = 0;
-    }
-
-    // Desenha lasers com efeito visual
-    lasers.forEach(l => {
-        ctx.save();
-        ctx.translate(l.x, l.y);
-        ctx.rotate(l.angle);
-        ctx.strokeStyle = "#ff3366";
-        ctx.lineWidth = 4;
-        ctx.shadowBlur = 10;
-        ctx.shadowColor = "#ff0000";
-        ctx.beginPath();
-        ctx.moveTo(0, 0);
-        ctx.lineTo(l.len, 0);
-        ctx.stroke();
-        ctx.fillStyle = "#ff6699";
-        ctx.beginPath();
-        ctx.arc(l.len, 0, 4, 0, Math.PI * 2);
-        ctx.fill();
+        
         ctx.restore();
-    });
-
-    platforms.forEach(p => {
-        if(p.type === 'goal' && !b.isMountain) {
-            ctx.fillStyle = "#fff"; ctx.fillRect(p.x-2, p.y-70, 4, 70);
-            ctx.fillStyle = "red"; ctx.beginPath(); ctx.moveTo(p.x, p.y-70); ctx.lineTo(p.x+40, p.y-50); ctx.lineTo(p.x, p.y-30); ctx.fill();
-        } else if (p.type !== 'ground' && !b.isMountain) {
-            ctx.fillStyle = p.c; ctx.fillRect(p.x, p.y, p.w, p.h);
-            ctx.fillStyle = p.t; ctx.fillRect(p.x, p.y, p.w, 4);
-        }
-    });
-
-    bullets.forEach(bu => { ctx.fillStyle = "cyan"; ctx.beginPath(); ctx.arc(bu.x, bu.y, 6, 0, Math.PI * 2); ctx.fill(); });
-
-    // Renderização do jogador
-    ctx.save(); ctx.translate(player.x, player.y); 
+        
+        let progress = (player.x / mountainWidth) * 100;
+        ctx.fillStyle = "rgba(0,0,0,0.7)";
+        ctx.fillRect(10, 10, 200, 15);
+        ctx.fillStyle = "#ffd700";
+        ctx.fillRect(10, 10, progress * 2, 15);
+        ctx.fillStyle = "white";
+        ctx.font = "12px monospace";
+        ctx.fillText(`PROGRESSO: ${Math.floor(progress)}%`, 10, 28);
+        
+    } else if (currentLevel !== 100) {
+        ctx.fillStyle = b.bg;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        if(b.lava) { ctx.fillStyle = "#ff4500"; ctx.fillRect(0, 480, canvas.width, 20); }
+        
+        lasers.forEach(l => {
+            ctx.save();
+            ctx.translate(l.x, l.y);
+            ctx.rotate(l.angle);
+            ctx.strokeStyle = "#ff3366";
+            ctx.lineWidth = 4;
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = "#ff0000";
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(l.len, 0);
+            ctx.stroke();
+            ctx.fillStyle = "#ff6699";
+            ctx.beginPath();
+            ctx.arc(l.len, 0, 3, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        });
+        
+        platforms.forEach(p => {
+            if(p.type === 'goal') {
+                ctx.fillStyle = "#fff"; ctx.fillRect(p.x-2, p.y-70, 4, 70);
+                ctx.fillStyle = "red"; ctx.beginPath(); ctx.moveTo(p.x, p.y-70); ctx.lineTo(p.x+40, p.y-50); ctx.lineTo(p.x, p.y-30); ctx.fill();
+            } else {
+                ctx.fillStyle = p.c; ctx.fillRect(p.x, p.y, p.w, p.h);
+                ctx.fillStyle = p.t; ctx.fillRect(p.x, p.y, p.w, 4);
+            }
+        });
+        
+        bullets.forEach(bu => { ctx.fillStyle = "cyan"; ctx.beginPath(); ctx.arc(bu.x, bu.y, 6, 0, Math.PI * 2); ctx.fill(); });
+    }
+    
+    ctx.save();
+    if (b.isMountain) {
+        ctx.translate(player.x - cameraX, player.y);
+    } else {
+        ctx.translate(player.x, player.y);
+    }
+    
     if(b.isAssas) {
         ctx.drawImage(assasSprites[spriteFrame], -player.r * 1.6, -player.r, player.r * 3.2, player.r * 2);
     } else {
@@ -427,8 +634,9 @@ function draw() {
     }
     ctx.restore();
 
-    if(b.hasGun) {
-        ctx.save(); ctx.translate(player.x, player.y);
+    if(b.hasGun && !b.isMountain && currentLevel !== 100) {
+        ctx.save(); 
+        ctx.translate(player.x, player.y);
         let angle = Math.atan2(mouse.y - player.y, mouse.x - player.x);
         ctx.rotate(angle); 
         ctx.drawImage(gunImg, 10, -10, 30, 20);
@@ -436,25 +644,29 @@ function draw() {
     }
 }
 
-function gameLoop() { update(); draw(); requestAnimationFrame(gameLoop); }
+function gameLoop() { 
+    if (gameRunning) {
+        update(); 
+        draw(); 
+    }
+    requestAnimationFrame(gameLoop); 
+}
 
 window.addEventListener("keydown", e => {
+    if (!gameRunning) return;
     keys[e.keyCode] = true;
     if (e.keyCode === 32) {
         let b = getBiome(currentLevel);
         if (b.flappy) { player.vy = -7; } 
         else {
             if (player.grounded) { 
-                player.vy = -13; 
+                let jumpForce = -13;
+                if (b.isMountain) jumpForce = -14.5;
+                player.vy = jumpForce; 
                 player.grounded = false;
-                
-                // Efeito extra na montanha: pulo mais responsivo
-                if (b.isMountain) {
-                    player.vy = -14;
-                }
             }
             else if (player.canDoubleJump) { 
-                player.vy = -11; 
+                player.vy = -11.5; 
                 player.canDoubleJump = false; 
             }
         }
@@ -464,8 +676,9 @@ window.addEventListener("keydown", e => {
 window.addEventListener("keyup", e => keys[e.keyCode] = false);
 
 window.addEventListener('mousedown', () => {
+    if (!gameRunning) return;
     let b = getBiome(currentLevel);
-    if(!gameRunning || !b.hasGun) return;
+    if(!b.hasGun || b.isMountain || currentLevel === 100) return;
     let a = Math.atan2(mouse.y - player.y, mouse.x - player.x);
     bullets.push({x: player.x, y: player.y, vx: Math.cos(a)*15, vy: Math.sin(a)*15});
 });
