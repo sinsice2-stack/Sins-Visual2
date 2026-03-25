@@ -36,7 +36,7 @@ const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 canvas.width = 1000; canvas.height = 500;
 
-// SPRITES RESTAURADOS AO ORIGINAL
+// SPRITES
 const ballImg = new Image(); ballImg.src = 'bola amarela.webp'; 
 const gunImg = new Image(); gunImg.src = 'arma-de-gelo.webp'; 
 const assasSprites = [];
@@ -71,10 +71,10 @@ function getBiome(n) {
     if (n <= 10) return { bg: "#87ceeb", g: "#5d4037", t: "#2ecc71", grav: 0.8 };
     if (n <= 20) return { bg: "#f0f8ff", g: "#b0c4de", t: "#ffffff", grav: 0.8 };
     if (n <= 32) return { bg: "#2a0000", g: "#440000", t: "#ff4500", lava: true, hasGun: true, grav: 0.8 };
-    // CORREÇÃO: Fase 33 - Montanha com rampa (subida e descida)
-    if (n === 33) return { bg: "#4a5b6d", g: "#2c3e50", t: "#ecf0f1", grav: 0.85, isMountain: true }; 
+    // CORREÇÃO: Fase 33-40 - Montanha estilo Getting Over It
+    if (n >= 33 && n <= 40) return { bg: "#8B5A2B", g: "#5D3A1A", t: "#CD853F", grav: 0.85, isMountain: true, gettingOverIt: true }; 
     if (n <= 50) return { bg: "#001a33", g: "#003366", t: "#00d4ff", water: true, grav: 0.2 }; 
-    // CORREÇÃO: Fase dos Lasers (51-70) com lasers mais curtos e lentos
+    // CORREÇÃO: Fases dos Lasers (51-70) com spawn seguro
     if (n <= 70) return { bg: "#050505", g: "#111", t: "#f00", laser: true, grav: 0.8, isAssas: true, flappy: true }; 
     return { bg: "#000011", g: "#000", t: "#fff", space: true, grav: 0.05 };
 }
@@ -85,24 +85,26 @@ function generateLevel(n) {
     const lv = [];
     lasers = [];
     
-    // CORREÇÃO: Lasers mais curtos (len: 40 ao invés de 90) e mais lentos (rotSpeed: 0.008 ao invés de 0.015)
+    // CORREÇÃO: Lasers com spawn seguro - posicionados longe do início
     if (b.laser) {
         for(let i = 0; i < 12; i++) {
+            // Garante que nenhum laser nasça nos primeiros 150 pixels (área segura)
+            let safeX = 150 + (random() * 800);
             lasers.push({ 
-                x: 60 + (i * 80), 
-                y: 80 + (random() * 380), 
+                x: safeX, 
+                y: 50 + (random() * 400), 
                 angle: random() * Math.PI * 2, 
-                rotSpeed: 0.005 + (random() * 0.006), // Velocidade de rotação mais lenta (0.005-0.011)
-                len: 35 + (random() * 15) // Comprimento reduzido: 35-50 pixels (antes era 90)
+                rotSpeed: 0.005 + (random() * 0.006),
+                len: 35 + (random() * 15)
             });
         }
     }
 
-    // CORREÇÃO: Fase Montanha - Rampa com subida e descida corretas
+    // CORREÇÃO: Fase Montanha estilo Getting Over It - terreno desafiador
     if (b.isMountain) {
-        // Não adicionar plataformas normais, apenas o terreno em rampa
         lv.push({x: 0, y: 480, w: 1000, h: 20, type: 'ground'});
-        lv.push({x: 950, y: 130, type: 'goal'});
+        // Goal no topo do penhasco (difícil de alcançar)
+        lv.push({x: 920, y: 80, type: 'goal'});
         return lv;
     }
 
@@ -120,26 +122,66 @@ function generateLevel(n) {
 }
 
 function loadLevel(n) { 
-    currentLevel = n; bullets = []; platforms = generateLevel(n); 
-    player.x = 60; player.y = 300; player.vx = player.vy = 0; 
+    currentLevel = n; 
+    bullets = []; 
+    platforms = generateLevel(n); 
+    
+    // CORREÇÃO: Spawn seguro para fases de laser - posiciona o jogador longe dos lasers
+    let b = getBiome(n);
+    if (b.laser) {
+        // Spawn no canto esquerdo, longe dos lasers que nascem a partir de 150px
+        player.x = 40;
+        player.y = 250;
+    } else {
+        player.x = 60;
+        player.y = 300;
+    }
+    
+    player.vx = player.vy = 0;
+    player.grounded = false;
+    player.canDoubleJump = true;
+    
     document.getElementById("lvlNum").innerText = n; 
 }
 
-// CORREÇÃO: Função para calcular altura da rampa na fase montanha
+// CORREÇÃO: Função para altura da montanha estilo Getting Over It
 function getMountainHeight(x) {
-    // Curva senoidal que começa baixo (subida) e termina alto (descida)
-    // Inverteu a lógica: antes era descida primeiro, agora é subida primeiro
-    let t = x / 1000; // 0 a 1
-    // Subida suave nos primeiros 40% do percurso, depois descida
-    let height;
-    if (t < 0.4) {
-        // SUBIDA: de 480 até 150
-        height = 480 - (t / 0.4) * 330;
-    } else {
-        // DESCIDA: de 150 até 130 (final)
-        height = 150 - ((t - 0.4) / 0.6) * 20;
+    let t = x / 1000;
+    
+    // Terreno extremamente desafiador estilo Getting Over It
+    // Subidas íngremes, platôs traiçoeiros e quedas brutais
+    
+    if (t < 0.15) {
+        // Primeira subida íngreme
+        return 480 - (t / 0.15) * 200;
+    } 
+    else if (t < 0.28) {
+        // Platô traiçoeiro
+        return 280 + Math.sin(t * Math.PI * 8) * 15;
     }
-    return Math.max(130, Math.min(480, height));
+    else if (t < 0.42) {
+        // Segunda subida desafiadora
+        let progress = (t - 0.28) / 0.14;
+        return 280 - progress * 120;
+    }
+    else if (t < 0.55) {
+        // Área de pedras instáveis
+        return 160 + Math.sin(t * Math.PI * 12) * 20;
+    }
+    else if (t < 0.70) {
+        // Subida final íngreme
+        let progress = (t - 0.55) / 0.15;
+        return 160 - progress * 80;
+    }
+    else if (t < 0.85) {
+        // Crista da montanha - área perigosa
+        return 80 + Math.sin(t * Math.PI * 10) * 15;
+    }
+    else {
+        // Descida para o goal
+        let progress = (t - 0.85) / 0.15;
+        return 80 + progress * 20;
+    }
 }
 
 function update() {
@@ -151,57 +193,59 @@ function update() {
     if (keys[39]) player.vx += 0.8; 
     if (keys[37]) player.vx -= 0.8;
     
-    // CORREÇÃO: Física da rampa na montanha (subida e descida com efeitos reais)
+    // CORREÇÃO: Física da montanha estilo Getting Over It
     if (b.isMountain) {
-        // Obtém a altura do terreno na posição X atual e na próxima posição
-        let currentGroundY = getMountainHeight(player.x);
-        let nextGroundY = getMountainHeight(player.x + (player.vx > 0 ? 10 : -10));
+        // Obtém altura do terreno
+        let groundY = getMountainHeight(player.x);
         
-        // Calcula a inclinação (diferença de altura)
-        let slope = (nextGroundY - currentGroundY) / 20;
-        
-        // Aplica efeito da inclinação na velocidade
-        if (Math.abs(slope) > 0.05) {
-            if (slope > 0) {
-                // SUBIDA: reduz velocidade e aplica resistência
-                player.vx *= 0.98;
-                player.vx -= Math.abs(slope) * 0.8;
-            } else {
-                // DESCIDA: aumenta velocidade (efeito de aceleração)
-                player.vx += Math.abs(slope) * 1.2;
-            }
-        }
-        
-        // Limita velocidade máxima na rampa
-        player.vx = Math.min(Math.max(player.vx, -12), 14);
-        
-        // Aplica gravidade e colisão com o terreno da rampa
+        // Aplica gravidade mais pesada
         player.vy += b.grav;
         player.x += player.vx;
         player.y += player.vy;
         
-        // Obtém altura do terreno na nova posição
-        let groundY = getMountainHeight(player.x);
-        
-        // Colisão com o chão da rampa
+        // Colisão com o chão
         if (player.y + player.r > groundY) {
             player.grounded = true;
             player.canDoubleJump = true;
             player.vy = 0;
             player.y = groundY - player.r;
             
-            // Ajusta posição horizontal se necessário
+            // Efeito de atrito no chão (menos controle)
+            player.vx *= 0.96;
+            
+            // Impede que saia dos limites
             player.x = Math.max(player.r, Math.min(1000 - player.r, player.x));
         } else {
             player.grounded = false;
         }
         
-        // Impede que saia dos limites laterais
-        player.x = Math.max(player.r, Math.min(1000 - player.r, player.x));
+        // CORREÇÃO: Efeito de inclinação - se estiver descendo rápido, ganha mais velocidade
+        let nextGroundY = getMountainHeight(player.x + (player.vx > 0 ? 8 : -8));
+        let slope = (nextGroundY - groundY) / 8;
+        
+        if (!player.grounded) {
+            // No ar, mantém inércia realista
+            player.vx += slope * 0.3;
+        } else {
+            // No chão, inclinação afeta movimento
+            if (slope < -0.1) {
+                // Descida - ganha velocidade
+                player.vx += Math.abs(slope) * 1.5;
+            } else if (slope > 0.1) {
+                // Subida - perde velocidade
+                player.vx *= 0.97;
+                player.vx -= slope * 0.5;
+            }
+        }
+        
+        // Limita velocidade máxima
+        player.vx = Math.min(Math.max(player.vx, -14), 16);
         
         // Verifica goal na fase montanha
-        if (player.x > 930 && player.y + player.r > getMountainHeight(950) - 20) {
-            loadLevel(currentLevel + 1);
+        if (player.x > 890 && player.y + player.r > getMountainHeight(920) - 15) {
+            if (Math.abs(player.x - 920) < 50) {
+                loadLevel(currentLevel + 1);
+            }
         }
     } else {
         // Movimento normal para outras fases
@@ -230,13 +274,18 @@ function update() {
         if (bu.x < 0 || bu.x > 1000 || bu.y < 0 || bu.y > 500) bullets.splice(i, 1);
     }
 
-    // CORREÇÃO: Lasers mais curtos já configurados no generateLevel
+    // CORREÇÃO: Verificação de colisão com lasers com margem de segurança
     lasers.forEach(l => {
         l.angle += l.rotSpeed;
         let x2 = l.x + Math.cos(l.angle) * l.len;
         let y2 = l.y + Math.sin(l.angle) * l.len;
         let dist = distToSegment({x: player.x, y: player.y}, {x: l.x, y: l.y}, {x: x2, y: y2});
-        if (dist < player.r - 2) { deaths++; loadLevel(currentLevel); }
+        
+        // Margem extra de segurança (3px) para evitar mortes injustas
+        if (dist < player.r - 3) { 
+            deaths++; 
+            loadLevel(currentLevel); 
+        }
     });
 
     // Colisões com plataformas (apenas para fases não-montanha)
@@ -272,71 +321,95 @@ function draw() {
 
     if(b.lava) { ctx.fillStyle = "#ff4500"; ctx.fillRect(0, 480, 1000, 20); }
 
-    // CORREÇÃO: Desenho da rampa na fase montanha
+    // CORREÇÃO: Desenho da montanha estilo Getting Over It
     if (b.isMountain) {
+        // Desenha céu dramático
+        let grad = ctx.createLinearGradient(0, 0, 0, 500);
+        grad.addColorStop(0, "#4A2A1A");
+        grad.addColorStop(1, "#2A1A0A");
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, 1000, 500);
+        
+        // Desenha o terreno montanhoso
         ctx.beginPath();
         ctx.moveTo(0, getMountainHeight(0));
-        for (let x = 0; x <= 1000; x += 10) {
+        for (let x = 0; x <= 1000; x += 5) {
             let y = getMountainHeight(x);
             ctx.lineTo(x, y);
         }
         ctx.lineTo(1000, 500);
         ctx.lineTo(0, 500);
         ctx.closePath();
-        ctx.fillStyle = "#5d3a1a";
-        ctx.fill();
-        ctx.strokeStyle = "#8b5a2b";
-        ctx.lineWidth = 3;
-        ctx.stroke();
         
-        // Adiciona neve no topo da montanha
-        ctx.fillStyle = "#fff";
-        for (let x = 0; x <= 1000; x += 15) {
+        // Gradiente do terreno
+        let groundGrad = ctx.createLinearGradient(0, 400, 0, 100);
+        groundGrad.addColorStop(0, "#5D3A1A");
+        groundGrad.addColorStop(1, "#8B5A2B");
+        ctx.fillStyle = groundGrad;
+        ctx.fill();
+        
+        // Detalhes de textura (pedras)
+        ctx.fillStyle = "#4A2A1A";
+        for (let x = 0; x <= 1000; x += 25) {
             let y = getMountainHeight(x);
-            if (y < 200) {
+            if (y < 400) {
                 ctx.beginPath();
-                ctx.arc(x, y - 5, 4, 0, Math.PI * 2);
+                ctx.ellipse(x, y - 3, 4, 2, 0, 0, Math.PI * 2);
                 ctx.fill();
             }
         }
         
-        // Desenha o goal no topo
+        // Contorno do terreno
+        ctx.strokeStyle = "#CD853F";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        // Desenha o goal (bandeira no topo)
+        let goalY = getMountainHeight(920);
         ctx.fillStyle = "#fff";
-        ctx.fillRect(950, getMountainHeight(950) - 30, 4, 30);
+        ctx.fillRect(918, goalY - 35, 4, 35);
         ctx.fillStyle = "#ffd700";
         ctx.beginPath();
-        ctx.moveTo(950, getMountainHeight(950) - 35);
-        ctx.lineTo(970, getMountainHeight(950) - 50);
-        ctx.lineTo(930, getMountainHeight(950) - 50);
+        ctx.moveTo(920, goalY - 40);
+        ctx.lineTo(940, goalY - 50);
+        ctx.lineTo(920, goalY - 60);
         ctx.fill();
+        
+        // Efeito de brilho no goal
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = "gold";
+        ctx.fillStyle = "rgba(255, 215, 0, 0.5)";
+        ctx.beginPath();
+        ctx.arc(920, goalY - 50, 12, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
     }
 
-    // Desenha lasers (agora mais curtos)
+    // Desenha lasers com efeito visual
     lasers.forEach(l => {
         ctx.save();
         ctx.translate(l.x, l.y);
         ctx.rotate(l.angle);
         ctx.strokeStyle = "#ff3366";
         ctx.lineWidth = 4;
-        ctx.shadowBlur = 8;
+        ctx.shadowBlur = 10;
         ctx.shadowColor = "#ff0000";
         ctx.beginPath();
         ctx.moveTo(0, 0);
         ctx.lineTo(l.len, 0);
         ctx.stroke();
-        // Adiciona efeito de brilho na ponta
         ctx.fillStyle = "#ff6699";
         ctx.beginPath();
-        ctx.arc(l.len, 0, 3, 0, Math.PI * 2);
+        ctx.arc(l.len, 0, 4, 0, Math.PI * 2);
         ctx.fill();
         ctx.restore();
     });
 
     platforms.forEach(p => {
-        if(p.type === 'goal') {
+        if(p.type === 'goal' && !b.isMountain) {
             ctx.fillStyle = "#fff"; ctx.fillRect(p.x-2, p.y-70, 4, 70);
             ctx.fillStyle = "red"; ctx.beginPath(); ctx.moveTo(p.x, p.y-70); ctx.lineTo(p.x+40, p.y-50); ctx.lineTo(p.x, p.y-30); ctx.fill();
-        } else if (p.type !== 'ground') {
+        } else if (p.type !== 'ground' && !b.isMountain) {
             ctx.fillStyle = p.c; ctx.fillRect(p.x, p.y, p.w, p.h);
             ctx.fillStyle = p.t; ctx.fillRect(p.x, p.y, p.w, 4);
         }
@@ -344,7 +417,7 @@ function draw() {
 
     bullets.forEach(bu => { ctx.fillStyle = "cyan"; ctx.beginPath(); ctx.arc(bu.x, bu.y, 6, 0, Math.PI * 2); ctx.fill(); });
 
-    // RENDERIZAÇÃO ORIGINAL
+    // Renderização do jogador
     ctx.save(); ctx.translate(player.x, player.y); 
     if(b.isAssas) {
         ctx.drawImage(assasSprites[spriteFrame], -player.r * 1.6, -player.r, player.r * 3.2, player.r * 2);
@@ -371,8 +444,19 @@ window.addEventListener("keydown", e => {
         let b = getBiome(currentLevel);
         if (b.flappy) { player.vy = -7; } 
         else {
-            if (player.grounded) { player.vy = -13; player.grounded = false; }
-            else if (player.canDoubleJump) { player.vy = -11; player.canDoubleJump = false; }
+            if (player.grounded) { 
+                player.vy = -13; 
+                player.grounded = false;
+                
+                // Efeito extra na montanha: pulo mais responsivo
+                if (b.isMountain) {
+                    player.vy = -14;
+                }
+            }
+            else if (player.canDoubleJump) { 
+                player.vy = -11; 
+                player.canDoubleJump = false; 
+            }
         }
     }
     if (e.keyCode === 82) platforms = platforms.filter(p => p.type !== 'ice');
