@@ -219,7 +219,6 @@ function generateLevel(n) {
     }
 
     if (b.isDynamic) {
-        // Plataforma inicial fixa
         lv.push({x: 0, y: 450, w: 80, h: 20, c: "#888", t: "#aaa", type: 'normal'});
         
         let numPlatforms = 6 + Math.floor(random() * 4);
@@ -330,8 +329,8 @@ function update() {
     
     if(b.isAssas) { spriteTimer++; if(spriteTimer % 5 === 0) spriteFrame = (spriteFrame + 1) % 8; }
 
-    // ========== CONTROLE COM VELOCIDADE MAIS RÁPIDA (3.5) ==========
-    const MOVE_SPEED = 3.5;  // Valor intermediário: rápido mas controlável
+    // ========== CONTROLE COM VELOCIDADE ALTA E RESPOSTA IMEDIATA ==========
+    const MOVE_SPEED = 7.0;  // Velocidade alta como antigamente, mas sem aceleração
     
     if (keys[39]) {
         player.vx = MOVE_SPEED;
@@ -339,17 +338,17 @@ function update() {
         player.vx = -MOVE_SPEED;
     } else {
         // Para rapidamente quando solta a tecla
-        player.vx *= 0.96;
+        player.vx *= 0.92;
     }
     
     // Limita a velocidade ao máximo definido
     player.vx = Math.min(Math.max(player.vx, -MOVE_SPEED), MOVE_SPEED);
-    // ================================================================
+    // ======================================================================
     
-    // Rotação
-    player.angle += player.vx * 0.1;
+    // Rotação (ajustada para a velocidade maior)
+    player.angle += player.vx * 0.12;
     if (!player.grounded && Math.abs(player.vy) > 3) {
-        player.angle += (player.vy > 0 ? 0.06 : -0.06);
+        player.angle += (player.vy > 0 ? 0.08 : -0.08);
     }
     if (player.angle > Math.PI * 2) player.angle -= Math.PI * 2;
     if (player.angle < 0) player.angle += Math.PI * 2;
