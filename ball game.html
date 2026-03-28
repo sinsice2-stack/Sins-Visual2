@@ -22,7 +22,6 @@
             box-shadow: 0 0 60px rgba(0,0,0,0.9);
             cursor: crosshair;
         }
-        /* Menu com abas */
         .overlay {
             position: absolute;
             top: 0;
@@ -168,15 +167,28 @@
             background: orange;
             box-shadow: 0 0 30px gold;
         }
-        pre {
+        .cheat-input {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .cheat-input input {
+            width: 200px;
+        }
+        .cheat-list {
+            text-align: left;
             background: #1e1e1e;
-            color: #d4d4d4;
-            padding: 10px;
+            padding: 15px;
             border-radius: 5px;
-            overflow-x: auto;
-            font-size: 12px;
-            white-space: pre-wrap;
-            word-wrap: break-word;
+        }
+        .cheat-list li {
+            margin: 8px 0;
+            font-family: monospace;
+        }
+        .cheat-message {
+            color: #ffcc66;
+            margin-top: 10px;
         }
     </style>
 </head>
@@ -192,7 +204,7 @@
     <div id="startMenu" class="overlay">
         <div class="tabs">
             <button class="tab-btn active" data-tab="tutorial">📘 TUTORIAL</button>
-            <button class="tab-btn" data-tab="code">💻 CÓDIGO</button>
+            <button class="tab-btn" data-tab="secrets">🔐 SEGREDOS</button>
             <button class="tab-btn" data-tab="play">🎮 JOGAR</button>
         </div>
         <div class="tab-content">
@@ -209,9 +221,24 @@
                 <p><strong>Inimigo distorcido:</strong> Um monstro que te teletransporta para uma fase aleatória ao tocar nele. Cuidado!</p>
                 <p><strong>Dicas:</strong> Use o duplo pulo para alcançar plataformas distantes. Nas fases com lasers, espere o momento certo para passar.</p>
             </div>
-            <div id="code" class="tab-pane">
-                <h2>📜 Código do Jogo</h2>
-                <pre id="codeBlock"></pre>
+            <div id="secrets" class="tab-pane">
+                <h2>🔐 CÓDIGOS SECRETOS</h2>
+                <div class="cheat-input">
+                    <input type="text" id="cheatCode" placeholder="Digite o código...">
+                    <button class="menu-btn" onclick="activateCheat()">ATIVAR</button>
+                </div>
+                <div class="cheat-list">
+                    <p><strong>Códigos disponíveis:</strong></p>
+                    <ul>
+                        <li><code>SUPERBALL</code> - Desbloqueia todas as fases (comece da fase 99)</li>
+                        <li><code>INVINCIBLE</code> - Fica invencível por 30 segundos (não morre)</li>
+                        <li><code>NOMORE</code> - Remove o inimigo distorcido da fase atual</li>
+                        <li><code>FASTFWD</code> - Aumenta a velocidade da bola em 50%</li>
+                        <li><code>SLOWMO</code> - Diminui a velocidade da bola pela metade</li>
+                        <li><code>RESET</code> - Volta a velocidade normal</li>
+                    </ul>
+                </div>
+                <div id="cheatMessage" class="cheat-message"></div>
             </div>
             <div id="play" class="tab-pane">
                 <h2>▶️ INICIAR JOGO</h2>
@@ -269,11 +296,17 @@ for (let i = 1; i <= 8; i++) {
 
 let currentLevel = 1, deaths = 0, startTime, gameRunning = false;
 let keys = {}, mouse = { x: 0, y: 0 }, platforms = [], bullets = [], lasers = [], movingPlatforms = [];
-let enemies = []; // array de inimigos
+let enemies = [];
 let enemyFrame = 0, enemyTimer = 0;
 let player = { x: 60, y: 300, r: 18, vx: 0, vy: 0, angle: 0, grounded: false, canDoubleJump: true };
 let spriteFrame = 0, spriteTimer = 0;
 let playerName = "";
+
+// Variáveis para cheats
+let invincibleTimer = 0;
+let speedMultiplier = 1.0;
+let originalMoveSpeed = 8.1;
+let currentMoveSpeed = originalMoveSpeed;
 
 // Funções auxiliares
 function randomInt(min, max) {
@@ -283,20 +316,81 @@ function randomInt(min, max) {
 function getRandomLevel(excludeCurrent = true) {
     let newLevel;
     do {
-        newLevel = randomInt(1, 99); // evita fase 100 (final)
+        newLevel = randomInt(1, 99);
     } while (excludeCurrent && newLevel === currentLevel);
     return newLevel;
 }
 
+// Ativação de cheats
+function activateCheat() {
+    const input = document.getElementById("cheatCode");
+    const code = input.value.trim().toUpperCase();
+    const msgDiv = document.getElementById("cheatMessage");
+    if (!code) return;
+
+    switch(code) {
+        case "SUPERBALL":
+            if (gameRunning) {
+                loadLevel(99);
+                msgDiv.innerHTML = "✅ Código ativado! Você foi para a fase 99!";
+            } else {
+                msgDiv.innerHTML = "⚠️ Ative durante o jogo.";
+            }
+            break;
+        case "INVINCIBLE":
+            if (gameRunning) {
+                invincibleTimer = 30 * 60; // 30 segundos a 60 fps
+                msgDiv.innerHTML = "✨ Invencibilidade ativada por 30 segundos! ✨";
+            } else {
+                msgDiv.innerHTML = "⚠️ Ative durante o jogo.";
+            }
+            break;
+        case "NOMORE":
+            if (gameRunning) {
+                enemies = [];
+                msgDiv.innerHTML = "👻 Inimigo removido da fase atual!";
+            } else {
+                msgDiv.innerHTML = "⚠️ Ative durante o jogo.";
+            }
+            break;
+        case "FASTFWD":
+            if (gameRunning) {
+                speedMultiplier = 1.5;
+                currentMoveSpeed = originalMoveSpeed * speedMultiplier;
+                msgDiv.innerHTML = "⚡ Velocidade aumentada em 50%!";
+            } else {
+                msgDiv.innerHTML = "⚠️ Ative durante o jogo.";
+            }
+            break;
+        case "SLOWMO":
+            if (gameRunning) {
+                speedMultiplier = 0.5;
+                currentMoveSpeed = originalMoveSpeed * speedMultiplier;
+                msgDiv.innerHTML = "🐢 Velocidade reduzida pela metade!";
+            } else {
+                msgDiv.innerHTML = "⚠️ Ative durante o jogo.";
+            }
+            break;
+        case "RESET":
+            if (gameRunning) {
+                speedMultiplier = 1.0;
+                currentMoveSpeed = originalMoveSpeed;
+                msgDiv.innerHTML = "🔄 Velocidade normal restaurada!";
+            } else {
+                msgDiv.innerHTML = "⚠️ Ative durante o jogo.";
+            }
+            break;
+        default:
+            msgDiv.innerHTML = "❌ Código desconhecido!";
+    }
+    input.value = "";
+    setTimeout(() => {
+        if (msgDiv.innerHTML !== "") msgDiv.innerHTML = "";
+    }, 3000);
+}
+
 // Inicialização do menu e tabs
 document.addEventListener("DOMContentLoaded", () => {
-    // Preencher a aba de código com o próprio código fonte (simplificado)
-    const codeBlock = document.getElementById("codeBlock");
-    if (codeBlock) {
-        codeBlock.textContent = document.documentElement.outerHTML;
-    }
-
-    // Configurar abas
     const tabBtns = document.querySelectorAll(".tab-btn");
     const tabPanes = document.querySelectorAll(".tab-pane");
     tabBtns.forEach(btn => {
@@ -322,6 +416,10 @@ function startGame() {
     startTime = Date.now();
     deaths = 0;
     document.getElementById("deathCount").innerText = deaths;
+    // Reset cheats ao iniciar novo jogo
+    invincibleTimer = 0;
+    speedMultiplier = 1.0;
+    currentMoveSpeed = originalMoveSpeed;
     loadLevel(1); 
     gameLoop();
 }
@@ -380,7 +478,7 @@ function generateLevel(n) {
     const lv = [];
     lasers = [];
     movingPlatforms = [];
-    enemies = []; // reinicia inimigos
+    enemies = [];
     
     if (n === 100) {
         lv.push({x: 0, y: 300, w: 1000, h: 200, c: "#FFD700", t: "#FFA500", type: 'normal'});
@@ -445,9 +543,8 @@ function generateLevel(n) {
         lv.push({x: 960, y: ly, type: 'goal'});
     }
     
-    // Adiciona o inimigo em todas as fases (exceto final)
+    // Inimigo em todas as fases (exceto final)
     if (n !== 100) {
-        // Posiciona o inimigo em algum lugar da fase, evitando o início
         let enemyX = randomInt(300, 900);
         let enemyY = randomInt(100, 400);
         enemies.push({
@@ -523,12 +620,11 @@ function update() {
     
     if(b.isAssas) { spriteTimer++; if(spriteTimer % 5 === 0) spriteFrame = (spriteFrame + 1) % 8; }
 
-    // Controle do jogador
-    const MOVE_SPEED = 8.1;
-    if (keys[39]) player.vx = MOVE_SPEED;
-    else if (keys[37]) player.vx = -MOVE_SPEED;
+    // Controle do jogador com velocidade ajustável por cheat
+    if (keys[39]) player.vx = currentMoveSpeed;
+    else if (keys[37]) player.vx = -currentMoveSpeed;
     else player.vx *= 0.92;
-    player.vx = Math.min(Math.max(player.vx, -MOVE_SPEED), MOVE_SPEED);
+    player.vx = Math.min(Math.max(player.vx, -currentMoveSpeed), currentMoveSpeed);
     
     // Rotação
     player.angle += player.vx * 0.14;
@@ -556,7 +652,13 @@ function update() {
         }
         if (player.x + player.r > p.x && player.x - player.r < p.x + p.w && 
             player.y + player.r > p.y && player.y - player.r < p.y + p.h) {
-            if (p.type === 'spike') { deaths++; loadLevel(currentLevel); return; }
+            if (p.type === 'spike') { 
+                if (invincibleTimer <= 0) {
+                    deaths++; 
+                    loadLevel(currentLevel);
+                }
+                return;
+            }
             if (player.vy > 0 && player.y < p.y + 15) {
                 player.grounded = true;
                 player.canDoubleJump = true;
@@ -574,7 +676,13 @@ function update() {
             
             if (player.x + player.r > mp.x && player.x - player.r < mp.x + mp.w && 
                 player.y + player.r > mp.y && player.y - player.r < mp.y + mp.h) {
-                if (mp.type === 'spike') { deaths++; loadLevel(currentLevel); return; }
+                if (mp.type === 'spike') { 
+                    if (invincibleTimer <= 0) {
+                        deaths++; 
+                        loadLevel(currentLevel);
+                    }
+                    return;
+                }
                 if (player.vy > 0 && player.y < mp.y + 15) {
                     player.grounded = true;
                     player.canDoubleJump = true;
@@ -593,16 +701,17 @@ function update() {
         const e = enemies[i];
         if (player.x + player.r > e.x && player.x - player.r < e.x + e.w &&
             player.y + player.r > e.y && player.y - player.r < e.y + e.h) {
-            // Teleporte para fase aleatória (10% de chance de permanecer na mesma)
-            let newLevel;
-            if (Math.random() < 0.1) {
-                newLevel = currentLevel; // 10% de chance de ficar
-            } else {
-                newLevel = getRandomLevel(true);
+            if (invincibleTimer <= 0) {
+                let newLevel;
+                if (Math.random() < 0.1) {
+                    newLevel = currentLevel;
+                } else {
+                    newLevel = getRandomLevel(true);
+                }
+                deaths++;
+                loadLevel(newLevel);
+                return;
             }
-            deaths++; // conta como morte? (opcional)
-            loadLevel(newLevel);
-            return; // sai imediatamente
         }
     }
     
@@ -614,18 +723,32 @@ function update() {
         });
     }
     
-    // Morte por queda, lava, etc.
-    if (player.y > 550) { deaths++; loadLevel(currentLevel); }
-    if (player.y < -150) { deaths++; loadLevel(currentLevel); }
-    if (b.lava && player.y + player.r > 480) { deaths++; loadLevel(currentLevel); }
+    // Atualiza timer de invencibilidade
+    if (invincibleTimer > 0) {
+        invincibleTimer--;
+    }
     
-    // Lasers
+    // Morte por queda, lava, etc. (ignora se invencível)
+    if (invincibleTimer <= 0) {
+        if (player.y > 550) { deaths++; loadLevel(currentLevel); }
+        if (player.y < -150) { deaths++; loadLevel(currentLevel); }
+        if (b.lava && player.y + player.r > 480) { deaths++; loadLevel(currentLevel); }
+    } else {
+        // Impede morte por sair da tela, mas não teleporta
+        if (player.y > 600) player.y = 0;
+        if (player.y < -200) player.y = 500;
+    }
+    
+    // Lasers (ignora se invencível)
     lasers.forEach(l => {
         l.angle += l.rotSpeed;
         let x2 = l.x + Math.cos(l.angle) * l.len;
         let y2 = l.y + Math.sin(l.angle) * l.len;
         let dist = distToSegment({x: player.x, y: player.y}, {x: l.x, y: l.y}, {x: x2, y: y2});
-        if (dist < player.r - 3) { deaths++; loadLevel(currentLevel); }
+        if (dist < player.r - 3 && invincibleTimer <= 0) { 
+            deaths++; 
+            loadLevel(currentLevel); 
+        }
     });
     
     // Balas
@@ -784,6 +907,15 @@ function draw() {
         ctx.font = "14px monospace";
         ctx.fillStyle = "#aaa";
         ctx.fillText("CUIDADO! ESPINHOS SE MOVEM", 20, 80);
+        ctx.shadowBlur = 0;
+    }
+    
+    // Mostra indicador de invencibilidade
+    if (invincibleTimer > 0) {
+        ctx.font = "bold 24px monospace";
+        ctx.fillStyle = "#ffcc00";
+        ctx.shadowBlur = 8;
+        ctx.fillText("✨ INVINCIBLE ✨", canvas.width/2 - 80, 40);
         ctx.shadowBlur = 0;
     }
 }
