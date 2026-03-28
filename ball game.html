@@ -176,16 +176,6 @@
         .cheat-input input {
             width: 200px;
         }
-        .cheat-list {
-            text-align: left;
-            background: #1e1e1e;
-            padding: 15px;
-            border-radius: 5px;
-        }
-        .cheat-list li {
-            margin: 8px 0;
-            font-family: monospace;
-        }
         .cheat-message {
             color: #ffcc66;
             margin-top: 10px;
@@ -218,27 +208,17 @@
                     <li>R : recarregar blocos de gelo (fases com lava)</li>
                 </ul>
                 <p><strong>Objetivo:</strong> Chegar até a bandeira vermelha em cada fase. Complete 100 fases e vença!</p>
-                <p><strong>Inimigo distorcido:</strong> Um monstro que te teletransporta para uma fase aleatória ao tocar nele. Cuidado!</p>
+                <p><strong>Inimigo distorcido:</strong> Aparece a partir da fase 33. Toque nele para ser teleportado para uma fase aleatória! Cuidado!</p>
                 <p><strong>Dicas:</strong> Use o duplo pulo para alcançar plataformas distantes. Nas fases com lasers, espere o momento certo para passar.</p>
             </div>
             <div id="secrets" class="tab-pane">
-                <h2>🔐 CÓDIGOS SECRETOS</h2>
+                <h2>🔐 SEGREDOS</h2>
                 <div class="cheat-input">
                     <input type="text" id="cheatCode" placeholder="Digite o código...">
                     <button class="menu-btn" onclick="activateCheat()">ATIVAR</button>
                 </div>
-                <div class="cheat-list">
-                    <p><strong>Códigos disponíveis:</strong></p>
-                    <ul>
-                        <li><code>SUPERBALL</code> - Desbloqueia todas as fases (comece da fase 99)</li>
-                        <li><code>INVINCIBLE</code> - Fica invencível por 30 segundos (não morre)</li>
-                        <li><code>NOMORE</code> - Remove o inimigo distorcido da fase atual</li>
-                        <li><code>FASTFWD</code> - Aumenta a velocidade da bola em 50%</li>
-                        <li><code>SLOWMO</code> - Diminui a velocidade da bola pela metade</li>
-                        <li><code>RESET</code> - Volta a velocidade normal</li>
-                    </ul>
-                </div>
                 <div id="cheatMessage" class="cheat-message"></div>
+                <p><em>Alguns segredos aguardam ser descobertos...</em></p>
             </div>
             <div id="play" class="tab-pane">
                 <h2>▶️ INICIAR JOGO</h2>
@@ -263,7 +243,7 @@ ballImg.src = 'bola amarela.webp';
 const gunImg = new Image(); 
 gunImg.src = 'arma-de-gelo.webp'; 
 
-// Sprites do inimigo (9 frames)
+// Sprites do inimigo (9 frames) - MAIOR
 const enemySprites = [];
 for (let i = 1; i <= 9; i++) {
     const img = new Image();
@@ -303,10 +283,15 @@ let spriteFrame = 0, spriteTimer = 0;
 let playerName = "";
 
 // Variáveis para cheats
-let invincibleTimer = 0;
-let speedMultiplier = 1.0;
-let originalMoveSpeed = 8.1;
-let currentMoveSpeed = originalMoveSpeed;
+let glitchMode = false;
+let harderMode = false;
+let distortedMode = false;
+let anniversaryTheme = false;
+
+// Variáveis de efeitos glitch
+let glitchOffsetX = 0, glitchOffsetY = 0;
+let glitchTimer = 0;
+let screenShake = 0;
 
 // Funções auxiliares
 function randomInt(min, max) {
@@ -321,7 +306,7 @@ function getRandomLevel(excludeCurrent = true) {
     return newLevel;
 }
 
-// Ativação de cheats
+// Ativação de cheats (códigos não listados)
 function activateCheat() {
     const input = document.getElementById("cheatCode");
     const code = input.value.trim().toUpperCase();
@@ -329,56 +314,26 @@ function activateCheat() {
     if (!code) return;
 
     switch(code) {
-        case "SUPERBALL":
-            if (gameRunning) {
-                loadLevel(99);
-                msgDiv.innerHTML = "✅ Código ativado! Você foi para a fase 99!";
+        case "GAMERUIM":
+            glitchMode = true;
+            msgDiv.innerHTML = "🌀 Modo malfeito ativado!";
+            break;
+        case "HARDER":
+            harderMode = true;
+            msgDiv.innerHTML = "⚡ Dificuldade aumentada!";
+            break;
+        case "3110":
+            const today = new Date();
+            if (today.getMonth() === 9 && today.getDate() === 31) {
+                anniversaryTheme = true;
+                msgDiv.innerHTML = "🎃 Tema especial ativado!";
             } else {
-                msgDiv.innerHTML = "⚠️ Ative durante o jogo.";
+                msgDiv.innerHTML = "❌ Este código só funciona em 31/10!";
             }
             break;
-        case "INVINCIBLE":
-            if (gameRunning) {
-                invincibleTimer = 30 * 60; // 30 segundos a 60 fps
-                msgDiv.innerHTML = "✨ Invencibilidade ativada por 30 segundos! ✨";
-            } else {
-                msgDiv.innerHTML = "⚠️ Ative durante o jogo.";
-            }
-            break;
-        case "NOMORE":
-            if (gameRunning) {
-                enemies = [];
-                msgDiv.innerHTML = "👻 Inimigo removido da fase atual!";
-            } else {
-                msgDiv.innerHTML = "⚠️ Ative durante o jogo.";
-            }
-            break;
-        case "FASTFWD":
-            if (gameRunning) {
-                speedMultiplier = 1.5;
-                currentMoveSpeed = originalMoveSpeed * speedMultiplier;
-                msgDiv.innerHTML = "⚡ Velocidade aumentada em 50%!";
-            } else {
-                msgDiv.innerHTML = "⚠️ Ative durante o jogo.";
-            }
-            break;
-        case "SLOWMO":
-            if (gameRunning) {
-                speedMultiplier = 0.5;
-                currentMoveSpeed = originalMoveSpeed * speedMultiplier;
-                msgDiv.innerHTML = "🐢 Velocidade reduzida pela metade!";
-            } else {
-                msgDiv.innerHTML = "⚠️ Ative durante o jogo.";
-            }
-            break;
-        case "RESET":
-            if (gameRunning) {
-                speedMultiplier = 1.0;
-                currentMoveSpeed = originalMoveSpeed;
-                msgDiv.innerHTML = "🔄 Velocidade normal restaurada!";
-            } else {
-                msgDiv.innerHTML = "⚠️ Ative durante o jogo.";
-            }
+        case "DISTORCED":
+            distortedMode = true;
+            msgDiv.innerHTML = "👾 Modo Distorcido ativado!";
             break;
         default:
             msgDiv.innerHTML = "❌ Código desconhecido!";
@@ -416,10 +371,6 @@ function startGame() {
     startTime = Date.now();
     deaths = 0;
     document.getElementById("deathCount").innerText = deaths;
-    // Reset cheats ao iniciar novo jogo
-    invincibleTimer = 0;
-    speedMultiplier = 1.0;
-    currentMoveSpeed = originalMoveSpeed;
     loadLevel(1); 
     gameLoop();
 }
@@ -487,14 +438,15 @@ function generateLevel(n) {
     }
     
     if (b.laser) {
-        for(let i = 0; i < 12; i++) {
+        let laserCount = harderMode ? 16 : 12;
+        for(let i = 0; i < laserCount; i++) {
             let safeX = 150 + (random() * 800);
             lasers.push({ 
                 x: safeX, 
                 y: 50 + (random() * 400), 
                 angle: random() * Math.PI * 2, 
-                rotSpeed: 0.005 + (random() * 0.006),
-                len: 35 + (random() * 15)
+                rotSpeed: (harderMode ? 0.01 : 0.005) + (random() * (harderMode ? 0.01 : 0.006)),
+                len: (harderMode ? 45 : 35) + (random() * (harderMode ? 20 : 15))
             });
         }
     }
@@ -502,17 +454,17 @@ function generateLevel(n) {
     if (b.isDynamic) {
         lv.push({x: 0, y: 450, w: 80, h: 20, c: "#888", t: "#aaa", type: 'normal'});
         
-        let numPlatforms = 6 + Math.floor(random() * 4);
+        let numPlatforms = harderMode ? 8 + Math.floor(random() * 5) : 6 + Math.floor(random() * 4);
         let startX = 120;
         for (let i = 0; i < numPlatforms; i++) {
             let x = startX + i * (90 + random() * 50);
             if (x > 900) break;
             let y = 200 + random() * 250;
             let w = 60 + random() * 40;
-            let moveRange = 20 + random() * 30;
-            let speed = 0.003 + random() * 0.007;
+            let moveRange = (harderMode ? 40 : 20) + random() * (harderMode ? 50 : 30);
+            let speed = (harderMode ? 0.008 : 0.003) + random() * (harderMode ? 0.012 : 0.007);
             let phase = random() * Math.PI * 2;
-            let type = random() > 0.7 ? 'spike' : 'moving';
+            let type = random() > (harderMode ? 0.5 : 0.7) ? 'spike' : 'moving';
             movingPlatforms.push({
                 x: x, y: y, w: w, h: 15,
                 originalY: y,
@@ -524,7 +476,8 @@ function generateLevel(n) {
             });
         }
         
-        for (let i = 0; i < 4; i++) {
+        let spikeCount = harderMode ? 6 : 4;
+        for (let i = 0; i < spikeCount; i++) {
             lv.push({x: 150 + random() * 700, y: 400 + random() * 50, w: 50, h: 15, c: "#f00", t: "#f88", type: 'spike'});
         }
         
@@ -536,19 +489,19 @@ function generateLevel(n) {
         while (lx < 850) {
             lx += 110 + (random()*80); ly += (random()*120)-60;
             if (ly < 150) ly = 150; if (ly > 440) ly = 400;
-            let type = (b.lava || b.laser) && random() > 0.8 ? 'spike' : 'normal';
+            let type = (b.lava || b.laser) && random() > (harderMode ? 0.6 : 0.8) ? 'spike' : 'normal';
             lv.push({x: lx, y: ly, w: 70, h: 25, c: type==='spike'?'#f00':b.g, t: type==='spike'?'#f00':b.t, type: type});
         }
         lv.push({x: 930, y: ly, w: 70, h: 500, c: b.g, t: b.t, type: 'normal'});
         lv.push({x: 960, y: ly, type: 'goal'});
     }
     
-    // Inimigo em todas as fases (exceto final)
-    if (n !== 100) {
+    // Inimigo aparece apenas a partir da fase 33
+    if (n >= 33 && n !== 100) {
         let enemyX = randomInt(300, 900);
         let enemyY = randomInt(100, 400);
         enemies.push({
-            x: enemyX, y: enemyY, w: 50, h: 50,
+            x: enemyX, y: enemyY, w: 80, h: 80, // MAIOR
             frame: 0, timer: 0
         });
     }
@@ -620,11 +573,12 @@ function update() {
     
     if(b.isAssas) { spriteTimer++; if(spriteTimer % 5 === 0) spriteFrame = (spriteFrame + 1) % 8; }
 
-    // Controle do jogador com velocidade ajustável por cheat
-    if (keys[39]) player.vx = currentMoveSpeed;
-    else if (keys[37]) player.vx = -currentMoveSpeed;
+    // Controle do jogador com velocidade ajustável
+    let moveSpeed = harderMode ? 10.0 : 8.1;
+    if (keys[39]) player.vx = moveSpeed;
+    else if (keys[37]) player.vx = -moveSpeed;
     else player.vx *= 0.92;
-    player.vx = Math.min(Math.max(player.vx, -currentMoveSpeed), currentMoveSpeed);
+    player.vx = Math.min(Math.max(player.vx, -moveSpeed), moveSpeed);
     
     // Rotação
     player.angle += player.vx * 0.14;
@@ -635,7 +589,7 @@ function update() {
     if (player.angle < 0) player.angle += Math.PI * 2;
     
     // Física
-    player.vy += b.grav;
+    player.vy += b.grav * (harderMode ? 1.1 : 1.0);
     player.x += player.vx;
     player.y += player.vy;
     
@@ -653,10 +607,8 @@ function update() {
         if (player.x + player.r > p.x && player.x - player.r < p.x + p.w && 
             player.y + player.r > p.y && player.y - player.r < p.y + p.h) {
             if (p.type === 'spike') { 
-                if (invincibleTimer <= 0) {
-                    deaths++; 
-                    loadLevel(currentLevel);
-                }
+                deaths++; 
+                loadLevel(currentLevel);
                 return;
             }
             if (player.vy > 0 && player.y < p.y + 15) {
@@ -677,10 +629,8 @@ function update() {
             if (player.x + player.r > mp.x && player.x - player.r < mp.x + mp.w && 
                 player.y + player.r > mp.y && player.y - player.r < mp.y + mp.h) {
                 if (mp.type === 'spike') { 
-                    if (invincibleTimer <= 0) {
-                        deaths++; 
-                        loadLevel(currentLevel);
-                    }
+                    deaths++; 
+                    loadLevel(currentLevel);
                     return;
                 }
                 if (player.vy > 0 && player.y < mp.y + 15) {
@@ -696,12 +646,17 @@ function update() {
     
     if (!collisionOccurred) player.grounded = false;
     
-    // Colisão com inimigo (efeito de distorção)
+    // Colisão com inimigo (apenas se houver)
     for (let i = 0; i < enemies.length; i++) {
         const e = enemies[i];
         if (player.x + player.r > e.x && player.x - player.r < e.x + e.w &&
             player.y + player.r > e.y && player.y - player.r < e.y + e.h) {
-            if (invincibleTimer <= 0) {
+            if (distortedMode) {
+                let newLevel = getRandomLevel(true);
+                deaths++;
+                loadLevel(newLevel);
+                return;
+            } else {
                 let newLevel;
                 if (Math.random() < 0.1) {
                     newLevel = currentLevel;
@@ -715,37 +670,37 @@ function update() {
         }
     }
     
-    // Atualiza animação do inimigo
+    // Se distortedMode e não há inimigo e fase >=33, adiciona um novo
+    if (distortedMode && enemies.length === 0 && currentLevel >= 33 && currentLevel !== 100) {
+        let enemyX = randomInt(300, 900);
+        let enemyY = randomInt(100, 400);
+        enemies.push({
+            x: enemyX, y: enemyY, w: 80, h: 80,
+            frame: 0, timer: 0
+        });
+    }
+    
+    // Atualiza animação do inimigo (mais rápida: troca a cada 2 frames)
     enemyTimer++;
-    if (enemyTimer % 6 === 0) {
+    if (enemyTimer >= 2) { // ~30 fps se o jogo roda a 60
+        enemyTimer = 0;
         enemies.forEach(e => {
             e.frame = (e.frame + 1) % 9;
         });
     }
     
-    // Atualiza timer de invencibilidade
-    if (invincibleTimer > 0) {
-        invincibleTimer--;
-    }
+    // Morte por queda, lava, etc.
+    if (player.y > 550) { deaths++; loadLevel(currentLevel); }
+    if (player.y < -150) { deaths++; loadLevel(currentLevel); }
+    if (b.lava && player.y + player.r > 480) { deaths++; loadLevel(currentLevel); }
     
-    // Morte por queda, lava, etc. (ignora se invencível)
-    if (invincibleTimer <= 0) {
-        if (player.y > 550) { deaths++; loadLevel(currentLevel); }
-        if (player.y < -150) { deaths++; loadLevel(currentLevel); }
-        if (b.lava && player.y + player.r > 480) { deaths++; loadLevel(currentLevel); }
-    } else {
-        // Impede morte por sair da tela, mas não teleporta
-        if (player.y > 600) player.y = 0;
-        if (player.y < -200) player.y = 500;
-    }
-    
-    // Lasers (ignora se invencível)
+    // Lasers
     lasers.forEach(l => {
         l.angle += l.rotSpeed;
         let x2 = l.x + Math.cos(l.angle) * l.len;
         let y2 = l.y + Math.sin(l.angle) * l.len;
         let dist = distToSegment({x: player.x, y: player.y}, {x: l.x, y: l.y}, {x: x2, y: y2});
-        if (dist < player.r - 3 && invincibleTimer <= 0) { 
+        if (dist < player.r - 3) { 
             deaths++; 
             loadLevel(currentLevel); 
         }
@@ -768,6 +723,24 @@ function update() {
     let msecs = Math.floor((timeDiff % 1000) / 10).toString().padStart(2, '0');
     document.getElementById("timer").innerText = mins+":"+secs+":"+msecs;
     document.getElementById("deathCount").innerText = deaths;
+    
+    // Efeitos de glitch
+    if (glitchMode) {
+        glitchTimer++;
+        if (glitchTimer % 10 === 0) {
+            glitchOffsetX = (Math.random() - 0.5) * 10;
+            glitchOffsetY = (Math.random() - 0.5) * 10;
+            screenShake = Math.random() * 5;
+        } else {
+            glitchOffsetX *= 0.95;
+            glitchOffsetY *= 0.95;
+            screenShake *= 0.95;
+        }
+    } else {
+        glitchOffsetX = 0;
+        glitchOffsetY = 0;
+        screenShake = 0;
+    }
 }
 
 function distToSegment(p, v, w) {
@@ -781,8 +754,14 @@ function draw() {
     let b = getBiome(currentLevel);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
+    // Aplica tremor de tela se glitchMode ativo
+    if (glitchMode && screenShake > 0.5) {
+        ctx.save();
+        ctx.translate(glitchOffsetX + (Math.random() - 0.5) * screenShake, glitchOffsetY + (Math.random() - 0.5) * screenShake);
+    }
+    
     if (currentLevel === 100) {
-        ctx.fillStyle = "#FFD700";
+        ctx.fillStyle = anniversaryTheme ? "#ff6600" : "#FFD700";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         for (let i = 0; i < 50; i++) {
             ctx.fillStyle = `hsl(${Date.now() + i * 100}, 100%, 50%)`;
@@ -803,74 +782,84 @@ function draw() {
         ctx.fillStyle = "#FFF";
         ctx.fillText("GOAL", 485, 240);
         ctx.shadowBlur = 0;
-    }
-    
-    ctx.fillStyle = b.bg;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
-    if(b.lava) { ctx.fillStyle = "#ff4500"; ctx.fillRect(0, 480, canvas.width, 20); }
-    
-    lasers.forEach(l => {
-        ctx.save();
-        ctx.translate(l.x, l.y);
-        ctx.rotate(l.angle);
-        ctx.strokeStyle = "#ff3366";
-        ctx.lineWidth = 4;
-        ctx.shadowBlur = 8;
-        ctx.beginPath();
-        ctx.moveTo(0, 0);
-        ctx.lineTo(l.len, 0);
-        ctx.stroke();
-        ctx.fillStyle = "#ff6699";
-        ctx.beginPath();
-        ctx.arc(l.len, 0, 3, 0, Math.PI*2);
-        ctx.fill();
-        ctx.restore();
-    });
-    
-    platforms.forEach(p => {
-        if(p.type === 'goal') {
-            ctx.fillStyle = "#fff";
-            ctx.fillRect(p.x-2, p.y-70, 4, 70);
-            ctx.fillStyle = "red";
-            ctx.beginPath();
-            ctx.moveTo(p.x, p.y-70);
-            ctx.lineTo(p.x+40, p.y-50);
-            ctx.lineTo(p.x, p.y-30);
-            ctx.fill();
+    } else {
+        // Fundo com tema de aniversário se ativo
+        if (anniversaryTheme) {
+            ctx.fillStyle = "#ff8800";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            for (let i = 0; i < 100; i++) {
+                ctx.fillStyle = `hsl(${Date.now() + i * 50}, 100%, 50%)`;
+                ctx.fillRect(Math.random() * canvas.width, Math.random() * canvas.height, 2, 2);
+            }
         } else {
-            ctx.fillStyle = p.c;
-            ctx.fillRect(p.x, p.y, p.w, p.h);
-            ctx.fillStyle = p.t;
-            ctx.fillRect(p.x, p.y, p.w, 4);
+            ctx.fillStyle = b.bg;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
-    });
-    
-    if (b.isDynamic) {
-        movingPlatforms.forEach(mp => {
-            ctx.fillStyle = mp.color;
-            ctx.fillRect(mp.x, mp.y, mp.w, mp.h);
-            if (mp.type === 'spike') {
-                ctx.fillStyle = "#f88";
-                for (let i = 0; i < 3; i++) {
-                    ctx.fillRect(mp.x + i*10, mp.y-5, 5, 5);
-                }
+        
+        if(b.lava) { ctx.fillStyle = "#ff4500"; ctx.fillRect(0, 480, canvas.width, 20); }
+        
+        lasers.forEach(l => {
+            ctx.save();
+            ctx.translate(l.x, l.y);
+            ctx.rotate(l.angle);
+            ctx.strokeStyle = "#ff3366";
+            ctx.lineWidth = 4;
+            ctx.shadowBlur = 8;
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(l.len, 0);
+            ctx.stroke();
+            ctx.fillStyle = "#ff6699";
+            ctx.beginPath();
+            ctx.arc(l.len, 0, 3, 0, Math.PI*2);
+            ctx.fill();
+            ctx.restore();
+        });
+        
+        platforms.forEach(p => {
+            if(p.type === 'goal') {
+                ctx.fillStyle = "#fff";
+                ctx.fillRect(p.x-2, p.y-70, 4, 70);
+                ctx.fillStyle = "red";
+                ctx.beginPath();
+                ctx.moveTo(p.x, p.y-70);
+                ctx.lineTo(p.x+40, p.y-50);
+                ctx.lineTo(p.x, p.y-30);
+                ctx.fill();
+            } else {
+                ctx.fillStyle = p.c;
+                ctx.fillRect(p.x, p.y, p.w, p.h);
+                ctx.fillStyle = p.t;
+                ctx.fillRect(p.x, p.y, p.w, 4);
             }
         });
-    }
-    
-    // Desenha inimigo
-    enemies.forEach(e => {
-        const frameIdx = e.frame % 9;
-        if (enemySprites[frameIdx] && enemySprites[frameIdx].complete) {
-            ctx.drawImage(enemySprites[frameIdx], e.x, e.y, e.w, e.h);
-        } else {
-            ctx.fillStyle = "#f0f";
-            ctx.fillRect(e.x, e.y, e.w, e.h);
+        
+        if (b.isDynamic) {
+            movingPlatforms.forEach(mp => {
+                ctx.fillStyle = mp.color;
+                ctx.fillRect(mp.x, mp.y, mp.w, mp.h);
+                if (mp.type === 'spike') {
+                    ctx.fillStyle = "#f88";
+                    for (let i = 0; i < 3; i++) {
+                        ctx.fillRect(mp.x + i*10, mp.y-5, 5, 5);
+                    }
+                }
+            });
         }
-    });
-    
-    bullets.forEach(bu => { ctx.fillStyle = "cyan"; ctx.beginPath(); ctx.arc(bu.x, bu.y, 6, 0, Math.PI*2); ctx.fill(); });
+        
+        // Desenha inimigo (maior)
+        enemies.forEach(e => {
+            const frameIdx = e.frame % 9;
+            if (enemySprites[frameIdx] && enemySprites[frameIdx].complete) {
+                ctx.drawImage(enemySprites[frameIdx], e.x, e.y, e.w, e.h);
+            } else {
+                ctx.fillStyle = "#f0f";
+                ctx.fillRect(e.x, e.y, e.w, e.h);
+            }
+        });
+        
+        bullets.forEach(bu => { ctx.fillStyle = "cyan"; ctx.beginPath(); ctx.arc(bu.x, bu.y, 6, 0, Math.PI*2); ctx.fill(); });
+    }
     
     // Jogador
     ctx.save();
@@ -910,13 +899,40 @@ function draw() {
         ctx.shadowBlur = 0;
     }
     
-    // Mostra indicador de invencibilidade
-    if (invincibleTimer > 0) {
-        ctx.font = "bold 24px monospace";
-        ctx.fillStyle = "#ffcc00";
-        ctx.shadowBlur = 8;
-        ctx.fillText("✨ INVINCIBLE ✨", canvas.width/2 - 80, 40);
-        ctx.shadowBlur = 0;
+    // Se glitchMode ativo, aplicar efeitos adicionais
+    if (glitchMode) {
+        ctx.save();
+        ctx.globalCompositeOperation = "difference";
+        ctx.fillStyle = "rgba(255,0,0,0.2)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.restore();
+        ctx.drawImage(canvas, glitchOffsetX, glitchOffsetY);
+    }
+    
+    if (glitchMode && screenShake > 0.5) {
+        ctx.restore();
+    }
+    
+    // Mostra indicadores dos modos ativos (sem revelar códigos)
+    if (glitchMode) {
+        ctx.font = "bold 16px monospace";
+        ctx.fillStyle = "#ff00ff";
+        ctx.fillText("⚡ GLITCH ⚡", 10, 450);
+    }
+    if (harderMode) {
+        ctx.font = "bold 16px monospace";
+        ctx.fillStyle = "#ff6600";
+        ctx.fillText("💀 HARDER 💀", 10, 470);
+    }
+    if (distortedMode) {
+        ctx.font = "bold 16px monospace";
+        ctx.fillStyle = "#aa44ff";
+        ctx.fillText("🌀 DISTORTED 🌀", 10, 490);
+    }
+    if (anniversaryTheme) {
+        ctx.font = "bold 20px monospace";
+        ctx.fillStyle = "#ffaa00";
+        ctx.fillText("🎃 HALLOWEEN 🎃", canvas.width/2 - 100, 30);
     }
 }
 
