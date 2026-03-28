@@ -4,14 +4,114 @@
     <meta charset="UTF-8">
     <title>Super Ball - Sinsice Definitive Edition</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #000; font-family: 'Segoe UI', sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; }
-        canvas { border: 2px solid #555; box-shadow: 0 0 60px rgba(0,0,0,0.9); cursor: crosshair; }
-        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.9); color: white; z-index: 100; }
-        .menu-btn { padding: 15px 40px; margin: 10px; font-size: 20px; cursor: pointer; background: #00d4ff; border: none; border-radius: 5px; font-weight: bold; transition: 0.3s; }
-        .menu-btn:hover { background: #fff; transform: scale(1.1); color: #000; }
-        input { padding: 12px; font-size: 18px; border-radius: 5px; border: none; margin-bottom: 20px; text-align: center; width: 250px; }
-        .hud { color: white; position: absolute; top: 20px; font-size: 18px; width: 100%; pointer-events: none; display: flex; justify-content: space-around; z-index: 10; font-weight: bold; text-shadow: 2px 2px 4px #000; }
-        b { color: #00fbff; font-size: 24px; }
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #000;
+            font-family: 'Segoe UI', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+        canvas {
+            border: 2px solid #555;
+            box-shadow: 0 0 60px rgba(0,0,0,0.9);
+            cursor: crosshair;
+        }
+        /* Menu com abas */
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            color: white;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .tab-btn {
+            padding: 10px 20px;
+            font-size: 18px;
+            background: #333;
+            border: none;
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: 0.3s;
+        }
+        .tab-btn.active {
+            background: #00d4ff;
+            color: #000;
+        }
+        .tab-content {
+            background: rgba(0,0,0,0.8);
+            padding: 20px;
+            border-radius: 10px;
+            width: 80%;
+            max-width: 800px;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+        .tab-pane {
+            display: none;
+        }
+        .tab-pane.active {
+            display: block;
+        }
+        .menu-btn {
+            padding: 15px 40px;
+            margin: 10px;
+            font-size: 20px;
+            cursor: pointer;
+            background: #00d4ff;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+        .menu-btn:hover {
+            background: #fff;
+            transform: scale(1.05);
+        }
+        input {
+            padding: 12px;
+            font-size: 18px;
+            border-radius: 5px;
+            border: none;
+            margin-bottom: 20px;
+            text-align: center;
+            width: 250px;
+        }
+        .hud {
+            color: white;
+            position: absolute;
+            top: 20px;
+            font-size: 18px;
+            width: 100%;
+            pointer-events: none;
+            display: flex;
+            justify-content: space-around;
+            z-index: 10;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px #000;
+        }
+        b {
+            color: #00fbff;
+            font-size: 24px;
+        }
         .victory-overlay {
             position: absolute;
             top: 0;
@@ -68,6 +168,16 @@
             background: orange;
             box-shadow: 0 0 30px gold;
         }
+        pre {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 12px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
     </style>
 </head>
 <body>
@@ -80,24 +190,59 @@
     </div>
 
     <div id="startMenu" class="overlay">
-        <h1>SUPER BALL 100</h1>
-        <input type="text" id="playerNameInput" placeholder="Seu nome..." maxlength="15">
-        <button class="menu-btn" onclick="startGame()">INICIAR JOGO</button>
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="tutorial">📘 TUTORIAL</button>
+            <button class="tab-btn" data-tab="code">💻 CÓDIGO</button>
+            <button class="tab-btn" data-tab="play">🎮 JOGAR</button>
+        </div>
+        <div class="tab-content">
+            <div id="tutorial" class="tab-pane active">
+                <h2>✨ SUPER BALL 100 ✨</h2>
+                <p><strong>Controles:</strong></p>
+                <ul>
+                    <li>⬅️ ➡️ : mover a bola</li>
+                    <li>␣ (espaço) : pular / duplo pulo</li>
+                    <li>🖱️ mouse (fases com arma) : atirar projéteis de gelo</li>
+                    <li>R : recarregar blocos de gelo (fases com lava)</li>
+                </ul>
+                <p><strong>Objetivo:</strong> Chegar até a bandeira vermelha em cada fase. Complete 100 fases e vença!</p>
+                <p><strong>Inimigo distorcido:</strong> Um monstro que te teletransporta para uma fase aleatória ao tocar nele. Cuidado!</p>
+                <p><strong>Dicas:</strong> Use o duplo pulo para alcançar plataformas distantes. Nas fases com lasers, espere o momento certo para passar.</p>
+            </div>
+            <div id="code" class="tab-pane">
+                <h2>📜 Código do Jogo</h2>
+                <pre id="codeBlock"></pre>
+            </div>
+            <div id="play" class="tab-pane">
+                <h2>▶️ INICIAR JOGO</h2>
+                <input type="text" id="playerNameInput" placeholder="Seu nome..." maxlength="15">
+                <button class="menu-btn" onclick="startGame()">INICIAR JOGO</button>
+            </div>
+        </div>
     </div>
 
     <canvas id="gameCanvas" style="display:none"></canvas>
 
 <script>
+// ======================== CÓDIGO DO JOGO ========================
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 canvas.width = 1000; canvas.height = 500;
 
-// SPRITES
+// Sprites principais
 const ballImg = new Image(); 
 ballImg.src = 'bola amarela.webp'; 
 
 const gunImg = new Image(); 
 gunImg.src = 'arma-de-gelo.webp'; 
+
+// Sprites do inimigo (9 frames)
+const enemySprites = [];
+for (let i = 1; i <= 9; i++) {
+    const img = new Image();
+    img.src = `H_7fRGgTLDJAh6jd4cSYIA${i.toString().padStart(4, '0')}.webp`;
+    enemySprites.push(img);
+}
 
 // Sprites do Assas
 const assasSprites = [];
@@ -124,9 +269,46 @@ for (let i = 1; i <= 8; i++) {
 
 let currentLevel = 1, deaths = 0, startTime, gameRunning = false;
 let keys = {}, mouse = { x: 0, y: 0 }, platforms = [], bullets = [], lasers = [], movingPlatforms = [];
+let enemies = []; // array de inimigos
+let enemyFrame = 0, enemyTimer = 0;
 let player = { x: 60, y: 300, r: 18, vx: 0, vy: 0, angle: 0, grounded: false, canDoubleJump: true };
 let spriteFrame = 0, spriteTimer = 0;
 let playerName = "";
+
+// Funções auxiliares
+function randomInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function getRandomLevel(excludeCurrent = true) {
+    let newLevel;
+    do {
+        newLevel = randomInt(1, 99); // evita fase 100 (final)
+    } while (excludeCurrent && newLevel === currentLevel);
+    return newLevel;
+}
+
+// Inicialização do menu e tabs
+document.addEventListener("DOMContentLoaded", () => {
+    // Preencher a aba de código com o próprio código fonte (simplificado)
+    const codeBlock = document.getElementById("codeBlock");
+    if (codeBlock) {
+        codeBlock.textContent = document.documentElement.outerHTML;
+    }
+
+    // Configurar abas
+    const tabBtns = document.querySelectorAll(".tab-btn");
+    const tabPanes = document.querySelectorAll(".tab-pane");
+    tabBtns.forEach(btn => {
+        btn.addEventListener("click", () => {
+            const target = btn.dataset.tab;
+            tabBtns.forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            tabPanes.forEach(pane => pane.classList.remove("active"));
+            document.getElementById(target).classList.add("active");
+        });
+    });
+});
 
 function startGame() {
     const input = document.getElementById("playerNameInput").value.trim();
@@ -198,6 +380,7 @@ function generateLevel(n) {
     const lv = [];
     lasers = [];
     movingPlatforms = [];
+    enemies = []; // reinicia inimigos
     
     if (n === 100) {
         lv.push({x: 0, y: 300, w: 1000, h: 200, c: "#FFD700", t: "#FFA500", type: 'normal'});
@@ -219,10 +402,8 @@ function generateLevel(n) {
     }
 
     if (b.isDynamic) {
-        // Plataforma inicial fixa
         lv.push({x: 0, y: 450, w: 80, h: 20, c: "#888", t: "#aaa", type: 'normal'});
         
-        // Plataformas móveis mais lentas
         let numPlatforms = 6 + Math.floor(random() * 4);
         let startX = 120;
         for (let i = 0; i < numPlatforms; i++) {
@@ -230,8 +411,8 @@ function generateLevel(n) {
             if (x > 900) break;
             let y = 200 + random() * 250;
             let w = 60 + random() * 40;
-            let moveRange = 20 + random() * 30;   // movimento mais curto
-            let speed = 0.003 + random() * 0.007; // mais lento
+            let moveRange = 20 + random() * 30;
+            let speed = 0.003 + random() * 0.007;
             let phase = random() * Math.PI * 2;
             let type = random() > 0.7 ? 'spike' : 'moving';
             movingPlatforms.push({
@@ -245,29 +426,36 @@ function generateLevel(n) {
             });
         }
         
-        // Espinhos fixos
         for (let i = 0; i < 4; i++) {
             lv.push({x: 150 + random() * 700, y: 400 + random() * 50, w: 50, h: 15, c: "#f00", t: "#f88", type: 'spike'});
         }
         
-        // Plataforma de apoio para a bandeira (goal)
         lv.push({x: 900, y: 370, w: 60, h: 20, c: "#888", t: "#aaa", type: 'normal'});
-        // Bandeira sobre a plataforma
         lv.push({x: 930, y: 360, type: 'goal'});
-        return lv;
+    } else {
+        lv.push({x: 0, y: 400, w: 120, h: 500, c: b.g, t: b.t, type: 'normal'});
+        let lx = 120, ly = 400;
+        while (lx < 850) {
+            lx += 110 + (random()*80); ly += (random()*120)-60;
+            if (ly < 150) ly = 150; if (ly > 440) ly = 400;
+            let type = (b.lava || b.laser) && random() > 0.8 ? 'spike' : 'normal';
+            lv.push({x: lx, y: ly, w: 70, h: 25, c: type==='spike'?'#f00':b.g, t: type==='spike'?'#f00':b.t, type: type});
+        }
+        lv.push({x: 930, y: ly, w: 70, h: 500, c: b.g, t: b.t, type: 'normal'});
+        lv.push({x: 960, y: ly, type: 'goal'});
     }
-
-    // Geração normal
-    lv.push({x: 0, y: 400, w: 120, h: 500, c: b.g, t: b.t, type: 'normal'});
-    let lx = 120, ly = 400;
-    while (lx < 850) {
-        lx += 110 + (random()*80); ly += (random()*120)-60;
-        if (ly < 150) ly = 150; if (ly > 440) ly = 400;
-        let type = (b.lava || b.laser) && random() > 0.8 ? 'spike' : 'normal';
-        lv.push({x: lx, y: ly, w: 70, h: 25, c: type==='spike'?'#f00':b.g, t: type==='spike'?'#f00':b.t, type: type});
+    
+    // Adiciona o inimigo em todas as fases (exceto final)
+    if (n !== 100) {
+        // Posiciona o inimigo em algum lugar da fase, evitando o início
+        let enemyX = randomInt(300, 900);
+        let enemyY = randomInt(100, 400);
+        enemies.push({
+            x: enemyX, y: enemyY, w: 50, h: 50,
+            frame: 0, timer: 0
+        });
     }
-    lv.push({x: 930, y: ly, w: 70, h: 500, c: b.g, t: b.t, type: 'normal'});
-    lv.push({x: 960, y: ly, type: 'goal'});
+    
     return lv;
 }
 
@@ -335,17 +523,11 @@ function update() {
     
     if(b.isAssas) { spriteTimer++; if(spriteTimer % 5 === 0) spriteFrame = (spriteFrame + 1) % 8; }
 
-    // Controle com velocidade constante e resposta imediata
+    // Controle do jogador
     const MOVE_SPEED = 8.1;
-    
-    if (keys[39]) {
-        player.vx = MOVE_SPEED;
-    } else if (keys[37]) {
-        player.vx = -MOVE_SPEED;
-    } else {
-        player.vx *= 0.92;
-    }
-    
+    if (keys[39]) player.vx = MOVE_SPEED;
+    else if (keys[37]) player.vx = -MOVE_SPEED;
+    else player.vx *= 0.92;
     player.vx = Math.min(Math.max(player.vx, -MOVE_SPEED), MOVE_SPEED);
     
     // Rotação
@@ -364,6 +546,7 @@ function update() {
     if (player.x < player.r) player.x = player.r;
     if (player.x > 1000 - player.r) player.x = 1000 - player.r;
     
+    // Colisões com plataformas
     player.grounded = false;
     let collisionOccurred = false;
     
@@ -405,10 +588,38 @@ function update() {
     
     if (!collisionOccurred) player.grounded = false;
     
+    // Colisão com inimigo (efeito de distorção)
+    for (let i = 0; i < enemies.length; i++) {
+        const e = enemies[i];
+        if (player.x + player.r > e.x && player.x - player.r < e.x + e.w &&
+            player.y + player.r > e.y && player.y - player.r < e.y + e.h) {
+            // Teleporte para fase aleatória (10% de chance de permanecer na mesma)
+            let newLevel;
+            if (Math.random() < 0.1) {
+                newLevel = currentLevel; // 10% de chance de ficar
+            } else {
+                newLevel = getRandomLevel(true);
+            }
+            deaths++; // conta como morte? (opcional)
+            loadLevel(newLevel);
+            return; // sai imediatamente
+        }
+    }
+    
+    // Atualiza animação do inimigo
+    enemyTimer++;
+    if (enemyTimer % 6 === 0) {
+        enemies.forEach(e => {
+            e.frame = (e.frame + 1) % 9;
+        });
+    }
+    
+    // Morte por queda, lava, etc.
     if (player.y > 550) { deaths++; loadLevel(currentLevel); }
     if (player.y < -150) { deaths++; loadLevel(currentLevel); }
     if (b.lava && player.y + player.r > 480) { deaths++; loadLevel(currentLevel); }
     
+    // Lasers
     lasers.forEach(l => {
         l.angle += l.rotSpeed;
         let x2 = l.x + Math.cos(l.angle) * l.len;
@@ -417,6 +628,7 @@ function update() {
         if (dist < player.r - 3) { deaths++; loadLevel(currentLevel); }
     });
     
+    // Balas
     for (let i = bullets.length - 1; i >= 0; i--) {
         let bu = bullets[i]; bu.x += bu.vx; bu.y += bu.vy;
         if(b.lava && bu.y > 480) {
@@ -426,6 +638,7 @@ function update() {
         if (bu.x < 0 || bu.x > 1000 || bu.y < 0 || bu.y > 500) bullets.splice(i, 1);
     }
     
+    // Timer
     let timeDiff = Date.now() - startTime;
     let mins = Math.floor(timeDiff / 60000).toString().padStart(2, '0');
     let secs = Math.floor((timeDiff % 60000) / 1000).toString().padStart(2, '0');
@@ -523,8 +736,20 @@ function draw() {
         });
     }
     
+    // Desenha inimigo
+    enemies.forEach(e => {
+        const frameIdx = e.frame % 9;
+        if (enemySprites[frameIdx] && enemySprites[frameIdx].complete) {
+            ctx.drawImage(enemySprites[frameIdx], e.x, e.y, e.w, e.h);
+        } else {
+            ctx.fillStyle = "#f0f";
+            ctx.fillRect(e.x, e.y, e.w, e.h);
+        }
+    });
+    
     bullets.forEach(bu => { ctx.fillStyle = "cyan"; ctx.beginPath(); ctx.arc(bu.x, bu.y, 6, 0, Math.PI*2); ctx.fill(); });
     
+    // Jogador
     ctx.save();
     ctx.translate(player.x, player.y);
     if(b.isAssas) {
