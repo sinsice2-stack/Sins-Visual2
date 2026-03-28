@@ -253,7 +253,7 @@
                     <li>R : recarregar blocos de gelo (fases com lava)</li>
                 </ul>
                 <p><strong>Objetivo:</strong> Chegar até a bandeira vermelha em cada fase. Complete 100 fases e vença!</p>
-                <p><strong>Inimigo distorcido:</strong> Um monstro que te transporta para uma <strong>fase distorcida</strong> ao tocar nele. Complete essa fase para voltar!</p>
+                <p><strong>Inimigo distorcido:</strong> A partir da fase 33, um monstro gigante aparecerá. Se ele te <strong>ver</strong>, o mundo se distorcerá!</p>
                 <p><strong>Dicas:</strong> Use o duplo pulo para alcançar plataformas distantes. Nas fases com lasers, espere o momento certo para passar.</p>
             </div>
             <div id="secrets" class="tab-pane">
@@ -287,7 +287,7 @@ canvas.width = 1000; canvas.height = 500;
 const ballImg = new Image(); ballImg.src = 'bola amarela.webp';
 const gunImg = new Image(); gunImg.src = 'arma-de-gelo.webp';
 
-// Inimigo (9 frames) – tamanho 100x100
+// Inimigo (9 frames) – tamanho 150x150 (enorme)
 const enemySprites = [];
 for (let i = 1; i <= 9; i++) {
     const img = new Image();
@@ -333,16 +333,15 @@ let distortedMode = false;
 let anniversaryTheme = false;
 
 // Controle de fase distorcida
-let isDistorted = false;          // indica se estamos em uma fase distorcida
-let returnToLevel = null;         // fase para a qual voltar após completar a distorcida
-let distortedLevelData = null;    // guarda as plataformas da fase distorcida
-let distortedLasers = null;
-let distortedMovingPlatforms = null;
-let distortedEnemies = null;
+let isDistorted = false;
+let returnToLevel = null;
+let distortedLevelData = null;
 
-// Efeito visual de distorção
-let distortionFlash = 0;
+// Animação de distorção
+let distortionEffect = 0;   // >0 = ativando, 0 = normal
+let distortionIntensity = 0;
 
+// Funções auxiliares
 function randomInt(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
@@ -355,23 +354,22 @@ function getRandomLevel(excludeCurrent = true) {
     return newLevel;
 }
 
-// Gera uma fase distorcida aleatória (procedural)
+// Gera uma fase distorcida (sem inimigo, sem texto)
 function generateDistortedLevel() {
     const lv = [];
     const lz = [];
     const mp = [];
-    const en = [];
 
-    // Cor de fundo caótica
-    const bgColor = `hsl(${Math.random() * 360}, 70%, 20%)`;
+    // Fundo escuro e caótico
+    const bgColor = `hsl(${Math.random() * 360}, 80%, 10%)`;
 
-    // Número aleatório de plataformas
-    let numPlats = randomInt(8, 15);
+    // Número aleatório de plataformas (mais caótico)
+    let numPlats = randomInt(10, 18);
     let lastX = 50;
     for (let i = 0; i < numPlats; i++) {
-        let x = lastX + randomInt(60, 120);
+        let x = lastX + randomInt(60, 130);
         if (x > 920) break;
-        let y = randomInt(100, 450);
+        let y = randomInt(80, 450);
         let w = randomInt(50, 100);
         let h = randomInt(15, 25);
         let type = Math.random() > 0.7 ? 'spike' : 'normal';
@@ -380,13 +378,13 @@ function generateDistortedLevel() {
     }
 
     // Adiciona algumas plataformas móveis
-    let numMoving = randomInt(2, 5);
+    let numMoving = randomInt(2, 6);
     for (let i = 0; i < numMoving; i++) {
         let x = randomInt(150, 850);
         let y = randomInt(150, 400);
-        let w = randomInt(60, 90);
-        let moveRange = randomInt(20, 60);
-        let speed = 0.003 + Math.random() * 0.01;
+        let w = randomInt(60, 100);
+        let moveRange = randomInt(30, 80);
+        let speed = 0.003 + Math.random() * 0.015;
         let phase = Math.random() * Math.PI * 2;
         let type = Math.random() > 0.8 ? 'spike' : 'moving';
         mp.push({
@@ -400,22 +398,21 @@ function generateDistortedLevel() {
     lv.push({ x: 920, y: randomInt(300, 450), w: 60, h: 20, c: "#888", t: "#aaa", type: 'normal' });
     lv.push({ x: 950, y: 420, type: 'goal' });
 
-    // Lasers (opcional)
-    if (Math.random() > 0.5) {
-        let laserCount = randomInt(3, 8);
+    // Lasers opcionais
+    if (Math.random() > 0.6) {
+        let laserCount = randomInt(4, 10);
         for (let i = 0; i < laserCount; i++) {
             lz.push({
                 x: randomInt(150, 900),
                 y: randomInt(50, 400),
                 angle: Math.random() * Math.PI * 2,
-                rotSpeed: 0.005 + Math.random() * 0.015,
-                len: randomInt(40, 80)
+                rotSpeed: 0.005 + Math.random() * 0.02,
+                len: randomInt(40, 90)
             });
         }
     }
 
-    // Inimigo não aparece na fase distorcida (para não criar loop)
-    return { platforms: lv, lasers: lz, movingPlatforms: mp, enemies: en, bgColor };
+    return { platforms: lv, lasers: lz, movingPlatforms: mp, bgColor };
 }
 
 // Ativação de cheats (códigos secretos)
@@ -599,11 +596,11 @@ function generateLevel(n) {
         lv.push({x: 960, y: ly, type: 'goal'});
     }
 
-    // Inimigo aparece em todas as fases (exceto final)
-    if (n !== 100) {
-        let enemyX = randomInt(300, 900);
+    // Inimigo só a partir da fase 33, e não na fase final (100)
+    if (n >= 33 && n !== 100) {
+        let enemyX = randomInt(300, 850);
         let enemyY = randomInt(100, 400);
-        en.push({ x: enemyX, y: enemyY, w: 100, h: 100, frame: 0 });
+        en.push({ x: enemyX, y: enemyY, w: 150, h: 150, frame: 0, cooldown: 0 });
     }
 
     return { platforms: lv, lasers: lz, movingPlatforms: mp, enemies: en, bgColor: b.bg };
@@ -615,8 +612,8 @@ function loadLevel(n) {
         return;
     }
 
-    // Se estamos retornando de uma fase distorcida, carrega a fase original
     if (isDistorted && returnToLevel !== null) {
+        // Retornando da fase distorcida para a original
         currentLevel = returnToLevel;
         isDistorted = false;
         returnToLevel = null;
@@ -625,9 +622,8 @@ function loadLevel(n) {
         lasers = data.lasers;
         movingPlatforms = data.movingPlatforms;
         enemies = data.enemies;
-        // guarda o bgColor original para desenho
         currentBgColor = data.bgColor;
-        // Reposiciona o jogador
+        // Reposiciona o jogador na fase original
         let b = getBiome(currentLevel);
         if (b.laser) player = { ...player, x: 40, y: 250 };
         else if (b.isDynamic) player = { ...player, x: 60, y: 430 };
@@ -660,22 +656,58 @@ function loadLevel(n) {
     document.getElementById("lvlNum").innerText = n;
 }
 
+// Verifica se o inimigo vê o jogador (linha de visão sem obstáculos)
+function enemySeesPlayer(enemy) {
+    const enemyCenter = { x: enemy.x + enemy.w/2, y: enemy.y + enemy.h/2 };
+    const playerCenter = { x: player.x, y: player.y };
+    const dx = playerCenter.x - enemyCenter.x;
+    const dy = playerCenter.y - enemyCenter.y;
+    const distance = Math.hypot(dx, dy);
+    if (distance > 300) return false; // alcance máximo de visão
+
+    // Verifica se há alguma plataforma entre o inimigo e o jogador
+    const steps = 20;
+    for (let i = 0; i <= steps; i++) {
+        const t = i / steps;
+        const checkX = enemyCenter.x + dx * t;
+        const checkY = enemyCenter.y + dy * t;
+        for (let p of platforms) {
+            if (checkX > p.x && checkX < p.x + p.w && checkY > p.y && checkY < p.y + p.h) {
+                return false; // obstáculo bloqueia visão
+            }
+        }
+        for (let mp of movingPlatforms) {
+            if (checkX > mp.x && checkX < mp.x + mp.w && checkY > mp.y && checkY < mp.y + mp.h) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+function startDistortion() {
+    if (isDistorted) return; // já está distorcido
+    distortionEffect = 30;   // duração da animação diabólica
+    // O efeito será aplicado no update e draw; quando terminar, entra na fase distorcida
+}
+
 function enterDistortedPhase() {
-    if (isDistorted) return; // já está em uma fase distorcida
-    // Gera fase distorcida
+    if (isDistorted) return;
     const data = generateDistortedLevel();
     platforms = data.platforms;
     lasers = data.lasers;
     movingPlatforms = data.movingPlatforms;
-    enemies = data.enemies;
+    enemies = []; // sem inimigo na fase distorcida
     currentBgColor = data.bgColor;
     isDistorted = true;
     returnToLevel = currentLevel;
-    // Reposiciona o jogador na fase distorcida
+    // Posiciona o jogador no início da fase distorcida
     player.x = 60; player.y = 300;
-    player.vx = 0; player.vy = 0; player.angle = 0; player.grounded = false; player.canDoubleJump = true;
-    document.getElementById("lvlNum").innerText = "DISTORCIDA";
-    distortionFlash = 20; // efeito visual
+    player.vx = 0; player.vy = 0;
+    player.grounded = false;
+    player.canDoubleJump = true;
+    document.getElementById("lvlNum").innerText = "???"; // sem texto genérico, mas precisa de algo
+    // Não exibimos "FASE DISTORCIDA" – apenas o número vira interrogação
 }
 
 function update() {
@@ -701,7 +733,7 @@ function update() {
 
     if(b.isAssas && !isDistorted) { spriteTimer++; if(spriteTimer % 5 === 0) spriteFrame = (spriteFrame + 1) % 8; }
 
-    // Controle
+    // Controle do jogador
     let moveSpeed = harderMode ? 10.0 : 8.1;
     if (keys[39]) player.vx = moveSpeed;
     else if (keys[37]) player.vx = -moveSpeed;
@@ -728,12 +760,11 @@ function update() {
     player.grounded = false;
     let collisionOccurred = false;
 
-    // Verifica goal
+    // Verifica goal (tanto na fase normal quanto na distorcida)
     for (let p of platforms) {
         if (p.type === 'goal' && Math.hypot(player.x - p.x, player.y - (p.y - 20)) < 45) {
             if (isDistorted) {
-                // Retorna à fase original
-                loadLevel(returnToLevel);
+                loadLevel(returnToLevel); // retorna à fase original
             } else {
                 loadLevel(currentLevel + 1);
             }
@@ -773,24 +804,30 @@ function update() {
 
     if (!collisionOccurred) player.grounded = false;
 
-    // Colisão com inimigo (apenas se não estiver em fase distorcida)
+    // Verifica visão do inimigo (apenas se não estiver distorcido)
     if (!isDistorted) {
         for (let e of enemies) {
-            if (player.x + player.r > e.x && player.x - player.r < e.x + e.w &&
-                player.y + player.r > e.y && player.y - player.r < e.y + e.h) {
-                // Entra na fase distorcida
-                enterDistortedPhase();
-                return;
+            if (enemySeesPlayer(e)) {
+                startDistortion();
+                break;
             }
         }
     }
 
-    // Atualiza animação do inimigo (mais rápida: troca a cada frame)
-    enemyTimer++;
+    // Anima o inimigo (rotação de sprites)
     enemies.forEach(e => { e.frame = (e.frame + 1) % 9; });
 
-    // Decai o flash
-    if (distortionFlash > 0) distortionFlash--;
+    // Animação de distorção
+    if (distortionEffect > 0) {
+        distortionEffect--;
+        distortionIntensity = Math.sin(Date.now() * 0.03) * (distortionEffect / 30);
+        if (distortionEffect === 0) {
+            // Fim da animação, entra na fase distorcida
+            enterDistortedPhase();
+        }
+    } else {
+        distortionIntensity = 0;
+    }
 
     // Morte por queda, lava
     if (player.y > 550) { deaths++; loadLevel(currentLevel); }
@@ -837,12 +874,14 @@ let currentBgColor = "#000";
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Efeito de distorção (flash)
-    if (distortionFlash > 0) {
-        ctx.fillStyle = `rgba(255, 255, 255, ${distortionFlash / 20})`;
+    // Efeito de distorção (tela treme, cores invertidas)
+    if (distortionEffect > 0) {
+        ctx.save();
+        ctx.translate((Math.random() - 0.5) * 10 * (distortionEffect/30), (Math.random() - 0.5) * 10 * (distortionEffect/30));
+        ctx.globalCompositeOperation = "difference";
+        ctx.fillStyle = `rgba(255,0,0,${0.2 + distortionEffect/30})`;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = `rgba(255, 0, 0, ${distortionFlash / 40})`;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.restore();
     }
 
     if (currentLevel === 100 && !isDistorted) {
@@ -868,10 +907,13 @@ function draw() {
     } else {
         // Fundo
         if (isDistorted) {
+            // Fundo caótico para fase distorcida
             ctx.fillStyle = currentBgColor;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = "rgba(255,0,0,0.3)";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            for (let i = 0; i < 200; i++) {
+                ctx.fillStyle = `hsl(${Date.now() + i * 20}, 100%, 50%)`;
+                ctx.fillRect(Math.random() * canvas.width, Math.random() * canvas.height, 3, 3);
+            }
         } else if (anniversaryTheme) {
             ctx.fillStyle = "#ff8800";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -937,8 +979,8 @@ function draw() {
             }
         }
 
-        // Inimigo (se existir e não estiver em fase distorcida)
-        if (!isDistorted) {
+        // Inimigo (apenas se não estiver distorcido e se a fase for >=33)
+        if (!isDistorted && currentLevel >= 33 && currentLevel !== 100) {
             for (let e of enemies) {
                 const frame = e.frame % 9;
                 if (enemySprites[frame] && enemySprites[frame].complete) {
@@ -978,7 +1020,7 @@ function draw() {
     }
     ctx.restore();
 
-    // Arma (se houver)
+    // Arma
     if (b.hasGun && !b.isDynamic && currentLevel !== 100 && !isDistorted) {
         ctx.save();
         ctx.translate(player.x, player.y);
@@ -1013,11 +1055,6 @@ function draw() {
         ctx.font = "bold 20px monospace";
         ctx.fillStyle = "#ffaa00";
         ctx.fillText("🎃 HALLOWEEN SPECIAL 🎃", canvas.width/2 - 130, 30);
-    }
-    if (isDistorted) {
-        ctx.font = "bold 24px monospace";
-        ctx.fillStyle = "#ff3366";
-        ctx.fillText("⚠️ FASE DISTORCIDA ⚠️", canvas.width/2 - 120, 60);
     }
 }
 
