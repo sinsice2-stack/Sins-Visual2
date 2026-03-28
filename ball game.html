@@ -219,8 +219,10 @@ function generateLevel(n) {
     }
 
     if (b.isDynamic) {
+        // Plataforma inicial fixa
         lv.push({x: 0, y: 450, w: 80, h: 20, c: "#888", t: "#aaa", type: 'normal'});
         
+        // Plataformas móveis mais lentas
         let numPlatforms = 6 + Math.floor(random() * 4);
         let startX = 120;
         for (let i = 0; i < numPlatforms; i++) {
@@ -228,8 +230,8 @@ function generateLevel(n) {
             if (x > 900) break;
             let y = 200 + random() * 250;
             let w = 60 + random() * 40;
-            let moveRange = 30 + random() * 40;
-            let speed = 0.008 + random() * 0.012;
+            let moveRange = 20 + random() * 30;   // movimento mais curto
+            let speed = 0.003 + random() * 0.007; // mais lento
             let phase = random() * Math.PI * 2;
             let type = random() > 0.7 ? 'spike' : 'moving';
             movingPlatforms.push({
@@ -243,11 +245,15 @@ function generateLevel(n) {
             });
         }
         
+        // Espinhos fixos
         for (let i = 0; i < 4; i++) {
             lv.push({x: 150 + random() * 700, y: 400 + random() * 50, w: 50, h: 15, c: "#f00", t: "#f88", type: 'spike'});
         }
         
-        lv.push({x: 920, y: 380, type: 'goal'});
+        // Plataforma de apoio para a bandeira (goal)
+        lv.push({x: 900, y: 370, w: 60, h: 20, c: "#888", t: "#aaa", type: 'normal'});
+        // Bandeira sobre a plataforma
+        lv.push({x: 930, y: 360, type: 'goal'});
         return lv;
     }
 
@@ -329,23 +335,20 @@ function update() {
     
     if(b.isAssas) { spriteTimer++; if(spriteTimer % 5 === 0) spriteFrame = (spriteFrame + 1) % 8; }
 
-    // ========== CONTROLE COM VELOCIDADE ALTA E RESPOSTA IMEDIATA ==========
-    const MOVE_SPEED = 8.1;  // Um pouquinho mais rápida
+    // Controle com velocidade constante e resposta imediata
+    const MOVE_SPEED = 8.1;
     
     if (keys[39]) {
         player.vx = MOVE_SPEED;
     } else if (keys[37]) {
         player.vx = -MOVE_SPEED;
     } else {
-        // Para rapidamente quando solta a tecla
         player.vx *= 0.92;
     }
     
-    // Limita a velocidade ao máximo definido
     player.vx = Math.min(Math.max(player.vx, -MOVE_SPEED), MOVE_SPEED);
-    // ======================================================================
     
-    // Rotação (ajustada para acompanhar a velocidade)
+    // Rotação
     player.angle += player.vx * 0.14;
     if (!player.grounded && Math.abs(player.vy) > 3) {
         player.angle += (player.vy > 0 ? 0.08 : -0.08);
@@ -353,16 +356,14 @@ function update() {
     if (player.angle > Math.PI * 2) player.angle -= Math.PI * 2;
     if (player.angle < 0) player.angle += Math.PI * 2;
     
-    // Física geral
+    // Física
     player.vy += b.grav;
     player.x += player.vx;
     player.y += player.vy;
     
-    // Limites laterais
     if (player.x < player.r) player.x = player.r;
     if (player.x > 1000 - player.r) player.x = 1000 - player.r;
     
-    // Colisões
     player.grounded = false;
     let collisionOccurred = false;
     
@@ -404,14 +405,10 @@ function update() {
     
     if (!collisionOccurred) player.grounded = false;
     
-    // Morte por queda
     if (player.y > 550) { deaths++; loadLevel(currentLevel); }
     if (player.y < -150) { deaths++; loadLevel(currentLevel); }
-    
-    // Lava
     if (b.lava && player.y + player.r > 480) { deaths++; loadLevel(currentLevel); }
     
-    // Lasers
     lasers.forEach(l => {
         l.angle += l.rotSpeed;
         let x2 = l.x + Math.cos(l.angle) * l.len;
@@ -420,7 +417,6 @@ function update() {
         if (dist < player.r - 3) { deaths++; loadLevel(currentLevel); }
     });
     
-    // Balas
     for (let i = bullets.length - 1; i >= 0; i--) {
         let bu = bullets[i]; bu.x += bu.vx; bu.y += bu.vy;
         if(b.lava && bu.y > 480) {
@@ -430,7 +426,6 @@ function update() {
         if (bu.x < 0 || bu.x > 1000 || bu.y < 0 || bu.y > 500) bullets.splice(i, 1);
     }
     
-    // Timer
     let timeDiff = Date.now() - startTime;
     let mins = Math.floor(timeDiff / 60000).toString().padStart(2, '0');
     let secs = Math.floor((timeDiff % 60000) / 1000).toString().padStart(2, '0');
