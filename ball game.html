@@ -110,7 +110,7 @@ for (let i = 1; i <= 8; i++) {
     img.src = `bola-amarela-assas${i.toString().padStart(4, '0')}.webp`;
     img.onload = (function(idx) {
         return function() {
-            const targetSize = 52; // Tamanho visual maior sem distorção
+            const targetSize = 52;
             const imgW = this.width;
             const imgH = this.height;
             const scale = targetSize / Math.max(imgW, imgH);
@@ -123,11 +123,11 @@ for (let i = 1; i <= 8; i++) {
 }
 
 let currentLevel = 1, deaths = 0, startTime, gameRunning = false;
-let keys = {}, mouse = { x: 0, y: 0 }, platforms = [], bullets = [], lasers = [];
+let keys = {}, mouse = { x: 0, y: 0 }, platforms = [], bullets = [], lasers = [], movingPlatforms = [];
 let player = { x: 60, y: 300, r: 18, vx: 0, vy: 0, angle: 0, grounded: false, canDoubleJump: true };
 let spriteFrame = 0, spriteTimer = 0;
 let cameraX = 0;
-let mountainWidth = 3000;
+let mountainWidth = 3000; // Não será mais usado, mas mantido por compatibilidade
 let playerName = "";
 
 function startGame() {
@@ -186,12 +186,10 @@ function getBiome(n) {
     if (n <= 10) return { bg: "#87ceeb", g: "#5d4037", t: "#2ecc71", grav: 0.8 };
     if (n <= 20) return { bg: "#f0f8ff", g: "#b0c4de", t: "#ffffff", grav: 0.8 };
     if (n <= 32) return { bg: "#2a0000", g: "#440000", t: "#ff4500", lava: true, hasGun: true, grav: 0.8 };
-    // Montanhas (33-40) - dificuldade máxima
-    if (n >= 33 && n <= 40) return { bg: "#1a2a3a", g: "#2C1810", t: "#CD853F", grav: 0.85, isMountain: true };
+    // NOVAS FASES 33-40: Caos Móvel (plataformas que se movem, espinhos sincronizados)
+    if (n >= 33 && n <= 40) return { bg: "#2a1a2a", g: "#4a2a3a", t: "#ff66cc", grav: 0.8, isDynamic: true, levelType: "dynamic" };
     if (n <= 50) return { bg: "#001a33", g: "#003366", t: "#00d4ff", water: true, grav: 0.2 }; 
-    // Lasers (51-70) – aqui usa o sprite Assas e tem arma
     if (n <= 70) return { bg: "#050505", g: "#111", t: "#f00", laser: true, grav: 0.8, isAssas: true, flappy: true, hasGun: true }; 
-    // Depois dos lasers (71-99) – volta ao normal (sem Assas, sem arma)
     if (n <= 90) return { bg: "#4a1a2a", g: "#2a0a1a", t: "#ff66cc", grav: 0.85 }; 
     if (n <= 99) return { bg: "#000011", g: "#000", t: "#fff", space: true, grav: 0.05 };
     return { bg: "#000011", g: "#000", t: "#fff", space: true, grav: 0.05 };
@@ -202,6 +200,7 @@ function generateLevel(n) {
     const b = getBiome(n);
     const lv = [];
     lasers = [];
+    movingPlatforms = [];
     
     if (n === 100) {
         lv.push({x: 0, y: 300, w: 1000, h: 200, c: "#FFD700", t: "#FFA500", type: 'normal'});
@@ -222,12 +221,45 @@ function generateLevel(n) {
         }
     }
 
-    if (b.isMountain) {
-        lv.push({x: 0, y: 480, w: mountainWidth, h: 20, type: 'ground'});
-        lv.push({x: mountainWidth - 80, y: 80, type: 'goal'});
+    // NOVAS FASES DINÂMICAS (plataformas móveis e espinhos)
+    if (b.isDynamic) {
+        // Plataformas fixas (base)
+        lv.push({x: 0, y: 450, w: 80, h: 20, c: "#888", t: "#aaa", type: 'normal'});
+        
+        // Gera várias plataformas móveis
+        let numPlatforms = 8 + Math.floor(random() * 5);
+        let startX = 120;
+        for (let i = 0; i < numPlatforms; i++) {
+            let x = startX + i * (80 + random() * 60);
+            if (x > 900) break;
+            let y = 200 + random() * 250;
+            let w = 60 + random() * 40;
+            let moveRange = 40 + random() * 60;
+            let speed = 0.02 + random() * 0.03;
+            let phase = random() * Math.PI * 2;
+            let type = random() > 0.7 ? 'spike' : 'moving';
+            movingPlatforms.push({
+                x: x, y: y, w: w, h: 15,
+                originalY: y,
+                moveRange: moveRange,
+                speed: speed,
+                phase: phase,
+                type: type,
+                color: type === 'spike' ? "#f44" : "#9b59b6"
+            });
+        }
+        
+        // Adiciona algumas plataformas fixas perigosas (espinhos)
+        for (let i = 0; i < 5; i++) {
+            lv.push({x: 150 + random() * 700, y: 400 + random() * 50, w: 50, h: 15, c: "#f00", t: "#f88", type: 'spike'});
+        }
+        
+        // Goal no final
+        lv.push({x: 920, y: 380, type: 'goal'});
         return lv;
     }
 
+    // Geração normal para outras fases
     lv.push({x: 0, y: 400, w: 120, h: 500, c: b.g, t: b.t, type: 'normal'});
     let lx = 120, ly = 400;
     while (lx < 850) {
@@ -256,9 +288,9 @@ function loadLevel(n) {
     if (b.laser) {
         player.x = 40;
         player.y = 250;
-    } else if (b.isMountain) {
-        player.x = 50;
-        player.y = 300;
+    } else if (b.isDynamic) {
+        player.x = 60;
+        player.y = 430; // começa em cima da plataforma inicial
     } else if (n === 100) {
         player.x = 100;
         player.y = 250;
@@ -274,59 +306,6 @@ function loadLevel(n) {
     player.canDoubleJump = true;
     
     document.getElementById("lvlNum").innerText = n; 
-}
-
-// Terreno da montanha – agora com degraus íngremes e sem "teleporte"
-function getMountainHeight(x, phase) {
-    let t = x / mountainWidth;
-    
-    // Perfis únicos para cada fase, todos com subidas brutais
-    if (phase === 33) {
-        // Subida com platôs íngremes
-        if (t < 0.2) return 480 - t * 300;
-        if (t < 0.35) return 420 - (t-0.2)*600;
-        if (t < 0.6) return 330 - (t-0.35)*400;
-        return 230 - (t-0.6)*250;
-    }
-    if (phase === 34) {
-        // Zigzag extremo
-        let zig = Math.sin(t * Math.PI * 4);
-        return 400 - zig * 280;
-    }
-    if (phase === 35) {
-        // Degraus altos (paredes quase verticais)
-        let step = Math.floor(t * 12);
-        let y = [480, 420, 360, 300, 250, 200, 160, 120, 90, 70, 60, 60];
-        return y[Math.min(step, 11)];
-    }
-    if (phase === 36) {
-        // Caverna com teto baixo e subida súbita
-        let ceiling = 180 + Math.sin(t * Math.PI * 5) * 40;
-        let floor = 480 - t * 450;
-        return Math.min(floor, ceiling - 40);
-    }
-    if (phase === 37) {
-        // Espiral agressiva
-        return 300 + Math.sin(t * Math.PI * 8) * 170;
-    }
-    if (phase === 38) {
-        // Inversão com descida íngreme
-        return 150 + t * 350;
-    }
-    if (phase === 39) {
-        // Caos total
-        let base = 480 - t * 500;
-        if (base < 100) base = 100 + Math.sin(t * Math.PI * 15) * 70;
-        return base;
-    }
-    if (phase === 40) {
-        // Final: subida quase vertical
-        if (t < 0.25) return 480 - t * 400;
-        if (t < 0.5) return 380 - (t-0.25)*600;
-        if (t < 0.75) return 230 - (t-0.5)*300;
-        return 140 - (t-0.75)*200;
-    }
-    return 480;
 }
 
 function update() {
@@ -359,9 +338,9 @@ function update() {
     
     if(b.isAssas) { spriteTimer++; if(spriteTimer % 5 === 0) spriteFrame = (spriteFrame + 1) % 8; }
 
-    // Controles manuais com aceleração reduzida
-    if (keys[39]) player.vx += 0.55;
-    if (keys[37]) player.vx -= 0.55;
+    // Controles
+    if (keys[39]) player.vx += 0.65;
+    if (keys[37]) player.vx -= 0.65;
     
     // Rotação
     player.angle += player.vx * 0.12;
@@ -371,85 +350,81 @@ function update() {
     if (player.angle > Math.PI * 2) player.angle -= Math.PI * 2;
     if (player.angle < 0) player.angle += Math.PI * 2;
     
-    if (b.isMountain) {
-        let groundY = getMountainHeight(player.x, currentLevel);
-        
-        // Gravidade
-        player.vy += b.grav;
-        player.x += player.vx;
-        player.y += player.vy;
-        
-        // Colisão com o chão (sem teleporte)
-        if (player.y + player.r > groundY) {
-            player.grounded = true;
-            player.canDoubleJump = true;
-            // Ajusta posição exata, sem modificar velocidade vertical
-            player.y = groundY - player.r;
+    // Física geral
+    player.vy += b.grav;
+    player.x += player.vx;
+    player.y += player.vy;
+    
+    // Atrito no ar (normal)
+    if (!player.grounded) player.vx *= 0.99;
+    
+    // Limites laterais (geral)
+    if (player.x < player.r) player.x = player.r;
+    if (player.x > 1000 - player.r) player.x = 1000 - player.r;
+    
+    // Colisão com plataformas (incluindo as móveis)
+    player.grounded = false;
+    let collisionOccurred = false;
+    
+    // Primeiro, plataformas fixas (do array platforms)
+    platforms.forEach(p => {
+        if (p.type === 'goal' && Math.hypot(player.x - p.x, player.y - (p.y - 20)) < 45) {
+            loadLevel(currentLevel + 1);
+        }
+        if (player.x + player.r > p.x && player.x - player.r < p.x + p.w && 
+            player.y + player.r > p.y && player.y - player.r < p.y + p.h) {
+            if (p.type === 'spike') { deaths++; loadLevel(currentLevel); return; }
+            if (player.vy > 0 && player.y < p.y + 15) {
+                player.grounded = true;
+                player.canDoubleJump = true;
+                player.vy = 0;
+                player.y = p.y - player.r;
+                collisionOccurred = true;
+            }
+        }
+    });
+    
+    // Depois, plataformas móveis (se existirem)
+    if (b.isDynamic) {
+        movingPlatforms.forEach(mp => {
+            // Atualiza posição Y da plataforma móvel
+            let newY = mp.originalY + Math.sin(Date.now() * mp.speed + mp.phase) * mp.moveRange;
+            mp.y = newY;
             
-            // Cálculo da inclinação para aplicar atrito e escorregamento
-            let nextX = player.x + (player.vx > 0 ? 8 : -8);
-            let nextGroundY = getMountainHeight(nextX, currentLevel);
-            let slope = (nextGroundY - groundY) / 8;
-            
-            // Em subidas íngremes: se velocidade baixa, desliza para trás
-            if (slope > 0.12) {
-                if (Math.abs(player.vx) < 2.0) {
-                    player.vx -= slope * 1.5; // empurra para trás
-                } else {
-                    player.vx -= slope * 0.8;
+            // Colisão com a plataforma móvel
+            if (player.x + player.r > mp.x && player.x - player.r < mp.x + mp.w && 
+                player.y + player.r > mp.y && player.y - player.r < mp.y + mp.h) {
+                if (mp.type === 'spike') { deaths++; loadLevel(currentLevel); return; }
+                if (player.vy > 0 && player.y < mp.y + 15) {
+                    player.grounded = true;
+                    player.canDoubleJump = true;
+                    player.vy = 0;
+                    player.y = mp.y - player.r;
+                    collisionOccurred = true;
                 }
-            } else if (slope < -0.12) {
-                // Descidas: ganha velocidade
-                player.vx += Math.abs(slope) * 1.2;
             }
-            
-            // Atrito alto para dificultar subidas
-            player.vx *= 0.94;
-            
-            // Limite de velocidade
-            let maxSpeed = 13;
-            player.vx = Math.min(Math.max(player.vx, -maxSpeed), maxSpeed);
-            
-            // Limites laterais
-            player.x = Math.max(player.r, Math.min(mountainWidth - player.r, player.x));
-        } else {
-            player.grounded = false;
-        }
-        
-        // Câmera
-        cameraX = player.x - canvas.width / 2;
-        cameraX = Math.max(0, Math.min(mountainWidth - canvas.width, cameraX));
-        
-        // Verifica goal
-        if (player.x > mountainWidth - 100 && player.y + player.r > getMountainHeight(mountainWidth - 80, currentLevel) - 15) {
-            if (Math.abs(player.x - (mountainWidth - 80)) < 80) {
-                loadLevel(currentLevel + 1);
-            }
-        }
-        
-        // Morte por queda
-        if (player.y > 550) {
-            deaths++;
-            loadLevel(currentLevel);
-        }
-    } else {
-        // Física normal para outras fases
-        player.vy += b.grav; 
-        player.vx *= 0.95; 
-        player.x += player.vx; 
-        player.y += player.vy;
-
-        if (player.x < player.r) player.x = player.r;
-        if (player.x > 1000 - player.r) player.x = 1000 - player.r;
+        });
     }
-
-    // Timer
-    let timeDiff = Date.now() - startTime;
-    let mins = Math.floor(timeDiff / 60000).toString().padStart(2, '0');
-    let secs = Math.floor((timeDiff % 60000) / 1000).toString().padStart(2, '0');
-    let msecs = Math.floor((timeDiff % 1000) / 10).toString().padStart(2, '0');
-    document.getElementById("timer").innerText = mins+":"+secs+":"+msecs;
-
+    
+    // Se não colidiu com nada, está no ar
+    if (!collisionOccurred) player.grounded = false;
+    
+    // Limite inferior (morte)
+    if (player.y > 550) { deaths++; loadLevel(currentLevel); }
+    if (player.y < -150) { deaths++; loadLevel(currentLevel); }
+    
+    // Lava (se houver)
+    if (b.lava && player.y + player.r > 480) { deaths++; loadLevel(currentLevel); }
+    
+    // Lasers
+    lasers.forEach(l => {
+        l.angle += l.rotSpeed;
+        let x2 = l.x + Math.cos(l.angle) * l.len;
+        let y2 = l.y + Math.sin(l.angle) * l.len;
+        let dist = distToSegment({x: player.x, y: player.y}, {x: l.x, y: l.y}, {x: x2, y: y2});
+        if (dist < player.r - 3) { deaths++; loadLevel(currentLevel); }
+    });
+    
     // Balas
     for (let i = bullets.length - 1; i >= 0; i--) {
         let bu = bullets[i]; bu.x += bu.vx; bu.y += bu.vy;
@@ -459,37 +434,13 @@ function update() {
         }
         if (bu.x < 0 || bu.x > 1000 || bu.y < 0 || bu.y > 500) bullets.splice(i, 1);
     }
-
-    // Lasers
-    lasers.forEach(l => {
-        l.angle += l.rotSpeed;
-        let x2 = l.x + Math.cos(l.angle) * l.len;
-        let y2 = l.y + Math.sin(l.angle) * l.len;
-        let dist = distToSegment({x: player.x, y: player.y}, {x: l.x, y: l.y}, {x: x2, y: y2});
-        
-        if (dist < player.r - 3) { 
-            deaths++; 
-            loadLevel(currentLevel); 
-        }
-    });
-
-    // Colisões com plataformas (exceto montanha)
-    if (!b.isMountain) {
-        player.grounded = false;
-        platforms.forEach(p => {
-            if (p.type === 'goal' && Math.hypot(player.x - p.x, player.y - (p.y - 20)) < 45) loadLevel(currentLevel + 1);
-            if (player.x + player.r > p.x && player.x - player.r < p.x + p.w && player.y + player.r > p.y && player.y - player.r < p.y + p.h) {
-                if (p.type === 'spike') { deaths++; loadLevel(currentLevel); }
-                if (player.vy > 0 && player.y < p.y + 15) { 
-                    player.grounded = true; player.canDoubleJump = true; player.vy = 0; player.y = p.y - player.r; 
-                }
-            }
-        });
-    }
-
-    // Morte por lava ou fora dos limites
-    if (b.lava && player.y > 480) { deaths++; loadLevel(currentLevel); }
-    if (player.y > 600 || player.y < -150) { deaths++; loadLevel(currentLevel); }
+    
+    // Timer
+    let timeDiff = Date.now() - startTime;
+    let mins = Math.floor(timeDiff / 60000).toString().padStart(2, '0');
+    let secs = Math.floor((timeDiff % 60000) / 1000).toString().padStart(2, '0');
+    let msecs = Math.floor((timeDiff % 1000) / 10).toString().padStart(2, '0');
+    document.getElementById("timer").innerText = mins+":"+secs+":"+msecs;
     document.getElementById("deathCount").innerText = deaths;
 }
 
@@ -505,7 +456,6 @@ function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
     if (currentLevel === 100) {
-        // Fase final
         ctx.fillStyle = "#FFD700";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         for (let i = 0; i < 50; i++) {
@@ -529,120 +479,66 @@ function draw() {
         ctx.shadowBlur = 0;
     }
     
-    if (b.isMountain) {
-        // Desenho da montanha
-        let grad = ctx.createLinearGradient(0, 0, 0, 500);
-        grad.addColorStop(0, "#1a2a3a");
-        grad.addColorStop(1, "#2a1a0a");
-        ctx.fillStyle = grad;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
+    // Desenho de fundo e plataformas
+    ctx.fillStyle = b.bg;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    if(b.lava) { ctx.fillStyle = "#ff4500"; ctx.fillRect(0, 480, canvas.width, 20); }
+    
+    lasers.forEach(l => {
         ctx.save();
-        ctx.translate(-cameraX, 0);
-        
+        ctx.translate(l.x, l.y);
+        ctx.rotate(l.angle);
+        ctx.strokeStyle = "#ff3366";
+        ctx.lineWidth = 4;
+        ctx.shadowBlur = 8;
         ctx.beginPath();
-        ctx.moveTo(0, getMountainHeight(0, currentLevel));
-        for (let x = 0; x <= mountainWidth; x += 8) {
-            ctx.lineTo(x, getMountainHeight(x, currentLevel));
-        }
-        ctx.lineTo(mountainWidth, 500);
-        ctx.lineTo(0, 500);
-        ctx.closePath();
-        
-        let groundGrad = ctx.createLinearGradient(0, 400, 0, 100);
-        groundGrad.addColorStop(0, "#2C1810");
-        groundGrad.addColorStop(1, "#6B3E1A");
-        ctx.fillStyle = groundGrad;
-        ctx.fill();
-        ctx.strokeStyle = "#CD853F";
-        ctx.lineWidth = 2.5;
+        ctx.moveTo(0, 0);
+        ctx.lineTo(l.len, 0);
         ctx.stroke();
-        
-        ctx.font = "bold 24px monospace";
-        ctx.fillStyle = "#FFD700";
-        ctx.fillText(`FASE ${currentLevel}`, cameraX + 20, 50);
-        ctx.font = "14px monospace";
-        ctx.fillStyle = "#FFF";
-        ctx.fillText("🔥 GETTING OVER IT STYLE 🔥", cameraX + 20, 80);
-        ctx.fillStyle = "#AAA";
-        ctx.fillText("←  USE AS SETAS →  |  SUBIDAS EXIGEM IMPULSO", cameraX + 20, 110);
-        
-        let goalX = mountainWidth - 80;
-        let goalY = getMountainHeight(goalX, currentLevel);
-        ctx.fillStyle = "#fff";
-        ctx.fillRect(goalX - 2, goalY - 45, 4, 45);
-        ctx.fillStyle = "#ffd700";
+        ctx.fillStyle = "#ff6699";
         ctx.beginPath();
-        ctx.moveTo(goalX, goalY - 50);
-        ctx.lineTo(goalX + 25, goalY - 60);
-        ctx.lineTo(goalX, goalY - 70);
+        ctx.arc(l.len, 0, 3, 0, Math.PI*2);
         ctx.fill();
-        ctx.shadowBlur = 20;
-        ctx.fillStyle = "rgba(255,215,0,0.4)";
-        ctx.beginPath();
-        ctx.arc(goalX, goalY - 60, 15, 0, Math.PI*2);
-        ctx.fill();
-        ctx.shadowBlur = 0;
         ctx.restore();
-        
-        let progress = (player.x / mountainWidth) * 100;
-        ctx.fillStyle = "rgba(0,0,0,0.7)";
-        ctx.fillRect(10, 10, 200, 15);
-        ctx.fillStyle = "#ffd700";
-        ctx.fillRect(10, 10, progress * 2, 15);
-        ctx.fillStyle = "white";
-        ctx.fillText(`PROGRESSO: ${Math.floor(progress)}%`, 10, 28);
-        
-    } else if (currentLevel !== 100) {
-        // Fases normais
-        ctx.fillStyle = b.bg;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        if(b.lava) ctx.fillStyle = "#ff4500"; ctx.fillRect(0, 480, canvas.width, 20);
-        
-        lasers.forEach(l => {
-            ctx.save();
-            ctx.translate(l.x, l.y);
-            ctx.rotate(l.angle);
-            ctx.strokeStyle = "#ff3366";
-            ctx.lineWidth = 4;
-            ctx.shadowBlur = 8;
+    });
+    
+    platforms.forEach(p => {
+        if(p.type === 'goal') {
+            ctx.fillStyle = "#fff";
+            ctx.fillRect(p.x-2, p.y-70, 4, 70);
+            ctx.fillStyle = "red";
             ctx.beginPath();
-            ctx.moveTo(0, 0);
-            ctx.lineTo(l.len, 0);
-            ctx.stroke();
-            ctx.fillStyle = "#ff6699";
-            ctx.beginPath();
-            ctx.arc(l.len, 0, 3, 0, Math.PI*2);
+            ctx.moveTo(p.x, p.y-70);
+            ctx.lineTo(p.x+40, p.y-50);
+            ctx.lineTo(p.x, p.y-30);
             ctx.fill();
-            ctx.restore();
-        });
-        
-        platforms.forEach(p => {
-            if(p.type === 'goal') {
-                ctx.fillStyle = "#fff";
-                ctx.fillRect(p.x-2, p.y-70, 4, 70);
-                ctx.fillStyle = "red";
-                ctx.beginPath();
-                ctx.moveTo(p.x, p.y-70);
-                ctx.lineTo(p.x+40, p.y-50);
-                ctx.lineTo(p.x, p.y-30);
-                ctx.fill();
-            } else {
-                ctx.fillStyle = p.c;
-                ctx.fillRect(p.x, p.y, p.w, p.h);
-                ctx.fillStyle = p.t;
-                ctx.fillRect(p.x, p.y, p.w, 4);
+        } else {
+            ctx.fillStyle = p.c;
+            ctx.fillRect(p.x, p.y, p.w, p.h);
+            ctx.fillStyle = p.t;
+            ctx.fillRect(p.x, p.y, p.w, 4);
+        }
+    });
+    
+    if (b.isDynamic) {
+        movingPlatforms.forEach(mp => {
+            ctx.fillStyle = mp.color;
+            ctx.fillRect(mp.x, mp.y, mp.w, mp.h);
+            if (mp.type === 'spike') {
+                ctx.fillStyle = "#f88";
+                for (let i = 0; i < 3; i++) {
+                    ctx.fillRect(mp.x + i*10, mp.y-5, 5, 5);
+                }
             }
         });
-        
-        bullets.forEach(bu => { ctx.fillStyle = "cyan"; ctx.beginPath(); ctx.arc(bu.x, bu.y, 6, 0, Math.PI*2); ctx.fill(); });
     }
+    
+    bullets.forEach(bu => { ctx.fillStyle = "cyan"; ctx.beginPath(); ctx.arc(bu.x, bu.y, 6, 0, Math.PI*2); ctx.fill(); });
     
     // Jogador
     ctx.save();
-    if (b.isMountain) ctx.translate(player.x - cameraX, player.y);
-    else ctx.translate(player.x, player.y);
-    
+    ctx.translate(player.x, player.y);
     if(b.isAssas) {
         const data = assasSpriteData[spriteFrame];
         if (data) {
@@ -658,13 +554,25 @@ function draw() {
     }
     ctx.restore();
 
-    if(b.hasGun && !b.isMountain && currentLevel !== 100) {
+    if(b.hasGun && !b.isDynamic && currentLevel !== 100) {
         ctx.save();
         ctx.translate(player.x, player.y);
         let angle = Math.atan2(mouse.y - player.y, mouse.x - player.x);
         ctx.rotate(angle);
         ctx.drawImage(gunImg, 10, -10, 30, 20);
         ctx.restore();
+    }
+    
+    // Texto informativo para fases dinâmicas
+    if (b.isDynamic) {
+        ctx.font = "bold 20px monospace";
+        ctx.fillStyle = "#ffcc66";
+        ctx.shadowBlur = 4;
+        ctx.fillText("⚡ PLATAFORMAS MÓVEIS ⚡", 20, 50);
+        ctx.font = "14px monospace";
+        ctx.fillStyle = "#aaa";
+        ctx.fillText("CUIDADO! ESPINHOS SE MOVEM", 20, 80);
+        ctx.shadowBlur = 0;
     }
 }
 
@@ -699,7 +607,7 @@ window.addEventListener("keyup", e => keys[e.keyCode] = false);
 window.addEventListener('mousedown', () => {
     if (!gameRunning) return;
     let b = getBiome(currentLevel);
-    if(!b.hasGun || b.isMountain || currentLevel === 100) return;
+    if(!b.hasGun || b.isDynamic || currentLevel === 100) return;
     let a = Math.atan2(mouse.y - player.y, mouse.x - player.x);
     bullets.push({x: player.x, y: player.y, vx: Math.cos(a)*15, vy: Math.sin(a)*15});
 });
