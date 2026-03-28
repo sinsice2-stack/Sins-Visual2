@@ -330,8 +330,8 @@ function update() {
     
     if(b.isAssas) { spriteTimer++; if(spriteTimer % 5 === 0) spriteFrame = (spriteFrame + 1) % 8; }
 
-    // ========== CONTROLE MAIS LENTO E RESPONSIVO ==========
-    const MOVE_SPEED = 2.2;  // Velocidade bem mais lenta
+    // ========== CONTROLE COM VELOCIDADE MAIS RÁPIDA (3.5) ==========
+    const MOVE_SPEED = 3.5;  // Valor intermediário: rápido mas controlável
     
     if (keys[39]) {
         player.vx = MOVE_SPEED;
@@ -344,7 +344,7 @@ function update() {
     
     // Limita a velocidade ao máximo definido
     player.vx = Math.min(Math.max(player.vx, -MOVE_SPEED), MOVE_SPEED);
-    // =======================================================
+    // ================================================================
     
     // Rotação
     player.angle += player.vx * 0.1;
