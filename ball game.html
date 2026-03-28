@@ -330,7 +330,7 @@ function update() {
     if(b.isAssas) { spriteTimer++; if(spriteTimer % 5 === 0) spriteFrame = (spriteFrame + 1) % 8; }
 
     // ========== CONTROLE COM VELOCIDADE ALTA E RESPOSTA IMEDIATA ==========
-    const MOVE_SPEED = 7.0;  // Velocidade alta como antigamente, mas sem aceleração
+    const MOVE_SPEED = 7.8;  // Um pouco mais rápida que antes, mantendo a sensação de velocidade
     
     if (keys[39]) {
         player.vx = MOVE_SPEED;
@@ -345,8 +345,8 @@ function update() {
     player.vx = Math.min(Math.max(player.vx, -MOVE_SPEED), MOVE_SPEED);
     // ======================================================================
     
-    // Rotação (ajustada para a velocidade maior)
-    player.angle += player.vx * 0.12;
+    // Rotação (ajustada para a velocidade)
+    player.angle += player.vx * 0.13;
     if (!player.grounded && Math.abs(player.vy) > 3) {
         player.angle += (player.vy > 0 ? 0.08 : -0.08);
     }
