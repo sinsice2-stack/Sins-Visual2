@@ -9,7 +9,6 @@
             padding: 0;
             box-sizing: border-box;
         }
-
         body {
             margin: 0;
             overflow: hidden;
@@ -20,15 +19,12 @@
             justify-content: center;
             height: 100vh;
         }
-
         canvas {
             border: 3px solid #ffaa33;
             box-shadow: 0 0 30px rgba(255, 170, 51, 0.5);
             cursor: crosshair;
             border-radius: 8px;
         }
-
-        /* Menu principal */
         .overlay {
             position: absolute;
             top: 0;
@@ -42,15 +38,12 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            font-family: 'Segoe UI', 'Poppins', sans-serif;
         }
-
         .tabs {
             display: flex;
             gap: 20px;
             margin-bottom: 30px;
         }
-
         .tab-btn {
             padding: 12px 28px;
             font-size: 20px;
@@ -62,22 +55,18 @@
             cursor: pointer;
             border-radius: 40px;
             transition: 0.3s;
-            letter-spacing: 1px;
         }
-
         .tab-btn.active {
             background: #ffaa33;
             color: #1a1a2e;
             border-color: #ffaa33;
             box-shadow: 0 0 15px #ffaa33;
         }
-
         .tab-btn:hover {
             background: #ffaa33;
             color: #1a1a2e;
             transform: scale(1.05);
         }
-
         .tab-content {
             background: rgba(0, 0, 0, 0.65);
             backdrop-filter: blur(10px);
@@ -88,17 +77,13 @@
             max-height: 70vh;
             overflow-y: auto;
             border: 1px solid rgba(255, 170, 51, 0.5);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
         }
-
         .tab-pane {
             display: none;
         }
-
         .tab-pane.active {
             display: block;
         }
-
         .menu-btn {
             padding: 12px 30px;
             margin: 10px;
@@ -111,13 +96,11 @@
             transition: 0.3s;
             color: #1a1a2e;
         }
-
         .menu-btn:hover {
             background: #fff;
             transform: scale(1.05);
             box-shadow: 0 0 20px #ffaa33;
         }
-
         input {
             padding: 12px 20px;
             font-size: 18px;
@@ -131,11 +114,9 @@
             outline: none;
             border: 1px solid #ffaa33;
         }
-
         input::placeholder {
             color: rgba(255, 255, 255, 0.7);
         }
-
         .hud {
             color: white;
             position: absolute;
@@ -150,12 +131,10 @@
             text-shadow: 2px 2px 4px #000;
             font-family: monospace;
         }
-
         b {
             color: #ffaa33;
             font-size: 24px;
         }
-
         .victory-overlay {
             position: absolute;
             top: 0;
@@ -170,17 +149,14 @@
             z-index: 200;
             animation: fadeIn 1s ease;
         }
-
         @keyframes fadeIn {
             from { opacity: 0; transform: scale(0.9); }
             to { opacity: 1; transform: scale(1); }
         }
-
         @keyframes glow {
             0% { text-shadow: 0 0 10px gold; }
             100% { text-shadow: 0 0 30px orange; }
         }
-
         .victory-title {
             font-size: 72px;
             font-weight: bold;
@@ -188,20 +164,17 @@
             animation: glow 0.5s infinite alternate;
             margin-bottom: 20px;
         }
-
         .victory-stats {
             font-size: 24px;
             margin: 20px;
             text-align: center;
             line-height: 2;
         }
-
         .victory-stats span {
             color: #ffaa33;
             font-weight: bold;
             font-size: 32px;
         }
-
         .restart-btn {
             padding: 15px 40px;
             margin-top: 30px;
@@ -213,47 +186,39 @@
             font-weight: bold;
             transition: 0.3s;
         }
-
         .restart-btn:hover {
             transform: scale(1.1);
             background: orange;
             box-shadow: 0 0 30px gold;
         }
-
         .cheat-input {
             display: flex;
             gap: 10px;
             justify-content: center;
             margin-bottom: 20px;
         }
-
         .cheat-input input {
             width: 220px;
         }
-
         .cheat-list {
             text-align: left;
             background: rgba(0, 0, 0, 0.6);
             padding: 15px;
             border-radius: 12px;
         }
-
         .cheat-message {
             color: #ffcc66;
             margin-top: 10px;
             font-weight: bold;
         }
-
         h2 {
             margin-bottom: 20px;
             color: #ffaa33;
         }
-
         ul {
             margin-left: 20px;
             line-height: 1.6;
         }
-
         code {
             background: #222;
             padding: 2px 6px;
@@ -288,7 +253,7 @@
                     <li>R : recarregar blocos de gelo (fases com lava)</li>
                 </ul>
                 <p><strong>Objetivo:</strong> Chegar até a bandeira vermelha em cada fase. Complete 100 fases e vença!</p>
-                <p><strong>Inimigo distorcido:</strong> Um monstro que te teletransporta para uma fase aleatória ao tocar nele. Cuidado!</p>
+                <p><strong>Inimigo distorcido:</strong> Um monstro que te transporta para uma <strong>fase distorcida</strong> ao tocar nele. Complete essa fase para voltar!</p>
                 <p><strong>Dicas:</strong> Use o duplo pulo para alcançar plataformas distantes. Nas fases com lasers, espere o momento certo para passar.</p>
             </div>
             <div id="secrets" class="tab-pane">
@@ -314,19 +279,15 @@
     <canvas id="gameCanvas" style="display:none"></canvas>
 
 <script>
-// ======================== CÓDIGO DO JOGO ========================
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 canvas.width = 1000; canvas.height = 500;
 
-// Sprites principais
-const ballImg = new Image(); 
-ballImg.src = 'bola amarela.webp'; 
+// SPRITES
+const ballImg = new Image(); ballImg.src = 'bola amarela.webp';
+const gunImg = new Image(); gunImg.src = 'arma-de-gelo.webp';
 
-const gunImg = new Image(); 
-gunImg.src = 'arma-de-gelo.webp'; 
-
-// Sprites do inimigo (9 frames) - tamanho maior visualmente
+// Inimigo (9 frames) – tamanho 100x100
 const enemySprites = [];
 for (let i = 1; i <= 9; i++) {
     const img = new Image();
@@ -371,10 +332,17 @@ let harderMode = false;
 let distortedMode = false;
 let anniversaryTheme = false;
 
-// Efeitos visuais extras
-let distortionFlash = 0; // para piscar a tela ao tocar no inimigo
+// Controle de fase distorcida
+let isDistorted = false;          // indica se estamos em uma fase distorcida
+let returnToLevel = null;         // fase para a qual voltar após completar a distorcida
+let distortedLevelData = null;    // guarda as plataformas da fase distorcida
+let distortedLasers = null;
+let distortedMovingPlatforms = null;
+let distortedEnemies = null;
 
-// Funções auxiliares
+// Efeito visual de distorção
+let distortionFlash = 0;
+
 function randomInt(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
@@ -387,6 +355,69 @@ function getRandomLevel(excludeCurrent = true) {
     return newLevel;
 }
 
+// Gera uma fase distorcida aleatória (procedural)
+function generateDistortedLevel() {
+    const lv = [];
+    const lz = [];
+    const mp = [];
+    const en = [];
+
+    // Cor de fundo caótica
+    const bgColor = `hsl(${Math.random() * 360}, 70%, 20%)`;
+
+    // Número aleatório de plataformas
+    let numPlats = randomInt(8, 15);
+    let lastX = 50;
+    for (let i = 0; i < numPlats; i++) {
+        let x = lastX + randomInt(60, 120);
+        if (x > 920) break;
+        let y = randomInt(100, 450);
+        let w = randomInt(50, 100);
+        let h = randomInt(15, 25);
+        let type = Math.random() > 0.7 ? 'spike' : 'normal';
+        lv.push({ x, y, w, h, c: type === 'spike' ? '#f44' : '#aaa', t: '#fff', type });
+        lastX = x + w;
+    }
+
+    // Adiciona algumas plataformas móveis
+    let numMoving = randomInt(2, 5);
+    for (let i = 0; i < numMoving; i++) {
+        let x = randomInt(150, 850);
+        let y = randomInt(150, 400);
+        let w = randomInt(60, 90);
+        let moveRange = randomInt(20, 60);
+        let speed = 0.003 + Math.random() * 0.01;
+        let phase = Math.random() * Math.PI * 2;
+        let type = Math.random() > 0.8 ? 'spike' : 'moving';
+        mp.push({
+            x, y, w, h: 15, originalY: y,
+            moveRange, speed, phase, type,
+            color: type === 'spike' ? '#f44' : '#9b59b6'
+        });
+    }
+
+    // Goal no final
+    lv.push({ x: 920, y: randomInt(300, 450), w: 60, h: 20, c: "#888", t: "#aaa", type: 'normal' });
+    lv.push({ x: 950, y: 420, type: 'goal' });
+
+    // Lasers (opcional)
+    if (Math.random() > 0.5) {
+        let laserCount = randomInt(3, 8);
+        for (let i = 0; i < laserCount; i++) {
+            lz.push({
+                x: randomInt(150, 900),
+                y: randomInt(50, 400),
+                angle: Math.random() * Math.PI * 2,
+                rotSpeed: 0.005 + Math.random() * 0.015,
+                len: randomInt(40, 80)
+            });
+        }
+    }
+
+    // Inimigo não aparece na fase distorcida (para não criar loop)
+    return { platforms: lv, lasers: lz, movingPlatforms: mp, enemies: en, bgColor };
+}
+
 // Ativação de cheats (códigos secretos)
 function activateCheat() {
     const input = document.getElementById("cheatCode");
@@ -397,35 +428,33 @@ function activateCheat() {
     switch(code) {
         case "GAMERUIM":
             glitchMode = true;
-            msgDiv.innerHTML = "🌀 Modo malfeito ativado! Prepare-se para os glitches!";
+            msgDiv.innerHTML = "🌀 Modo malfeito ativado!";
             break;
         case "HARDER":
             harderMode = true;
-            msgDiv.innerHTML = "⚡ Dificuldade aumentada! Mais perigos e velocidade!";
+            msgDiv.innerHTML = "⚡ Dificuldade aumentada!";
             break;
         case "3110":
             const today = new Date();
             if (today.getMonth() === 9 && today.getDate() === 31) {
                 anniversaryTheme = true;
-                msgDiv.innerHTML = "🎃 Tema de aniversário ativado! Feliz 31/10! 🎃";
+                msgDiv.innerHTML = "🎃 Tema de aniversário ativado!";
             } else {
-                msgDiv.innerHTML = "❌ Este código só funciona em 31 de outubro!";
+                msgDiv.innerHTML = "❌ Este código só funciona em 31/10!";
             }
             break;
         case "DISTORCED":
             distortedMode = true;
-            msgDiv.innerHTML = "👾 Modo Distorcido ativado! O inimigo nunca desaparece!";
+            msgDiv.innerHTML = "👾 Modo Distorcido ativado!";
             break;
         default:
             msgDiv.innerHTML = "❌ Código desconhecido!";
     }
     input.value = "";
-    setTimeout(() => {
-        if (msgDiv.innerHTML !== "") msgDiv.innerHTML = "";
-    }, 3000);
+    setTimeout(() => { if (msgDiv.innerHTML !== "") msgDiv.innerHTML = ""; }, 3000);
 }
 
-// Inicialização do menu e tabs
+// Inicialização do menu
 document.addEventListener("DOMContentLoaded", () => {
     const tabBtns = document.querySelectorAll(".tab-btn");
     const tabPanes = document.querySelectorAll(".tab-pane");
@@ -452,9 +481,9 @@ function startGame() {
     startTime = Date.now();
     deaths = 0;
     document.getElementById("deathCount").innerText = deaths;
-    // Reset cheats ao iniciar novo jogo (opcional)
-    // Mantém os cheats ativos apenas para esta sessão
-    loadLevel(1); 
+    isDistorted = false;
+    returnToLevel = null;
+    loadLevel(1);
     gameLoop();
 }
 
@@ -462,12 +491,10 @@ function showVictory() {
     gameRunning = false;
     canvas.style.display = "none";
     document.getElementById("gameHud").style.display = "none";
-    
     const timeDiff = Date.now() - startTime;
     const mins = Math.floor(timeDiff / 60000);
     const secs = Math.floor((timeDiff % 60000) / 1000);
     const totalDeaths = deaths;
-    
     const victoryDiv = document.createElement("div");
     victoryDiv.className = "victory-overlay";
     victoryDiv.innerHTML = `
@@ -510,21 +537,21 @@ function generateLevel(n) {
     rngSeed = n * 54321;
     const b = getBiome(n);
     const lv = [];
-    lasers = [];
-    movingPlatforms = [];
-    enemies = [];
-    
+    const lz = [];
+    const mp = [];
+    const en = [];
+
     if (n === 100) {
         lv.push({x: 0, y: 300, w: 1000, h: 200, c: "#FFD700", t: "#FFA500", type: 'normal'});
         lv.push({x: 450, y: 200, type: 'goal'});
-        return lv;
+        return { platforms: lv, lasers: lz, movingPlatforms: mp, enemies: en, bgColor: b.bg };
     }
-    
+
     if (b.laser) {
         let laserCount = harderMode ? 16 : 12;
         for(let i = 0; i < laserCount; i++) {
             let safeX = 150 + (random() * 800);
-            lasers.push({ 
+            lz.push({ 
                 x: safeX, 
                 y: 50 + (random() * 400), 
                 angle: random() * Math.PI * 2, 
@@ -536,7 +563,6 @@ function generateLevel(n) {
 
     if (b.isDynamic) {
         lv.push({x: 0, y: 450, w: 80, h: 20, c: "#888", t: "#aaa", type: 'normal'});
-        
         let numPlatforms = harderMode ? 8 + Math.floor(random() * 5) : 6 + Math.floor(random() * 4);
         let startX = 120;
         for (let i = 0; i < numPlatforms; i++) {
@@ -548,22 +574,16 @@ function generateLevel(n) {
             let speed = (harderMode ? 0.008 : 0.003) + random() * (harderMode ? 0.012 : 0.007);
             let phase = random() * Math.PI * 2;
             let type = random() > (harderMode ? 0.5 : 0.7) ? 'spike' : 'moving';
-            movingPlatforms.push({
-                x: x, y: y, w: w, h: 15,
-                originalY: y,
-                moveRange: moveRange,
-                speed: speed,
-                phase: phase,
-                type: type,
+            mp.push({
+                x, y, w, h: 15, originalY: y,
+                moveRange, speed, phase, type,
                 color: type === 'spike' ? "#f44" : "#9b59b6"
             });
         }
-        
         let spikeCount = harderMode ? 6 : 4;
         for (let i = 0; i < spikeCount; i++) {
             lv.push({x: 150 + random() * 700, y: 400 + random() * 50, w: 50, h: 15, c: "#f00", t: "#f88", type: 'spike'});
         }
-        
         lv.push({x: 900, y: 370, w: 60, h: 20, c: "#888", t: "#aaa", type: 'normal'});
         lv.push({x: 930, y: 360, type: 'goal'});
     } else {
@@ -578,18 +598,15 @@ function generateLevel(n) {
         lv.push({x: 930, y: ly, w: 70, h: 500, c: b.g, t: b.t, type: 'normal'});
         lv.push({x: 960, y: ly, type: 'goal'});
     }
-    
-    // Inimigo aparece em todas as fases (exceto final 100)
+
+    // Inimigo aparece em todas as fases (exceto final)
     if (n !== 100) {
         let enemyX = randomInt(300, 900);
         let enemyY = randomInt(100, 400);
-        enemies.push({
-            x: enemyX, y: enemyY, w: 80, h: 80,   // maior
-            frame: 0, timer: 0
-        });
+        en.push({ x: enemyX, y: enemyY, w: 100, h: 100, frame: 0 });
     }
-    
-    return lv;
+
+    return { platforms: lv, lasers: lz, movingPlatforms: mp, enemies: en, bgColor: b.bg };
 }
 
 function loadLevel(n) { 
@@ -597,72 +614,100 @@ function loadLevel(n) {
         showVictory();
         return;
     }
-    
-    currentLevel = n; 
-    bullets = []; 
-    platforms = generateLevel(n); 
-    
+
+    // Se estamos retornando de uma fase distorcida, carrega a fase original
+    if (isDistorted && returnToLevel !== null) {
+        currentLevel = returnToLevel;
+        isDistorted = false;
+        returnToLevel = null;
+        const data = generateLevel(currentLevel);
+        platforms = data.platforms;
+        lasers = data.lasers;
+        movingPlatforms = data.movingPlatforms;
+        enemies = data.enemies;
+        // guarda o bgColor original para desenho
+        currentBgColor = data.bgColor;
+        // Reposiciona o jogador
+        let b = getBiome(currentLevel);
+        if (b.laser) player = { ...player, x: 40, y: 250 };
+        else if (b.isDynamic) player = { ...player, x: 60, y: 430 };
+        else player = { ...player, x: 60, y: 300 };
+        player.vx = 0; player.vy = 0; player.angle = 0; player.grounded = false; player.canDoubleJump = true;
+        document.getElementById("lvlNum").innerText = currentLevel;
+        return;
+    }
+
+    currentLevel = n;
+    isDistorted = false;
+    const data = generateLevel(n);
+    platforms = data.platforms;
+    lasers = data.lasers;
+    movingPlatforms = data.movingPlatforms;
+    enemies = data.enemies;
+    currentBgColor = data.bgColor;
+
     let b = getBiome(n);
     if (b.laser) {
-        player.x = 40;
-        player.y = 250;
+        player.x = 40; player.y = 250;
     } else if (b.isDynamic) {
-        player.x = 60;
-        player.y = 430;
+        player.x = 60; player.y = 430;
     } else if (n === 100) {
-        player.x = 100;
-        player.y = 250;
+        player.x = 100; player.y = 250;
     } else {
-        player.x = 60;
-        player.y = 300;
+        player.x = 60; player.y = 300;
     }
-    
-    player.vx = 0;
-    player.vy = 0;
-    player.angle = 0;
-    player.grounded = false;
-    player.canDoubleJump = true;
-    
-    document.getElementById("lvlNum").innerText = n; 
+    player.vx = 0; player.vy = 0; player.angle = 0; player.grounded = false; player.canDoubleJump = true;
+    document.getElementById("lvlNum").innerText = n;
+}
+
+function enterDistortedPhase() {
+    if (isDistorted) return; // já está em uma fase distorcida
+    // Gera fase distorcida
+    const data = generateDistortedLevel();
+    platforms = data.platforms;
+    lasers = data.lasers;
+    movingPlatforms = data.movingPlatforms;
+    enemies = data.enemies;
+    currentBgColor = data.bgColor;
+    isDistorted = true;
+    returnToLevel = currentLevel;
+    // Reposiciona o jogador na fase distorcida
+    player.x = 60; player.y = 300;
+    player.vx = 0; player.vy = 0; player.angle = 0; player.grounded = false; player.canDoubleJump = true;
+    document.getElementById("lvlNum").innerText = "DISTORCIDA";
+    distortionFlash = 20; // efeito visual
 }
 
 function update() {
     if (!gameRunning) return;
-    
+
     let b = getBiome(currentLevel);
-    
-    if (currentLevel === 100) {
+    if (currentLevel === 100 && !isDistorted) {
+        // fase final normal
         player.vy += 0.5;
         player.vx *= 0.98;
         player.x += player.vx;
         player.y += player.vy;
         player.angle += player.vx * 0.15;
-        
         if (player.x < player.r) player.x = player.r;
         if (player.x > 1000 - player.r) player.x = 1000 - player.r;
-        
         if (player.x > 450 && player.y + player.r > 180 && player.y - player.r < 220) {
             loadLevel(101);
         }
-        
-        if (player.y > 500) {
-            deaths++;
-            loadLevel(100);
-        }
-        
+        if (player.y > 500) { deaths++; loadLevel(100); }
         document.getElementById("deathCount").innerText = deaths;
         return;
     }
-    
-    if(b.isAssas) { spriteTimer++; if(spriteTimer % 5 === 0) spriteFrame = (spriteFrame + 1) % 8; }
 
-    // Controle do jogador
+    if(b.isAssas && !isDistorted) { spriteTimer++; if(spriteTimer % 5 === 0) spriteFrame = (spriteFrame + 1) % 8; }
+
+    // Controle
     let moveSpeed = harderMode ? 10.0 : 8.1;
     if (keys[39]) player.vx = moveSpeed;
     else if (keys[37]) player.vx = -moveSpeed;
     else player.vx *= 0.92;
     player.vx = Math.min(Math.max(player.vx, -moveSpeed), moveSpeed);
-    
+
     // Rotação
     player.angle += player.vx * 0.14;
     if (!player.grounded && Math.abs(player.vy) > 3) {
@@ -670,31 +715,36 @@ function update() {
     }
     if (player.angle > Math.PI * 2) player.angle -= Math.PI * 2;
     if (player.angle < 0) player.angle += Math.PI * 2;
-    
+
     // Física
-    let gravity = harderMode ? 0.9 : 0.8;
-    player.vy += b.grav * (harderMode ? 1.1 : 1.0);
+    player.vy += (b.grav * (harderMode ? 1.1 : 1.0));
     player.x += player.vx;
     player.y += player.vy;
-    
+
     if (player.x < player.r) player.x = player.r;
     if (player.x > 1000 - player.r) player.x = 1000 - player.r;
-    
+
     // Colisões com plataformas
     player.grounded = false;
     let collisionOccurred = false;
-    
-    platforms.forEach(p => {
+
+    // Verifica goal
+    for (let p of platforms) {
         if (p.type === 'goal' && Math.hypot(player.x - p.x, player.y - (p.y - 20)) < 45) {
-            loadLevel(currentLevel + 1);
-        }
-        if (player.x + player.r > p.x && player.x - player.r < p.x + p.w && 
-            player.y + player.r > p.y && player.y - player.r < p.y + p.h) {
-            if (p.type === 'spike') { 
-                deaths++; 
-                loadLevel(currentLevel);
-                return;
+            if (isDistorted) {
+                // Retorna à fase original
+                loadLevel(returnToLevel);
+            } else {
+                loadLevel(currentLevel + 1);
             }
+            return;
+        }
+    }
+
+    for (let p of platforms) {
+        if (player.x + player.r > p.x && player.x - player.r < p.x + p.w &&
+            player.y + player.r > p.y && player.y - player.r < p.y + p.h) {
+            if (p.type === 'spike') { deaths++; loadLevel(currentLevel); return; }
             if (player.vy > 0 && player.y < p.y + 15) {
                 player.grounded = true;
                 player.canDoubleJump = true;
@@ -703,138 +753,99 @@ function update() {
                 collisionOccurred = true;
             }
         }
-    });
-    
-    if (b.isDynamic) {
-        movingPlatforms.forEach(mp => {
-            let newY = mp.originalY + Math.sin(Date.now() * mp.speed + mp.phase) * mp.moveRange;
-            mp.y = newY;
-            
-            if (player.x + player.r > mp.x && player.x - player.r < mp.x + mp.w && 
-                player.y + player.r > mp.y && player.y - player.r < mp.y + mp.h) {
-                if (mp.type === 'spike') { 
-                    deaths++; 
-                    loadLevel(currentLevel);
-                    return;
-                }
-                if (player.vy > 0 && player.y < mp.y + 15) {
-                    player.grounded = true;
-                    player.canDoubleJump = true;
-                    player.vy = 0;
-                    player.y = mp.y - player.r;
-                    collisionOccurred = true;
-                }
-            }
-        });
     }
-    
+
+    for (let mp of movingPlatforms) {
+        let newY = mp.originalY + Math.sin(Date.now() * mp.speed + mp.phase) * mp.moveRange;
+        mp.y = newY;
+        if (player.x + player.r > mp.x && player.x - player.r < mp.x + mp.w &&
+            player.y + player.r > mp.y && player.y - player.r < mp.y + mp.h) {
+            if (mp.type === 'spike') { deaths++; loadLevel(currentLevel); return; }
+            if (player.vy > 0 && player.y < mp.y + 15) {
+                player.grounded = true;
+                player.canDoubleJump = true;
+                player.vy = 0;
+                player.y = mp.y - player.r;
+                collisionOccurred = true;
+            }
+        }
+    }
+
     if (!collisionOccurred) player.grounded = false;
-    
-    // Colisão com inimigo
-    for (let i = 0; i < enemies.length; i++) {
-        const e = enemies[i];
-        if (player.x + player.r > e.x && player.x - player.r < e.x + e.w &&
-            player.y + player.r > e.y && player.y - player.r < e.y + e.h) {
-            // Efeito de distorção visual
-            distortionFlash = 15; // pisca por alguns frames
-            if (distortedMode) {
-                // Sempre teleporta para uma fase aleatória
-                let newLevel = getRandomLevel(true);
-                deaths++;
-                loadLevel(newLevel);
-                return;
-            } else {
-                // Chance de 10% de ficar na mesma
-                let newLevel;
-                if (Math.random() < 0.1) {
-                    newLevel = currentLevel;
-                } else {
-                    newLevel = getRandomLevel(true);
-                }
-                deaths++;
-                loadLevel(newLevel);
+
+    // Colisão com inimigo (apenas se não estiver em fase distorcida)
+    if (!isDistorted) {
+        for (let e of enemies) {
+            if (player.x + player.r > e.x && player.x - player.r < e.x + e.w &&
+                player.y + player.r > e.y && player.y - player.r < e.y + e.h) {
+                // Entra na fase distorcida
+                enterDistortedPhase();
                 return;
             }
         }
     }
-    
-    // Se distortedMode e não há inimigo, adiciona um novo
-    if (distortedMode && enemies.length === 0 && currentLevel !== 100) {
-        let enemyX = randomInt(300, 900);
-        let enemyY = randomInt(100, 400);
-        enemies.push({
-            x: enemyX, y: enemyY, w: 80, h: 80,
-            frame: 0, timer: 0
-        });
-    }
-    
-    // Atualiza animação do inimigo (mais rápida: 30fps)
+
+    // Atualiza animação do inimigo (mais rápida: troca a cada frame)
     enemyTimer++;
-    if (enemyTimer % 2 === 0) {  // a cada 2 frames -> 30fps se o jogo roda a 60fps
-        enemies.forEach(e => {
-            e.frame = (e.frame + 1) % 9;
-        });
-    }
-    
-    // Decai o flash de distorção
+    enemies.forEach(e => { e.frame = (e.frame + 1) % 9; });
+
+    // Decai o flash
     if (distortionFlash > 0) distortionFlash--;
-    
-    // Morte por queda, lava, etc.
+
+    // Morte por queda, lava
     if (player.y > 550) { deaths++; loadLevel(currentLevel); }
     if (player.y < -150) { deaths++; loadLevel(currentLevel); }
-    if (b.lava && player.y + player.r > 480) { deaths++; loadLevel(currentLevel); }
-    
+    if (b.lava && player.y + player.r > 480 && !isDistorted) { deaths++; loadLevel(currentLevel); }
+
     // Lasers
-    lasers.forEach(l => {
+    for (let l of lasers) {
         l.angle += l.rotSpeed;
         let x2 = l.x + Math.cos(l.angle) * l.len;
         let y2 = l.y + Math.sin(l.angle) * l.len;
         let dist = distToSegment({x: player.x, y: player.y}, {x: l.x, y: l.y}, {x: x2, y: y2});
-        if (dist < player.r - 3) { 
-            deaths++; 
-            loadLevel(currentLevel); 
-        }
-    });
-    
-    // Balas
-    for (let i = bullets.length - 1; i >= 0; i--) {
-        let bu = bullets[i]; bu.x += bu.vx; bu.y += bu.vy;
-        if(b.lava && bu.y > 480) {
-            platforms.push({x: bu.x - 35, y: 480, w: 70, h: 20, c: '#add8e6', t: '#fff', type: 'ice'});
-            bullets.splice(i, 1); continue;
-        }
-        if (bu.x < 0 || bu.x > 1000 || bu.y < 0 || bu.y > 500) bullets.splice(i, 1);
+        if (dist < player.r - 3) { deaths++; loadLevel(currentLevel); }
     }
-    
-    // Timer
+
+    // Balas
+    for (let i = bullets.length-1; i>=0; i--) {
+        let bu = bullets[i];
+        bu.x += bu.vx; bu.y += bu.vy;
+        if(b.lava && bu.y > 480 && !isDistorted) {
+            platforms.push({x: bu.x-35, y: 480, w:70, h:20, c:'#add8e6', t:'#fff', type:'ice'});
+            bullets.splice(i,1); continue;
+        }
+        if (bu.x<0 || bu.x>1000 || bu.y<0 || bu.y>500) bullets.splice(i,1);
+    }
+
     let timeDiff = Date.now() - startTime;
-    let mins = Math.floor(timeDiff / 60000).toString().padStart(2, '0');
-    let secs = Math.floor((timeDiff % 60000) / 1000).toString().padStart(2, '0');
-    let msecs = Math.floor((timeDiff % 1000) / 10).toString().padStart(2, '0');
+    let mins = Math.floor(timeDiff/60000).toString().padStart(2,'0');
+    let secs = Math.floor((timeDiff%60000)/1000).toString().padStart(2,'0');
+    let msecs = Math.floor((timeDiff%1000)/10).toString().padStart(2,'0');
     document.getElementById("timer").innerText = mins+":"+secs+":"+msecs;
     document.getElementById("deathCount").innerText = deaths;
 }
 
 function distToSegment(p, v, w) {
-    let l2 = Math.pow(v.x - w.x, 2) + Math.pow(v.y - w.y, 2);
-    if (l2 == 0) return Math.hypot(p.x - v.x, p.y - v.y);
-    let t = Math.max(0, Math.min(1, ((p.x - v.x) * (w.x - v.x) + (p.y - v.y) * (w.y - v.y)) / l2));
-    return Math.hypot(p.x - (v.x + t * (w.x - v.x)), p.y - (v.y + t * (w.y - v.y)));
+    let l2 = Math.pow(v.x-w.x,2)+Math.pow(v.y-w.y,2);
+    if(l2==0) return Math.hypot(p.x-v.x, p.y-v.y);
+    let t = Math.max(0, Math.min(1, ((p.x-v.x)*(w.x-v.x)+(p.y-v.y)*(w.y-v.y))/l2));
+    return Math.hypot(p.x-(v.x+t*(w.x-v.x)), p.y-(v.y+t*(w.y-v.y)));
 }
 
+let currentBgColor = "#000";
+
 function draw() {
-    let b = getBiome(currentLevel);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
-    // Efeito de distorção (flash branco/glitch)
+
+    // Efeito de distorção (flash)
     if (distortionFlash > 0) {
-        ctx.fillStyle = `rgba(255, 255, 255, ${distortionFlash / 15})`;
+        ctx.fillStyle = `rgba(255, 255, 255, ${distortionFlash / 20})`;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = `rgba(255, 0, 0, ${distortionFlash / 30})`;
+        ctx.fillStyle = `rgba(255, 0, 0, ${distortionFlash / 40})`;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
-    
-    if (currentLevel === 100) {
+
+    if (currentLevel === 100 && !isDistorted) {
         ctx.fillStyle = anniversaryTheme ? "#ff6600" : "#FFD700";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         for (let i = 0; i < 50; i++) {
@@ -845,7 +856,6 @@ function draw() {
         ctx.fillRect(0, 300, canvas.width, 200);
         ctx.font = "bold 36px Arial";
         ctx.fillStyle = "#FFF";
-        ctx.shadowBlur = 10;
         ctx.fillText("✨ FASE FINAL! ✨", canvas.width/2 - 150, 80);
         ctx.font = "20px Arial";
         ctx.fillText("Vá até o portal dourado!", canvas.width/2 - 130, 140);
@@ -855,10 +865,14 @@ function draw() {
         ctx.fillRect(470, 210, 60, 30);
         ctx.fillStyle = "#FFF";
         ctx.fillText("GOAL", 485, 240);
-        ctx.shadowBlur = 0;
     } else {
         // Fundo
-        if (anniversaryTheme) {
+        if (isDistorted) {
+            ctx.fillStyle = currentBgColor;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "rgba(255,0,0,0.3)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        } else if (anniversaryTheme) {
             ctx.fillStyle = "#ff8800";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             for (let i = 0; i < 100; i++) {
@@ -866,13 +880,17 @@ function draw() {
                 ctx.fillRect(Math.random() * canvas.width, Math.random() * canvas.height, 2, 2);
             }
         } else {
-            ctx.fillStyle = b.bg;
+            ctx.fillStyle = currentBgColor;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
-        
-        if(b.lava) { ctx.fillStyle = "#ff4500"; ctx.fillRect(0, 480, canvas.width, 20); }
-        
-        lasers.forEach(l => {
+
+        if (getBiome(currentLevel).lava && !isDistorted) {
+            ctx.fillStyle = "#ff4500";
+            ctx.fillRect(0, 480, canvas.width, 20);
+        }
+
+        // Lasers
+        for (let l of lasers) {
             ctx.save();
             ctx.translate(l.x, l.y);
             ctx.rotate(l.angle);
@@ -888,10 +906,11 @@ function draw() {
             ctx.arc(l.len, 0, 3, 0, Math.PI*2);
             ctx.fill();
             ctx.restore();
-        });
-        
-        platforms.forEach(p => {
-            if(p.type === 'goal') {
+        }
+
+        // Plataformas fixas
+        for (let p of platforms) {
+            if (p.type === 'goal') {
                 ctx.fillStyle = "#fff";
                 ctx.fillRect(p.x-2, p.y-70, 4, 70);
                 ctx.fillStyle = "red";
@@ -906,39 +925,45 @@ function draw() {
                 ctx.fillStyle = p.t;
                 ctx.fillRect(p.x, p.y, p.w, 4);
             }
-        });
-        
-        if (b.isDynamic) {
-            movingPlatforms.forEach(mp => {
-                ctx.fillStyle = mp.color;
-                ctx.fillRect(mp.x, mp.y, mp.w, mp.h);
-                if (mp.type === 'spike') {
-                    ctx.fillStyle = "#f88";
-                    for (let i = 0; i < 3; i++) {
-                        ctx.fillRect(mp.x + i*10, mp.y-5, 5, 5);
-                    }
-                }
-            });
         }
-        
-        // Desenha inimigo (maior)
-        enemies.forEach(e => {
-            const frameIdx = e.frame % 9;
-            if (enemySprites[frameIdx] && enemySprites[frameIdx].complete) {
-                ctx.drawImage(enemySprites[frameIdx], e.x, e.y, e.w, e.h);
-            } else {
-                ctx.fillStyle = "#f0f";
-                ctx.fillRect(e.x, e.y, e.w, e.h);
+
+        // Plataformas móveis
+        for (let mp of movingPlatforms) {
+            ctx.fillStyle = mp.color;
+            ctx.fillRect(mp.x, mp.y, mp.w, mp.h);
+            if (mp.type === 'spike') {
+                ctx.fillStyle = "#f88";
+                for (let i = 0; i < 3; i++) ctx.fillRect(mp.x + i*10, mp.y-5, 5, 5);
             }
-        });
-        
-        bullets.forEach(bu => { ctx.fillStyle = "cyan"; ctx.beginPath(); ctx.arc(bu.x, bu.y, 6, 0, Math.PI*2); ctx.fill(); });
+        }
+
+        // Inimigo (se existir e não estiver em fase distorcida)
+        if (!isDistorted) {
+            for (let e of enemies) {
+                const frame = e.frame % 9;
+                if (enemySprites[frame] && enemySprites[frame].complete) {
+                    ctx.drawImage(enemySprites[frame], e.x, e.y, e.w, e.h);
+                } else {
+                    ctx.fillStyle = "#f0f";
+                    ctx.fillRect(e.x, e.y, e.w, e.h);
+                }
+            }
+        }
+
+        // Balas
+        for (let bu of bullets) {
+            ctx.fillStyle = "cyan";
+            ctx.beginPath();
+            ctx.arc(bu.x, bu.y, 6, 0, Math.PI*2);
+            ctx.fill();
+        }
     }
-    
+
     // Jogador
     ctx.save();
     ctx.translate(player.x, player.y);
-    if(b.isAssas) {
+    let b = getBiome(currentLevel);
+    if (b.isAssas && !isDistorted) {
         const data = assasSpriteData[spriteFrame];
         if (data) {
             const w = data.w * data.scale;
@@ -953,7 +978,8 @@ function draw() {
     }
     ctx.restore();
 
-    if(b.hasGun && !b.isDynamic && currentLevel !== 100) {
+    // Arma (se houver)
+    if (b.hasGun && !b.isDynamic && currentLevel !== 100 && !isDistorted) {
         ctx.save();
         ctx.translate(player.x, player.y);
         let angle = Math.atan2(mouse.y - player.y, mouse.x - player.x);
@@ -961,24 +987,12 @@ function draw() {
         ctx.drawImage(gunImg, 10, -10, 30, 20);
         ctx.restore();
     }
-    
-    if (b.isDynamic) {
-        ctx.font = "bold 20px monospace";
-        ctx.fillStyle = "#ffcc66";
-        ctx.shadowBlur = 4;
-        ctx.fillText("⚡ PLATAFORMAS MÓVEIS ⚡", 20, 50);
-        ctx.font = "14px monospace";
-        ctx.fillStyle = "#aaa";
-        ctx.fillText("CUIDADO! ESPINHOS SE MOVEM", 20, 80);
-        ctx.shadowBlur = 0;
-    }
-    
-    // Indicadores de modos ativos
+
+    // Indicadores de modo
     if (glitchMode) {
         ctx.font = "bold 16px monospace";
         ctx.fillStyle = "#ff00ff";
         ctx.fillText("⚡ GLITCH MODE ⚡", 10, 450);
-        // Efeito glitch adicional
         ctx.save();
         ctx.globalCompositeOperation = "difference";
         ctx.fillStyle = "rgba(255,0,0,0.2)";
@@ -1000,11 +1014,16 @@ function draw() {
         ctx.fillStyle = "#ffaa00";
         ctx.fillText("🎃 HALLOWEEN SPECIAL 🎃", canvas.width/2 - 130, 30);
     }
+    if (isDistorted) {
+        ctx.font = "bold 24px monospace";
+        ctx.fillStyle = "#ff3366";
+        ctx.fillText("⚠️ FASE DISTORCIDA ⚠️", canvas.width/2 - 120, 60);
+    }
 }
 
-function gameLoop() { 
+function gameLoop() {
     if (gameRunning) { update(); draw(); }
-    requestAnimationFrame(gameLoop); 
+    requestAnimationFrame(gameLoop);
 }
 
 window.addEventListener("keydown", e => {
@@ -1012,14 +1031,13 @@ window.addEventListener("keydown", e => {
     keys[e.keyCode] = true;
     if (e.keyCode === 32) {
         let b = getBiome(currentLevel);
-        if (b.flappy) { player.vy = -7; } 
+        if (b.flappy) { player.vy = -7; }
         else {
-            if (player.grounded) { 
+            if (player.grounded) {
                 player.vy = -11;
                 player.grounded = false;
                 player.angle += 0.2;
-            }
-            else if (player.canDoubleJump) { 
+            } else if (player.canDoubleJump) {
                 player.vy = -9;
                 player.canDoubleJump = false;
                 player.angle += 0.4;
@@ -1033,13 +1051,15 @@ window.addEventListener("keyup", e => keys[e.keyCode] = false);
 window.addEventListener('mousedown', () => {
     if (!gameRunning) return;
     let b = getBiome(currentLevel);
-    if(!b.hasGun || b.isDynamic || currentLevel === 100) return;
+    if(!b.hasGun || b.isDynamic || currentLevel === 100 || isDistorted) return;
     let a = Math.atan2(mouse.y - player.y, mouse.x - player.x);
     bullets.push({x: player.x, y: player.y, vx: Math.cos(a)*15, vy: Math.sin(a)*15});
 });
 
-canvas.addEventListener('mousemove', e => { 
-    let r = canvas.getBoundingClientRect(); mouse.x = e.clientX - r.left; mouse.y = e.clientY - r.top; 
+canvas.addEventListener('mousemove', e => {
+    let r = canvas.getBoundingClientRect();
+    mouse.x = e.clientX - r.left;
+    mouse.y = e.clientY - r.top;
 });
 </script>
 </body>
