@@ -624,7 +624,7 @@ function loadLevel(n) {
 function startDistortionTransition() {
     if (transitionActive || isDistorted) return;
     transitionActive = true;
-    transitionTimer = 60;       // transição mais longa (2 segundos a 60fps)
+    transitionTimer = 60;       // 1 segundo a 60fps
     transitionIntensity = 0;
 }
 
@@ -643,8 +643,9 @@ function enterDistortedPhase() {
     player.grounded = false;
     player.canDoubleJump = true;
     document.getElementById("lvlNum").innerText = "???";
+    // A transição continua por mais alguns frames depois de entrar
     transitionActive = true;
-    transitionTimer = 30; // mantém o efeito por mais meio segundo
+    transitionTimer = 30;
 }
 
 function updateEnemyMovement(e) {
@@ -703,8 +704,8 @@ function update() {
 
     if(b.isAssas && !isDistorted) { spriteTimer++; if(spriteTimer % 5 === 0) spriteFrame = (spriteFrame + 1) % 8; }
 
-    // Controle do jogador - velocidade um pouco maior
-    let moveSpeed = harderMode ? 10.5 : 9.2;
+    // ========== VELOCIDADE AUMENTADA ==========
+    let moveSpeed = harderMode ? 11.2 : 9.8;
     if (keys[39]) player.vx = moveSpeed;
     else if (keys[37]) player.vx = -moveSpeed;
     else player.vx *= 0.92;
@@ -777,9 +778,6 @@ function update() {
                 startDistortionTransition();
             }
         }
-    } else if (!isDistorted && currentLevel === 33 && !phase33Triggered && enemies.length > 0) {
-        // Se o timer falhou (ex: jogador muito rápido), mas ainda não disparou, mantém
-        // O timer já está rodando, não faz nada aqui
     }
 
     // Animação do inimigo (22 FPS)
@@ -811,10 +809,11 @@ function update() {
         if (particles[i].life <= 0) particles.splice(i,1);
     }
 
-    // Transição de distorção (efeito cinematográfico)
+    // Transição de distorção (estilo Kanye West visualizer)
     if (transitionActive) {
         transitionTimer--;
-        transitionIntensity = Math.sin((60 - transitionTimer) / 60 * Math.PI); // cresce e decai
+        // A intensidade varia como uma onda senoidal para pulsar
+        transitionIntensity = Math.sin((60 - transitionTimer) / 60 * Math.PI);
         if (transitionTimer <= 0) {
             transitionActive = false;
             if (!isDistorted) {
@@ -866,27 +865,7 @@ function distToSegment(p, v, w) {
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Efeito de transição cinematográfico
-    if (transitionActive) {
-        const intensity = transitionIntensity;
-        // Chromatic aberration (deslocamento de cores)
-        ctx.save();
-        ctx.translate((Math.random() - 0.5) * 20 * intensity, (Math.random() - 0.5) * 15 * intensity);
-        ctx.globalCompositeOperation = "difference";
-        ctx.fillStyle = `rgba(255,0,0,${0.3 * intensity})`;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = `rgba(0,255,0,${0.2 * intensity})`;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = `rgba(0,0,255,${0.2 * intensity})`;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.restore();
-        // Scanlines
-        for (let i = 0; i < canvas.height; i+=4) {
-            ctx.fillStyle = `rgba(0,0,0,${0.3 * intensity})`;
-            ctx.fillRect(0, i, canvas.width, 2);
-        }
-    }
-
+    // Desenho normal do jogo (sempre desenha, a transição é aplicada por cima)
     if (currentLevel === 100 && !isDistorted) {
         ctx.fillStyle = anniversaryTheme ? "#ff6600" : "#FFD700";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -1045,6 +1024,34 @@ function draw() {
         let angle = Math.atan2(mouse.y - player.y, mouse.x - player.x);
         ctx.rotate(angle);
         ctx.drawImage(gunImg, 10, -10, 30, 20);
+        ctx.restore();
+    }
+
+    // ========== EFEITO DE TRANSIÇÃO ESTILO KANYE WEST ==========
+    if (transitionActive && transitionIntensity > 0.05) {
+        const intensity = transitionIntensity;
+        // Chromatic aberration (deslocamento RGB)
+        ctx.save();
+        ctx.globalCompositeOperation = "lighter";
+        // Tremor intenso
+        ctx.translate((Math.random() - 0.5) * 30 * intensity, (Math.random() - 0.5) * 20 * intensity);
+        // Split RGB
+        ctx.fillStyle = `rgba(255, 0, 0, ${0.4 * intensity})`;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = `rgba(0, 255, 0, ${0.3 * intensity})`;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = `rgba(0, 0, 255, ${0.3 * intensity})`;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        // Scanlines grossas
+        for (let i = 0; i < canvas.height; i += 6) {
+            ctx.fillStyle = `rgba(0, 0, 0, ${0.6 * intensity})`;
+            ctx.fillRect(0, i, canvas.width, 3);
+        }
+        // Glitch blocks
+        for (let i = 0; i < 20; i++) {
+            ctx.fillStyle = `hsla(${Math.random() * 360}, 100%, 50%, ${0.5 * intensity})`;
+            ctx.fillRect(Math.random() * canvas.width, Math.random() * canvas.height, Math.random() * 80 + 20, Math.random() * 15 + 5);
+        }
         ctx.restore();
     }
 
