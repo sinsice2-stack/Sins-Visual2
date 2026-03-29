@@ -489,6 +489,9 @@ function generateLevel(n) {
     const mp = [];
     const en = [];
 
+    // Plataforma inicial para não começar pulando
+    lv.push({ x: 0, y: 350, w: 100, h: 20, c: "#888", t: "#aaa", type: 'normal' });
+
     if (n === 100) {
         lv.push({x: 0, y: 300, w: 1000, h: 200, c: "#FFD700", t: "#FFA500", type: 'normal'});
         lv.push({x: 450, y: 200, type: 'goal'});
@@ -535,7 +538,6 @@ function generateLevel(n) {
         lv.push({x: 900, y: 370, w: 60, h: 20, c: "#888", t: "#aaa", type: 'normal'});
         lv.push({x: 930, y: 360, type: 'goal'});
     } else {
-        lv.push({x: 0, y: 400, w: 120, h: 500, c: b.g, t: b.t, type: 'normal'});
         let lx = 120, ly = 400;
         while (lx < 850) {
             lx += 110 + (random()*80); ly += (random()*120)-60;
@@ -588,7 +590,7 @@ function loadLevel(n) {
         let b = getBiome(currentLevel);
         if (b.laser) player = { ...player, x: 40, y: 250 };
         else if (b.isDynamic) player = { ...player, x: 60, y: 430 };
-        else player = { ...player, x: 60, y: 300 };
+        else player = { ...player, x: 60, y: 350 }; // ajustado para a plataforma inicial y=350
         player.vx = 0; player.vy = 0; player.angle = 0; player.grounded = false; player.canDoubleJump = true;
         document.getElementById("lvlNum").innerText = currentLevel;
         return;
@@ -607,7 +609,7 @@ function loadLevel(n) {
     if (b.laser) { player.x = 40; player.y = 250; }
     else if (b.isDynamic) { player.x = 60; player.y = 430; }
     else if (n === 100) { player.x = 100; player.y = 250; }
-    else { player.x = 60; player.y = 300; }
+    else { player.x = 60; player.y = 350; } // alinhado com a plataforma inicial
     player.vx = 0; player.vy = 0; player.angle = 0; player.grounded = false; player.canDoubleJump = true;
     document.getElementById("lvlNum").innerText = n;
 
@@ -624,7 +626,7 @@ function loadLevel(n) {
 function startDistortionTransition() {
     if (transitionActive || isDistorted) return;
     transitionActive = true;
-    transitionTimer = 60;       // 1 segundo a 60fps
+    transitionTimer = 90;       // 1.5 segundos a 60fps
     transitionIntensity = 0;
 }
 
@@ -643,15 +645,17 @@ function enterDistortedPhase() {
     player.grounded = false;
     player.canDoubleJump = true;
     document.getElementById("lvlNum").innerText = "???";
-    // A transição continua por mais alguns frames depois de entrar
+    // Mantém a transição ativa por mais alguns frames
     transitionActive = true;
     transitionTimer = 30;
 }
 
 function updateEnemyMovement(e) {
+    // Zig-zag horizontal
     e.x += e.speedX * e.direction;
     if (e.x < 50) { e.x = 50; e.direction = 1; }
     if (e.x + e.w > canvas.width - 50) { e.x = canvas.width - e.w - 50; e.direction = -1; }
+    // Movimento vertical senoidal
     e.y = e.originalY + Math.sin(Date.now() * 0.008 + e.phase) * e.amplitude;
 }
 
@@ -704,7 +708,7 @@ function update() {
 
     if(b.isAssas && !isDistorted) { spriteTimer++; if(spriteTimer % 5 === 0) spriteFrame = (spriteFrame + 1) % 8; }
 
-    // ========== VELOCIDADE AUMENTADA ==========
+    // Velocidade aumentada
     let moveSpeed = harderMode ? 11.2 : 9.8;
     if (keys[39]) player.vx = moveSpeed;
     else if (keys[37]) player.vx = -moveSpeed;
@@ -780,7 +784,7 @@ function update() {
         }
     }
 
-    // Animação do inimigo (22 FPS)
+    // Animação do inimigo (loop infinito)
     enemyFrameCounter++;
     if (enemyFrameCounter >= enemyFrameDelay) {
         enemyFrameCounter = 0;
@@ -809,11 +813,10 @@ function update() {
         if (particles[i].life <= 0) particles.splice(i,1);
     }
 
-    // Transição de distorção (estilo Kanye West visualizer)
+    // Transição diabólica e bugada (intensificada)
     if (transitionActive) {
         transitionTimer--;
-        // A intensidade varia como uma onda senoidal para pulsar
-        transitionIntensity = Math.sin((60 - transitionTimer) / 60 * Math.PI);
+        transitionIntensity = Math.sin((90 - transitionTimer) / 90 * Math.PI);
         if (transitionTimer <= 0) {
             transitionActive = false;
             if (!isDistorted) {
@@ -865,7 +868,7 @@ function distToSegment(p, v, w) {
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Desenho normal do jogo (sempre desenha, a transição é aplicada por cima)
+    // Desenho normal do jogo
     if (currentLevel === 100 && !isDistorted) {
         ctx.fillStyle = anniversaryTheme ? "#ff6600" : "#FFD700";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -960,7 +963,7 @@ function draw() {
             }
         }
 
-        // Inimigo com efeitos
+        // Inimigo com efeitos (animação loop)
         if (!isDistorted && currentLevel >= 33 && currentLevel !== 100) {
             for (let e of enemies) {
                 ctx.save();
@@ -1027,31 +1030,35 @@ function draw() {
         ctx.restore();
     }
 
-    // ========== EFEITO DE TRANSIÇÃO ESTILO KANYE WEST ==========
+    // EFEITO DE TRANSIÇÃO DIABÓLICA E BUGADA (intensificado)
     if (transitionActive && transitionIntensity > 0.05) {
         const intensity = transitionIntensity;
-        // Chromatic aberration (deslocamento RGB)
         ctx.save();
+        // Tremor extremo
+        ctx.translate((Math.random() - 0.5) * 40 * intensity, (Math.random() - 0.5) * 30 * intensity);
+        // Split RGB + inversão de cores
         ctx.globalCompositeOperation = "lighter";
-        // Tremor intenso
-        ctx.translate((Math.random() - 0.5) * 30 * intensity, (Math.random() - 0.5) * 20 * intensity);
-        // Split RGB
-        ctx.fillStyle = `rgba(255, 0, 0, ${0.4 * intensity})`;
+        ctx.fillStyle = `rgba(255, 0, 0, ${0.5 * intensity})`;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = `rgba(0, 255, 0, ${0.3 * intensity})`;
+        ctx.fillStyle = `rgba(0, 255, 0, ${0.4 * intensity})`;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = `rgba(0, 0, 255, ${0.3 * intensity})`;
+        ctx.fillStyle = `rgba(0, 0, 255, ${0.4 * intensity})`;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        // Scanlines grossas
-        for (let i = 0; i < canvas.height; i += 6) {
-            ctx.fillStyle = `rgba(0, 0, 0, ${0.6 * intensity})`;
-            ctx.fillRect(0, i, canvas.width, 3);
+        // Inversão de cores (branco)
+        ctx.fillStyle = `rgba(255, 255, 255, ${0.3 * intensity})`;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        // Scanlines grossas e irregulares
+        for (let i = 0; i < canvas.height; i += 4) {
+            ctx.fillStyle = `rgba(0, 0, 0, ${0.7 * intensity})`;
+            ctx.fillRect(0, i, canvas.width, 2);
         }
-        // Glitch blocks
-        for (let i = 0; i < 20; i++) {
-            ctx.fillStyle = `hsla(${Math.random() * 360}, 100%, 50%, ${0.5 * intensity})`;
-            ctx.fillRect(Math.random() * canvas.width, Math.random() * canvas.height, Math.random() * 80 + 20, Math.random() * 15 + 5);
+        // Blocos de glitch aleatórios (mais numerosos)
+        for (let i = 0; i < 40; i++) {
+            ctx.fillStyle = `hsla(${Math.random() * 360}, 100%, 50%, ${0.6 * intensity})`;
+            ctx.fillRect(Math.random() * canvas.width, Math.random() * canvas.height, Math.random() * 100 + 30, Math.random() * 20 + 8);
         }
+        // Deslocamento de imagem (efeito de "pixel push")
+        ctx.drawImage(canvas, (Math.random() - 0.5) * 30 * intensity, (Math.random() - 0.5) * 20 * intensity);
         ctx.restore();
     }
 
