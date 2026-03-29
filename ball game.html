@@ -282,7 +282,7 @@ for (let i = 1; i <= 8; i++) {
 let currentLevel = 1, deaths = 0, startTime, gameRunning = false;
 let keys = {}, mouse = { x: 0, y: 0 }, platforms = [], bullets = [], lasers = [], movingPlatforms = [];
 let enemies = [];
-let enemyFrame = 0, enemyFrameDelay = 3, enemyFrameCounter = 0; // 22 FPS (60/3≈20, próximo)
+let enemyFrame = 0, enemyFrameDelay = 3, enemyFrameCounter = 0; // 22 FPS (60/3≈20)
 let player = { x: 60, y: 300, r: 18, vx: 0, vy: 0, angle: 0, grounded: false, canDoubleJump: true };
 let spriteFrame = 0, spriteTimer = 0;
 let playerName = "";
@@ -296,7 +296,6 @@ let anniversaryTheme = false;
 // Controle de fase distorcida
 let isDistorted = false;
 let returnToLevel = null;
-let distortedLevelData = null;
 let transitionActive = false;      // true enquanto a transição está ocorrendo
 let transitionTimer = 0;           // frames restantes da transição
 let transitionIntensity = 0;       // intensidade da distorção na tela
@@ -317,15 +316,18 @@ function getRandomLevel(excludeCurrent = true) {
     return newLevel;
 }
 
-// Gera fase distorcida (sem inimigo)
+// Gera fase distorcida com plataforma inicial garantida
 function generateDistortedLevel() {
     const lv = [];
     const lz = [];
     const mp = [];
     const bgColor = `hsl(${Math.random() * 360}, 80%, 10%)`;
 
+    // PLATAFORMA INICIAL (garante que o jogador não caia)
+    lv.push({ x: 0, y: 300, w: 100, h: 20, c: "#888", t: "#aaa", type: 'normal' });
+
     let numPlats = randomInt(10, 18);
-    let lastX = 50;
+    let lastX = 120;
     for (let i = 0; i < numPlats; i++) {
         let x = lastX + randomInt(60, 130);
         if (x > 920) break;
@@ -353,6 +355,7 @@ function generateDistortedLevel() {
         });
     }
 
+    // Goal no final
     lv.push({ x: 920, y: randomInt(300, 450), w: 60, h: 20, c: "#888", t: "#aaa", type: 'normal' });
     lv.push({ x: 950, y: 420, type: 'goal' });
 
@@ -548,8 +551,7 @@ function generateLevel(n) {
         en.push({
             x: enemyX, y: enemyY, w: 150, h: 150,
             frame: 0,
-            // Movimento em zig-zag
-            angle: 0,
+            originalY: enemyY,
             speedX: 1.2 + Math.random() * 0.8,
             amplitude: 40 + Math.random() * 30,
             phase: Math.random() * Math.PI * 2,
@@ -632,9 +634,8 @@ function enterDistortedPhase() {
 }
 
 function updateEnemyMovement(e) {
-    // Movimento zig‑zag: desloca horizontalmente com uma onda senoidal
+    // Movimento horizontal (zig‑zag)
     e.x += e.speedX * e.direction;
-    // Reverte direção se encostar nas bordas da tela
     if (e.x < 50) { e.x = 50; e.direction = 1; }
     if (e.x + e.w > canvas.width - 50) { e.x = canvas.width - e.w - 50; e.direction = -1; }
     // Movimento vertical senoidal
@@ -647,9 +648,8 @@ function enemySeesPlayer(e) {
     const dx = playerCenter.x - enemyCenter.x;
     const dy = playerCenter.y - enemyCenter.y;
     const distance = Math.hypot(dx, dy);
-    if (distance > 380) return false; // alcance de visão
+    if (distance > 380) return false;
 
-    // Linha de visão: verifica obstáculos entre eles
     const steps = 20;
     for (let i = 0; i <= steps; i++) {
         const t = i / steps;
@@ -760,11 +760,7 @@ function update() {
     // Atualiza inimigos (movimento e visão)
     if (!isDistorted && currentLevel >= 33 && currentLevel !== 100) {
         for (let e of enemies) {
-            // Salva Y original para movimento senoidal
-            if (e.originalY === undefined) e.originalY = e.y;
             updateEnemyMovement(e);
-
-            // Verifica visão
             if (enemySeesPlayer(e)) {
                 startDistortionTransition();
             }
@@ -778,8 +774,8 @@ function update() {
         enemies.forEach(e => { e.frame = (e.frame + 1) % 9; });
     }
 
-    // Atualiza partículas do inimigo (efeito Asriel)
-    if (!isDistorted && currentLevel >= 33) {
+    // Partículas do inimigo
+    if (!isDistorted && currentLevel >= 33 && currentLevel !== 100) {
         for (let e of enemies) {
             if (Math.random() < 0.3) {
                 particles.push({
@@ -803,7 +799,7 @@ function update() {
     // Transição de distorção
     if (transitionActive) {
         transitionTimer--;
-        transitionIntensity = Math.min(1, (45 - transitionTimer) / 45); // aumenta até o meio, depois diminui
+        transitionIntensity = Math.min(1, (45 - transitionTimer) / 45);
         if (transitionTimer <= 0) {
             transitionActive = false;
             if (!isDistorted) {
@@ -855,7 +851,7 @@ function distToSegment(p, v, w) {
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Aplica efeito de transição (distorção de tela)
+    // Efeito de transição
     if (transitionActive) {
         const intensity = Math.sin(transitionTimer * 0.5) * (1 - transitionIntensity) * 0.2;
         ctx.save();
@@ -964,7 +960,6 @@ function draw() {
         // Inimigo com efeitos
         if (!isDistorted && currentLevel >= 33 && currentLevel !== 100) {
             for (let e of enemies) {
-                // Brilho pulsante (aura)
                 ctx.save();
                 ctx.shadowBlur = 20;
                 ctx.shadowColor = `hsl(${Date.now() * 0.01 % 360}, 100%, 60%)`;
@@ -976,7 +971,6 @@ function draw() {
                     ctx.fillRect(e.x, e.y, e.w, e.h);
                 }
                 ctx.restore();
-                // Círculo pulsante ao redor
                 ctx.beginPath();
                 ctx.arc(e.x + e.w/2, e.y + e.h/2, 85 + Math.sin(Date.now() * 0.01) * 10, 0, Math.PI*2);
                 ctx.fillStyle = `rgba(255, 80, 120, ${0.3 + Math.sin(Date.now() * 0.02) * 0.2})`;
