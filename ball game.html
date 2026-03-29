@@ -215,7 +215,7 @@
                     <li>R : recarregar blocos de gelo (fases com lava)</li>
                 </ul>
                 <p><strong>Objetivo:</strong> Chegar até a bandeira vermelha em cada fase. Complete 100 fases e vença!</p>
-                <p><strong>Inimigo distorcido:</strong> A partir da fase 33, um monstro gigante aparece. Ele se move em zig‑zag e, se te <strong>ver</strong>, o mundo se distorcerá!</p>
+                <p><strong>Inimigo distorcido:</strong> A partir da fase 33, um monstro gigante aparece. Na fase 33, ele distorce o mundo após 2 segundos. Nas demais, ele te persegue!</p>
                 <p><strong>Dicas:</strong> Use o duplo pulo para alcançar plataformas distantes. Nas fases com lasers, espere o momento certo para passar.</p>
             </div>
             <div id="secrets" class="tab-pane">
@@ -282,27 +282,31 @@ for (let i = 1; i <= 8; i++) {
 let currentLevel = 1, deaths = 0, startTime, gameRunning = false;
 let keys = {}, mouse = { x: 0, y: 0 }, platforms = [], bullets = [], lasers = [], movingPlatforms = [];
 let enemies = [];
-let enemyFrame = 0, enemyFrameDelay = 3, enemyFrameCounter = 0; // 22 FPS (60/3≈20)
+let enemyFrame = 0, enemyFrameDelay = 3, enemyFrameCounter = 0;
 let player = { x: 60, y: 300, r: 18, vx: 0, vy: 0, angle: 0, grounded: false, canDoubleJump: true };
 let spriteFrame = 0, spriteTimer = 0;
 let playerName = "";
 
-// Variáveis para cheats
+// Cheats
 let glitchMode = false;
 let harderMode = false;
 let distortedMode = false;
 let anniversaryTheme = false;
 
-// Controle de fase distorcida
+// Fase distorcida
 let isDistorted = false;
 let returnToLevel = null;
-let transitionActive = false;      // true enquanto a transição está ocorrendo
-let transitionTimer = 0;           // frames restantes da transição
-let transitionIntensity = 0;       // intensidade da distorção na tela
+let transitionActive = false;
+let transitionTimer = 0;
+let transitionIntensity = 0;
 let currentBgColor = "#000";
 
-// Efeitos de partículas no inimigo
+// Partículas do inimigo
 let particles = [];
+
+// Timer para fase 33
+let phase33Timer = null;
+let phase33Triggered = false;
 
 function randomInt(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -323,7 +327,6 @@ function generateDistortedLevel() {
     const mp = [];
     const bgColor = `hsl(${Math.random() * 360}, 80%, 10%)`;
 
-    // PLATAFORMA INICIAL (garante que o jogador não caia)
     lv.push({ x: 0, y: 300, w: 100, h: 20, c: "#888", t: "#aaa", type: 'normal' });
 
     let numPlats = randomInt(10, 18);
@@ -355,7 +358,6 @@ function generateDistortedLevel() {
         });
     }
 
-    // Goal no final
     lv.push({ x: 920, y: randomInt(300, 450), w: 60, h: 20, c: "#888", t: "#aaa", type: 'normal' });
     lv.push({ x: 950, y: 420, type: 'goal' });
 
@@ -398,7 +400,6 @@ function activateCheat() {
     setTimeout(() => { if (msgDiv.innerHTML !== "") msgDiv.innerHTML = ""; }, 3000);
 }
 
-// Inicialização do menu
 document.addEventListener("DOMContentLoaded", () => {
     const tabBtns = document.querySelectorAll(".tab-btn");
     const tabPanes = document.querySelectorAll(".tab-pane");
@@ -428,6 +429,8 @@ function startGame() {
     isDistorted = false;
     returnToLevel = null;
     transitionActive = false;
+    phase33Triggered = false;
+    if (phase33Timer) clearTimeout(phase33Timer);
     loadLevel(1);
     gameLoop();
 }
@@ -568,8 +571,11 @@ function loadLevel(n) {
         return;
     }
 
+    // Limpa timer da fase 33
+    if (phase33Timer) clearTimeout(phase33Timer);
+    phase33Triggered = false;
+
     if (isDistorted && returnToLevel !== null) {
-        // Retornando da fase distorcida
         currentLevel = returnToLevel;
         isDistorted = false;
         returnToLevel = null;
@@ -604,12 +610,21 @@ function loadLevel(n) {
     else { player.x = 60; player.y = 300; }
     player.vx = 0; player.vy = 0; player.angle = 0; player.grounded = false; player.canDoubleJump = true;
     document.getElementById("lvlNum").innerText = n;
+
+    // Se for fase 33, agenda a distorção após 2 segundos
+    if (n === 33 && !isDistorted && enemies.length > 0) {
+        phase33Timer = setTimeout(() => {
+            if (gameRunning && !isDistorted && !transitionActive && currentLevel === 33) {
+                startDistortionTransition();
+            }
+        }, 2000);
+    }
 }
 
 function startDistortionTransition() {
     if (transitionActive || isDistorted) return;
     transitionActive = true;
-    transitionTimer = 45;       // duração da transição (45 frames)
+    transitionTimer = 60;       // transição mais longa (2 segundos a 60fps)
     transitionIntensity = 0;
 }
 
@@ -628,17 +643,14 @@ function enterDistortedPhase() {
     player.grounded = false;
     player.canDoubleJump = true;
     document.getElementById("lvlNum").innerText = "???";
-    // Mantém a transição ativa por mais alguns frames após entrar
     transitionActive = true;
-    transitionTimer = 20;
+    transitionTimer = 30; // mantém o efeito por mais meio segundo
 }
 
 function updateEnemyMovement(e) {
-    // Movimento horizontal (zig‑zag)
     e.x += e.speedX * e.direction;
     if (e.x < 50) { e.x = 50; e.direction = 1; }
     if (e.x + e.w > canvas.width - 50) { e.x = canvas.width - e.w - 50; e.direction = -1; }
-    // Movimento vertical senoidal
     e.y = e.originalY + Math.sin(Date.now() * 0.008 + e.phase) * e.amplitude;
 }
 
@@ -691,8 +703,8 @@ function update() {
 
     if(b.isAssas && !isDistorted) { spriteTimer++; if(spriteTimer % 5 === 0) spriteFrame = (spriteFrame + 1) % 8; }
 
-    // Controle do jogador
-    let moveSpeed = harderMode ? 10.0 : 8.1;
+    // Controle do jogador - velocidade um pouco maior
+    let moveSpeed = harderMode ? 10.5 : 9.2;
     if (keys[39]) player.vx = moveSpeed;
     else if (keys[37]) player.vx = -moveSpeed;
     else player.vx *= 0.92;
@@ -757,17 +769,20 @@ function update() {
 
     if (!collisionOccurred) player.grounded = false;
 
-    // Atualiza inimigos (movimento e visão)
-    if (!isDistorted && currentLevel >= 33 && currentLevel !== 100) {
+    // Atualiza inimigos (movimento e visão) – exceto na fase 33 que usa timer
+    if (!isDistorted && currentLevel >= 33 && currentLevel !== 100 && currentLevel !== 33) {
         for (let e of enemies) {
             updateEnemyMovement(e);
             if (enemySeesPlayer(e)) {
                 startDistortionTransition();
             }
         }
+    } else if (!isDistorted && currentLevel === 33 && !phase33Triggered && enemies.length > 0) {
+        // Se o timer falhou (ex: jogador muito rápido), mas ainda não disparou, mantém
+        // O timer já está rodando, não faz nada aqui
     }
 
-    // Animação do inimigo (22 FPS ~ a cada 3 quadros)
+    // Animação do inimigo (22 FPS)
     enemyFrameCounter++;
     if (enemyFrameCounter >= enemyFrameDelay) {
         enemyFrameCounter = 0;
@@ -796,10 +811,10 @@ function update() {
         if (particles[i].life <= 0) particles.splice(i,1);
     }
 
-    // Transição de distorção
+    // Transição de distorção (efeito cinematográfico)
     if (transitionActive) {
         transitionTimer--;
-        transitionIntensity = Math.min(1, (45 - transitionTimer) / 45);
+        transitionIntensity = Math.sin((60 - transitionTimer) / 60 * Math.PI); // cresce e decai
         if (transitionTimer <= 0) {
             transitionActive = false;
             if (!isDistorted) {
@@ -851,19 +866,28 @@ function distToSegment(p, v, w) {
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Efeito de transição
+    // Efeito de transição cinematográfico
     if (transitionActive) {
-        const intensity = Math.sin(transitionTimer * 0.5) * (1 - transitionIntensity) * 0.2;
+        const intensity = transitionIntensity;
+        // Chromatic aberration (deslocamento de cores)
         ctx.save();
-        ctx.translate((Math.random() - 0.5) * 15 * intensity, (Math.random() - 0.5) * 15 * intensity);
+        ctx.translate((Math.random() - 0.5) * 20 * intensity, (Math.random() - 0.5) * 15 * intensity);
         ctx.globalCompositeOperation = "difference";
-        ctx.fillStyle = `rgba(255,0,0,${0.2 + intensity * 0.5})`;
+        ctx.fillStyle = `rgba(255,0,0,${0.3 * intensity})`;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = `rgba(0,255,0,${0.2 * intensity})`;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = `rgba(0,0,255,${0.2 * intensity})`;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.restore();
+        // Scanlines
+        for (let i = 0; i < canvas.height; i+=4) {
+            ctx.fillStyle = `rgba(0,0,0,${0.3 * intensity})`;
+            ctx.fillRect(0, i, canvas.width, 2);
+        }
     }
 
     if (currentLevel === 100 && !isDistorted) {
-        // Fase final
         ctx.fillStyle = anniversaryTheme ? "#ff6600" : "#FFD700";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         for (let i = 0; i < 50; i++) {
