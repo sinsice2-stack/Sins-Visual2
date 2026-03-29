@@ -4,11 +4,7 @@
     <meta charset="UTF-8">
     <title>Super Ball - Sinsice Definitive Edition</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             margin: 0;
             overflow: hidden;
@@ -78,12 +74,8 @@
             overflow-y: auto;
             border: 1px solid rgba(255, 170, 51, 0.5);
         }
-        .tab-pane {
-            display: none;
-        }
-        .tab-pane.active {
-            display: block;
-        }
+        .tab-pane { display: none; }
+        .tab-pane.active { display: block; }
         .menu-btn {
             padding: 12px 30px;
             margin: 10px;
@@ -114,9 +106,7 @@
             outline: none;
             border: 1px solid #ffaa33;
         }
-        input::placeholder {
-            color: rgba(255, 255, 255, 0.7);
-        }
+        input::placeholder { color: rgba(255, 255, 255, 0.7); }
         .hud {
             color: white;
             position: absolute;
@@ -131,10 +121,7 @@
             text-shadow: 2px 2px 4px #000;
             font-family: monospace;
         }
-        b {
-            color: #ffaa33;
-            font-size: 24px;
-        }
+        b { color: #ffaa33; font-size: 24px; }
         .victory-overlay {
             position: absolute;
             top: 0;
@@ -170,11 +157,7 @@
             text-align: center;
             line-height: 2;
         }
-        .victory-stats span {
-            color: #ffaa33;
-            font-weight: bold;
-            font-size: 32px;
-        }
+        .victory-stats span { color: #ffaa33; font-weight: bold; font-size: 32px; }
         .restart-btn {
             padding: 15px 40px;
             margin-top: 30px;
@@ -186,45 +169,24 @@
             font-weight: bold;
             transition: 0.3s;
         }
-        .restart-btn:hover {
-            transform: scale(1.1);
-            background: orange;
-            box-shadow: 0 0 30px gold;
-        }
+        .restart-btn:hover { transform: scale(1.1); background: orange; box-shadow: 0 0 30px gold; }
         .cheat-input {
             display: flex;
             gap: 10px;
             justify-content: center;
             margin-bottom: 20px;
         }
-        .cheat-input input {
-            width: 220px;
-        }
+        .cheat-input input { width: 220px; }
         .cheat-list {
             text-align: left;
             background: rgba(0, 0, 0, 0.6);
             padding: 15px;
             border-radius: 12px;
         }
-        .cheat-message {
-            color: #ffcc66;
-            margin-top: 10px;
-            font-weight: bold;
-        }
-        h2 {
-            margin-bottom: 20px;
-            color: #ffaa33;
-        }
-        ul {
-            margin-left: 20px;
-            line-height: 1.6;
-        }
-        code {
-            background: #222;
-            padding: 2px 6px;
-            border-radius: 6px;
-            color: #ffaa33;
-        }
+        .cheat-message { color: #ffcc66; margin-top: 10px; font-weight: bold; }
+        h2 { margin-bottom: 20px; color: #ffaa33; }
+        ul { margin-left: 20px; line-height: 1.6; }
+        code { background: #222; padding: 2px 6px; border-radius: 6px; color: #ffaa33; }
     </style>
 </head>
 <body>
@@ -253,7 +215,7 @@
                     <li>R : recarregar blocos de gelo (fases com lava)</li>
                 </ul>
                 <p><strong>Objetivo:</strong> Chegar até a bandeira vermelha em cada fase. Complete 100 fases e vença!</p>
-                <p><strong>Inimigo distorcido:</strong> A partir da fase 33, um monstro gigante aparecerá. Se ele te <strong>ver</strong>, o mundo começará a se distorcer!</p>
+                <p><strong>Inimigo distorcido:</strong> A partir da fase 33, um monstro gigante aparece. Ele se move em zig‑zag e, se te <strong>ver</strong>, o mundo se distorcerá!</p>
                 <p><strong>Dicas:</strong> Use o duplo pulo para alcançar plataformas distantes. Nas fases com lasers, espere o momento certo para passar.</p>
             </div>
             <div id="secrets" class="tab-pane">
@@ -283,11 +245,11 @@ const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 canvas.width = 1000; canvas.height = 500;
 
-// SPRITES
+// Sprites
 const ballImg = new Image(); ballImg.src = 'bola amarela.webp';
 const gunImg = new Image(); gunImg.src = 'arma-de-gelo.webp';
 
-// Inimigo (9 frames) – tamanho 180x180
+// Inimigo (9 frames) – 150x150
 const enemySprites = [];
 for (let i = 1; i <= 9; i++) {
     const img = new Image();
@@ -300,7 +262,6 @@ const assasSprites = [];
 const assasSpriteData = [];
 let assasLoadedCount = 0;
 const totalAssasSprites = 8;
-
 for (let i = 1; i <= 8; i++) {
     const img = new Image();
     img.src = `bola-amarela-assas${i.toString().padStart(4, '0')}.webp`;
@@ -321,7 +282,7 @@ for (let i = 1; i <= 8; i++) {
 let currentLevel = 1, deaths = 0, startTime, gameRunning = false;
 let keys = {}, mouse = { x: 0, y: 0 }, platforms = [], bullets = [], lasers = [], movingPlatforms = [];
 let enemies = [];
-let enemyFrame = 0, enemyTimer = 0;
+let enemyFrame = 0, enemyFrameDelay = 3, enemyFrameCounter = 0; // 22 FPS (60/3≈20, próximo)
 let player = { x: 60, y: 300, r: 18, vx: 0, vy: 0, angle: 0, grounded: false, canDoubleJump: true };
 let spriteFrame = 0, spriteTimer = 0;
 let playerName = "";
@@ -332,15 +293,28 @@ let harderMode = false;
 let distortedMode = false;
 let anniversaryTheme = false;
 
-// Controle de distorção
-let distortionActive = false;       // se a distorção está em andamento
-let distortionTimer = 0;            // contador para animação de distorção
-let isDistorted = false;            // se está atualmente em fase distorcida
-let returnToLevel = null;           // fase para retornar após distorcida
+// Controle de fase distorcida
+let isDistorted = false;
+let returnToLevel = null;
+let distortedLevelData = null;
+let transitionActive = false;      // true enquanto a transição está ocorrendo
+let transitionTimer = 0;           // frames restantes da transição
+let transitionIntensity = 0;       // intensidade da distorção na tela
 let currentBgColor = "#000";
+
+// Efeitos de partículas no inimigo
+let particles = [];
 
 function randomInt(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function getRandomLevel(excludeCurrent = true) {
+    let newLevel;
+    do {
+        newLevel = randomInt(1, 99);
+    } while (excludeCurrent && newLevel === currentLevel);
+    return newLevel;
 }
 
 // Gera fase distorcida (sem inimigo)
@@ -348,7 +322,6 @@ function generateDistortedLevel() {
     const lv = [];
     const lz = [];
     const mp = [];
-
     const bgColor = `hsl(${Math.random() * 360}, 80%, 10%)`;
 
     let numPlats = randomInt(10, 18);
@@ -399,7 +372,6 @@ function generateDistortedLevel() {
     return { platforms: lv, lasers: lz, movingPlatforms: mp, bgColor };
 }
 
-// Ativação de cheats
 function activateCheat() {
     const input = document.getElementById("cheatCode");
     const code = input.value.trim().toUpperCase();
@@ -407,29 +379,17 @@ function activateCheat() {
     if (!code) return;
 
     switch(code) {
-        case "GAMERUIM":
-            glitchMode = true;
-            msgDiv.innerHTML = "🌀 Modo malfeito ativado!";
-            break;
-        case "HARDER":
-            harderMode = true;
-            msgDiv.innerHTML = "⚡ Dificuldade aumentada!";
-            break;
+        case "GAMERUIM": glitchMode = true; msgDiv.innerHTML = "🌀 Modo malfeito ativado!"; break;
+        case "HARDER": harderMode = true; msgDiv.innerHTML = "⚡ Dificuldade aumentada!"; break;
         case "3110":
             const today = new Date();
             if (today.getMonth() === 9 && today.getDate() === 31) {
                 anniversaryTheme = true;
                 msgDiv.innerHTML = "🎃 Tema de aniversário ativado!";
-            } else {
-                msgDiv.innerHTML = "❌ Este código só funciona em 31/10!";
-            }
+            } else msgDiv.innerHTML = "❌ Este código só funciona em 31/10!";
             break;
-        case "DISTORCED":
-            distortedMode = true;
-            msgDiv.innerHTML = "👾 Modo Distorcido ativado!";
-            break;
-        default:
-            msgDiv.innerHTML = "❌ Código desconhecido!";
+        case "DISTORCED": distortedMode = true; msgDiv.innerHTML = "👾 Modo Distorcido ativado!"; break;
+        default: msgDiv.innerHTML = "❌ Código desconhecido!";
     }
     input.value = "";
     setTimeout(() => { if (msgDiv.innerHTML !== "") msgDiv.innerHTML = ""; }, 3000);
@@ -458,13 +418,13 @@ function startGame() {
     document.getElementById("gameHud").style.display = "flex";
     document.getElementById("displayName").innerText = playerName;
     canvas.style.display = "block";
-    gameRunning = true; 
+    gameRunning = true;
     startTime = Date.now();
     deaths = 0;
     document.getElementById("deathCount").innerText = deaths;
     isDistorted = false;
     returnToLevel = null;
-    distortionActive = false;
+    transitionActive = false;
     loadLevel(1);
     gameLoop();
 }
@@ -508,9 +468,9 @@ function getBiome(n) {
     if (n <= 20) return { bg: "#f0f8ff", g: "#b0c4de", t: "#ffffff", grav: 0.8 };
     if (n <= 32) return { bg: "#2a0000", g: "#440000", t: "#ff4500", lava: true, hasGun: true, grav: 0.8 };
     if (n >= 33 && n <= 40) return { bg: "#2a1a2a", g: "#4a2a3a", t: "#ff66cc", grav: 0.8, isDynamic: true };
-    if (n <= 50) return { bg: "#001a33", g: "#003366", t: "#00d4ff", water: true, grav: 0.2 }; 
-    if (n <= 70) return { bg: "#050505", g: "#111", t: "#f00", laser: true, grav: 0.8, isAssas: true, flappy: true, hasGun: true }; 
-    if (n <= 90) return { bg: "#4a1a2a", g: "#2a0a1a", t: "#ff66cc", grav: 0.85 }; 
+    if (n <= 50) return { bg: "#001a33", g: "#003366", t: "#00d4ff", water: true, grav: 0.2 };
+    if (n <= 70) return { bg: "#050505", g: "#111", t: "#f00", laser: true, grav: 0.8, isAssas: true, flappy: true, hasGun: true };
+    if (n <= 90) return { bg: "#4a1a2a", g: "#2a0a1a", t: "#ff66cc", grav: 0.85 };
     if (n <= 99) return { bg: "#000011", g: "#000", t: "#fff", space: true, grav: 0.05 };
     return { bg: "#000011", g: "#000", t: "#fff", space: true, grav: 0.05 };
 }
@@ -581,24 +541,33 @@ function generateLevel(n) {
         lv.push({x: 960, y: ly, type: 'goal'});
     }
 
-    // Inimigo só a partir da fase 33
+    // Inimigo a partir da fase 33
     if (n >= 33 && n !== 100) {
-        let enemyX = randomInt(300, 820);
-        let enemyY = randomInt(100, 320);
-        en.push({ x: enemyX, y: enemyY, w: 180, h: 180, frame: 0, cooldown: 0 });
+        let enemyX = randomInt(300, 850);
+        let enemyY = randomInt(100, 400);
+        en.push({
+            x: enemyX, y: enemyY, w: 150, h: 150,
+            frame: 0,
+            // Movimento em zig-zag
+            angle: 0,
+            speedX: 1.2 + Math.random() * 0.8,
+            amplitude: 40 + Math.random() * 30,
+            phase: Math.random() * Math.PI * 2,
+            direction: Math.random() > 0.5 ? 1 : -1
+        });
     }
 
     return { platforms: lv, lasers: lz, movingPlatforms: mp, enemies: en, bgColor: b.bg };
 }
 
-function loadLevel(n) { 
+function loadLevel(n) {
     if (n > 100) {
         showVictory();
         return;
     }
 
-    // Retorno de fase distorcida
     if (isDistorted && returnToLevel !== null) {
+        // Retornando da fase distorcida
         currentLevel = returnToLevel;
         isDistorted = false;
         returnToLevel = null;
@@ -614,7 +583,6 @@ function loadLevel(n) {
         else player = { ...player, x: 60, y: 300 };
         player.vx = 0; player.vy = 0; player.angle = 0; player.grounded = false; player.canDoubleJump = true;
         document.getElementById("lvlNum").innerText = currentLevel;
-        distortionActive = false;
         return;
     }
 
@@ -628,28 +596,60 @@ function loadLevel(n) {
     currentBgColor = data.bgColor;
 
     let b = getBiome(n);
-    if (b.laser) {
-        player.x = 40; player.y = 250;
-    } else if (b.isDynamic) {
-        player.x = 60; player.y = 430;
-    } else if (n === 100) {
-        player.x = 100; player.y = 250;
-    } else {
-        player.x = 60; player.y = 300;
-    }
+    if (b.laser) { player.x = 40; player.y = 250; }
+    else if (b.isDynamic) { player.x = 60; player.y = 430; }
+    else if (n === 100) { player.x = 100; player.y = 250; }
+    else { player.x = 60; player.y = 300; }
     player.vx = 0; player.vy = 0; player.angle = 0; player.grounded = false; player.canDoubleJump = true;
     document.getElementById("lvlNum").innerText = n;
 }
 
-// Verifica se o inimigo vê o jogador
-function enemySeesPlayer(enemy) {
-    const enemyCenter = { x: enemy.x + enemy.w/2, y: enemy.y + enemy.h/2 };
+function startDistortionTransition() {
+    if (transitionActive || isDistorted) return;
+    transitionActive = true;
+    transitionTimer = 45;       // duração da transição (45 frames)
+    transitionIntensity = 0;
+}
+
+function enterDistortedPhase() {
+    if (isDistorted) return;
+    const data = generateDistortedLevel();
+    platforms = data.platforms;
+    lasers = data.lasers;
+    movingPlatforms = data.movingPlatforms;
+    enemies = [];
+    currentBgColor = data.bgColor;
+    isDistorted = true;
+    returnToLevel = currentLevel;
+    player.x = 60; player.y = 300;
+    player.vx = 0; player.vy = 0;
+    player.grounded = false;
+    player.canDoubleJump = true;
+    document.getElementById("lvlNum").innerText = "???";
+    // Mantém a transição ativa por mais alguns frames após entrar
+    transitionActive = true;
+    transitionTimer = 20;
+}
+
+function updateEnemyMovement(e) {
+    // Movimento zig‑zag: desloca horizontalmente com uma onda senoidal
+    e.x += e.speedX * e.direction;
+    // Reverte direção se encostar nas bordas da tela
+    if (e.x < 50) { e.x = 50; e.direction = 1; }
+    if (e.x + e.w > canvas.width - 50) { e.x = canvas.width - e.w - 50; e.direction = -1; }
+    // Movimento vertical senoidal
+    e.y = e.originalY + Math.sin(Date.now() * 0.008 + e.phase) * e.amplitude;
+}
+
+function enemySeesPlayer(e) {
+    const enemyCenter = { x: e.x + e.w/2, y: e.y + e.h/2 };
     const playerCenter = { x: player.x, y: player.y };
     const dx = playerCenter.x - enemyCenter.x;
     const dy = playerCenter.y - enemyCenter.y;
     const distance = Math.hypot(dx, dy);
-    if (distance > 350) return false;
+    if (distance > 380) return false; // alcance de visão
 
+    // Linha de visão: verifica obstáculos entre eles
     const steps = 20;
     for (let i = 0; i <= steps; i++) {
         const t = i / steps;
@@ -669,39 +669,12 @@ function enemySeesPlayer(enemy) {
     return true;
 }
 
-// Inicia a animação de distorção
-function startDistortion() {
-    if (distortionActive || isDistorted) return;
-    distortionActive = true;
-    distortionTimer = 0;
-}
-
-function applyDistortion() {
-    if (!distortionActive) return;
-    distortionTimer++;
-    if (distortionTimer >= 120) { // 2 segundos a 60fps
-        // Entra na fase distorcida
-        const data = generateDistortedLevel();
-        platforms = data.platforms;
-        lasers = data.lasers;
-        movingPlatforms = data.movingPlatforms;
-        enemies = [];
-        currentBgColor = data.bgColor;
-        isDistorted = true;
-        returnToLevel = currentLevel;
-        player.x = 60; player.y = 300;
-        player.vx = 0; player.vy = 0;
-        player.grounded = false;
-        player.canDoubleJump = true;
-        document.getElementById("lvlNum").innerText = "???";
-        distortionActive = false;
-    }
-}
-
 function update() {
     if (!gameRunning) return;
 
     let b = getBiome(currentLevel);
+
+    // Fase final
     if (currentLevel === 100 && !isDistorted) {
         player.vy += 0.5;
         player.vx *= 0.98;
@@ -710,9 +683,7 @@ function update() {
         player.angle += player.vx * 0.15;
         if (player.x < player.r) player.x = player.r;
         if (player.x > 1000 - player.r) player.x = 1000 - player.r;
-        if (player.x > 450 && player.y + player.r > 180 && player.y - player.r < 220) {
-            loadLevel(101);
-        }
+        if (player.x > 450 && player.y + player.r > 180 && player.y - player.r < 220) loadLevel(101);
         if (player.y > 500) { deaths++; loadLevel(100); }
         document.getElementById("deathCount").innerText = deaths;
         return;
@@ -729,9 +700,7 @@ function update() {
 
     // Rotação
     player.angle += player.vx * 0.14;
-    if (!player.grounded && Math.abs(player.vy) > 3) {
-        player.angle += (player.vy > 0 ? 0.08 : -0.08);
-    }
+    if (!player.grounded && Math.abs(player.vy) > 3) player.angle += (player.vy > 0 ? 0.08 : -0.08);
     if (player.angle > Math.PI * 2) player.angle -= Math.PI * 2;
     if (player.angle < 0) player.angle += Math.PI * 2;
 
@@ -747,14 +716,11 @@ function update() {
     player.grounded = false;
     let collisionOccurred = false;
 
-    // Verifica goal
+    // Goal
     for (let p of platforms) {
         if (p.type === 'goal' && Math.hypot(player.x - p.x, player.y - (p.y - 20)) < 45) {
-            if (isDistorted) {
-                loadLevel(returnToLevel);
-            } else {
-                loadLevel(currentLevel + 1);
-            }
+            if (isDistorted) loadLevel(returnToLevel);
+            else loadLevel(currentLevel + 1);
             return;
         }
     }
@@ -791,28 +757,62 @@ function update() {
 
     if (!collisionOccurred) player.grounded = false;
 
-    // Verifica visão do inimigo (apenas se não estiver distorcido)
-    if (!isDistorted && !distortionActive && currentLevel >= 33 && currentLevel !== 100) {
+    // Atualiza inimigos (movimento e visão)
+    if (!isDistorted && currentLevel >= 33 && currentLevel !== 100) {
         for (let e of enemies) {
+            // Salva Y original para movimento senoidal
+            if (e.originalY === undefined) e.originalY = e.y;
+            updateEnemyMovement(e);
+
+            // Verifica visão
             if (enemySeesPlayer(e)) {
-                startDistortion();
-                break;
+                startDistortionTransition();
             }
         }
     }
 
-    // Atualiza animação do inimigo (mais lenta)
-    enemyTimer++;
-    if (enemyTimer % 8 === 0) {
+    // Animação do inimigo (22 FPS ~ a cada 3 quadros)
+    enemyFrameCounter++;
+    if (enemyFrameCounter >= enemyFrameDelay) {
+        enemyFrameCounter = 0;
         enemies.forEach(e => { e.frame = (e.frame + 1) % 9; });
     }
 
-    // Aplica distorção se ativa
-    if (distortionActive) {
-        applyDistortion();
+    // Atualiza partículas do inimigo (efeito Asriel)
+    if (!isDistorted && currentLevel >= 33) {
+        for (let e of enemies) {
+            if (Math.random() < 0.3) {
+                particles.push({
+                    x: e.x + e.w/2 + (Math.random() - 0.5) * 60,
+                    y: e.y + e.h/2 + (Math.random() - 0.5) * 60,
+                    vx: (Math.random() - 0.5) * 2,
+                    vy: (Math.random() - 0.5) * 2,
+                    life: 30,
+                    color: `hsl(${Math.random() * 60 + 300}, 100%, 60%)`
+                });
+            }
+        }
+    }
+    for (let i = particles.length-1; i>=0; i--) {
+        particles[i].x += particles[i].vx;
+        particles[i].y += particles[i].vy;
+        particles[i].life--;
+        if (particles[i].life <= 0) particles.splice(i,1);
     }
 
-    // Morte por queda, lava
+    // Transição de distorção
+    if (transitionActive) {
+        transitionTimer--;
+        transitionIntensity = Math.min(1, (45 - transitionTimer) / 45); // aumenta até o meio, depois diminui
+        if (transitionTimer <= 0) {
+            transitionActive = false;
+            if (!isDistorted) {
+                enterDistortedPhase();
+            }
+        }
+    }
+
+    // Morte por queda/lava
     if (player.y > 550) { deaths++; loadLevel(currentLevel); }
     if (player.y < -150) { deaths++; loadLevel(currentLevel); }
     if (b.lava && player.y + player.r > 480 && !isDistorted) { deaths++; loadLevel(currentLevel); }
@@ -855,17 +855,19 @@ function distToSegment(p, v, w) {
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Efeito de distorção durante a animação
-    if (distortionActive) {
+    // Aplica efeito de transição (distorção de tela)
+    if (transitionActive) {
+        const intensity = Math.sin(transitionTimer * 0.5) * (1 - transitionIntensity) * 0.2;
         ctx.save();
-        ctx.translate((Math.random() - 0.5) * 15, (Math.random() - 0.5) * 15);
+        ctx.translate((Math.random() - 0.5) * 15 * intensity, (Math.random() - 0.5) * 15 * intensity);
         ctx.globalCompositeOperation = "difference";
-        ctx.fillStyle = `rgba(255,0,0,0.3)`;
+        ctx.fillStyle = `rgba(255,0,0,${0.2 + intensity * 0.5})`;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.restore();
     }
 
     if (currentLevel === 100 && !isDistorted) {
+        // Fase final
         ctx.fillStyle = anniversaryTheme ? "#ff6600" : "#FFD700";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         for (let i = 0; i < 50; i++) {
@@ -930,7 +932,7 @@ function draw() {
             ctx.restore();
         }
 
-        // Plataformas
+        // Plataformas fixas
         for (let p of platforms) {
             if (p.type === 'goal') {
                 ctx.fillStyle = "#fff";
@@ -959,16 +961,13 @@ function draw() {
             }
         }
 
-        // Inimigo (com efeito de aura)
+        // Inimigo com efeitos
         if (!isDistorted && currentLevel >= 33 && currentLevel !== 100) {
             for (let e of enemies) {
-                // Aura vermelha pulsante
-                const pulse = Math.sin(Date.now() * 0.008) * 0.3 + 0.5;
+                // Brilho pulsante (aura)
                 ctx.save();
                 ctx.shadowBlur = 20;
-                ctx.shadowColor = `rgba(255, 0, 0, ${0.8 + pulse})`;
-                ctx.shadowOffsetX = 0;
-                ctx.shadowOffsetY = 0;
+                ctx.shadowColor = `hsl(${Date.now() * 0.01 % 360}, 100%, 60%)`;
                 const frame = e.frame % 9;
                 if (enemySprites[frame] && enemySprites[frame].complete) {
                     ctx.drawImage(enemySprites[frame], e.x, e.y, e.w, e.h);
@@ -977,13 +976,20 @@ function draw() {
                     ctx.fillRect(e.x, e.y, e.w, e.h);
                 }
                 ctx.restore();
-
-                // Pequenos glitch particles
-                for (let i = 0; i < 5; i++) {
-                    ctx.fillStyle = `rgba(255, ${Math.random() * 100}, 0, 0.8)`;
-                    ctx.fillRect(e.x + Math.random() * e.w, e.y + Math.random() * e.h, 2, 2);
-                }
+                // Círculo pulsante ao redor
+                ctx.beginPath();
+                ctx.arc(e.x + e.w/2, e.y + e.h/2, 85 + Math.sin(Date.now() * 0.01) * 10, 0, Math.PI*2);
+                ctx.fillStyle = `rgba(255, 80, 120, ${0.3 + Math.sin(Date.now() * 0.02) * 0.2})`;
+                ctx.fill();
             }
+        }
+
+        // Partículas
+        for (let p of particles) {
+            ctx.fillStyle = p.color;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, 3, 0, Math.PI*2);
+            ctx.fill();
         }
 
         // Balas
