@@ -20,9 +20,8 @@
             box-shadow: 0 0 30px rgba(255, 170, 51, 0.5);
             cursor: crosshair;
             border-radius: 8px;
-            /* Renderização padrão (suave) */
         }
-        /* (demais estilos iguais aos anteriores) */
+        /* (demais estilos iguais ao anterior, mantidos para brevidade) */
         .overlay {
             position: absolute;
             top: 0;
@@ -563,10 +562,10 @@ function generateLevel(n) {
             canDistort: true
         });
     }
-    // Inimigo quadrado: fases 42 em diante – tamanho 100x100 (muito encorpado)
+    // Inimigo quadrado: fases 42 em diante – tamanho 100x100, plataformas com largura mínima 80
     else if (n >= 42 && n !== 100) {
         // Exclui a plataforma inicial (x < 100) e garante largura mínima para o inimigo
-        let possiblePlatforms = lv.filter(p => p.type === 'normal' && p.x > 100 && p.w >= 110);
+        let possiblePlatforms = lv.filter(p => p.type === 'normal' && p.x > 100 && p.w >= 80);
         if (possiblePlatforms.length > 0) {
             let plat = possiblePlatforms[Math.floor(Math.random() * possiblePlatforms.length)];
             let enemyW = 100;
