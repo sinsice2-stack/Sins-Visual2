@@ -20,7 +20,11 @@
             box-shadow: 0 0 30px rgba(255, 170, 51, 0.5);
             cursor: crosshair;
             border-radius: 8px;
+            /* Melhora a nitidez de imagens redimensionadas */
+            image-rendering: crisp-edges;
+            image-rendering: pixelated;
         }
+        /* (resto dos estilos igual ao anterior) */
         .overlay {
             position: absolute;
             top: 0;
@@ -258,7 +262,7 @@ for (let i = 1; i <= 9; i++) {
     enemySprites.push(img);
 }
 
-// NOVO INIMIGO: quadrado (Geometry Dash style) - tamanho aumentado para 48x48 (mais encorpado)
+// NOVO INIMIGO: quadrado – tamanho aumentado para 60x60 (mais encorpado)
 const squareEnemyImg = new Image();
 squareEnemyImg.src = 'quadrado.webp';
 
@@ -316,7 +320,7 @@ function randomInt(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-// Gera fase distorcida
+// Gera fase distorcida (idêntica à anterior)
 function generateDistortedLevel() {
     const lv = [];
     const lz = [];
@@ -561,13 +565,14 @@ function generateLevel(n) {
             canDistort: true
         });
     }
-    // Inimigo quadrado: fases 42 em diante – tamanho aumentado para 48x48 (mais encorpado)
+    // Inimigo quadrado: fases 42 em diante – tamanho 60x60 (mais encorpado)
     else if (n >= 42 && n !== 100) {
-        let possiblePlatforms = lv.filter(p => p.type === 'normal' && p.w >= 70);
+        // Plataformas com largura mínima 90px para acomodar o quadrado
+        let possiblePlatforms = lv.filter(p => p.type === 'normal' && p.w >= 90);
         if (possiblePlatforms.length > 0) {
             let plat = possiblePlatforms[Math.floor(Math.random() * possiblePlatforms.length)];
-            let enemyW = 48;
-            let enemyH = 48;
+            let enemyW = 60;
+            let enemyH = 60;
             let enemyX = plat.x + 10;
             enemyX = Math.min(Math.max(enemyX, plat.x), plat.x + plat.w - enemyW);
             en.push({
@@ -644,9 +649,7 @@ function loadLevel(n) {
 function completeDistortedPhase() {
     if (!isDistorted) return;
     let nextLevel = returnToLevel + 1;
-    // Limpa estado distorcido antes de carregar a próxima fase
     isDistorted = false;
-    let tempReturn = returnToLevel;
     returnToLevel = null;
     loadLevel(nextLevel);
 }
@@ -770,14 +773,13 @@ function update() {
     player.grounded = false;
     let collisionOccurred = false;
 
-    // VERIFICAÇÃO DO GOAL
+    // GOAL
     for (let p of platforms) {
         if (p.type === 'goal') {
             const goalCenterX = p.x;
             const goalCenterY = p.y - 50;
             if (Math.hypot(player.x - goalCenterX, player.y - goalCenterY) < 45) {
                 if (isDistorted) {
-                    // Completa a fase distorcida e avança
                     completeDistortedPhase();
                 } else {
                     loadLevel(currentLevel + 1);
@@ -821,16 +823,14 @@ function update() {
 
     if (!collisionOccurred) player.grounded = false;
 
-    // Atualiza movimento dos inimigos e colisão
+    // Inimigos: movimento e colisão
     for (let e of enemies) {
         updateEnemyMovement(e);
-        // Colisão com o jogador
         if (player.x + player.r > e.x && player.x - player.r < e.x + e.w &&
             player.y + player.r > e.y && player.y - player.r < e.y + e.h) {
             deaths++;
             if (isDistorted) {
-                // Se morreu na fase distorcida, recarrega a mesma fase distorcida
-                loadLevel(currentLevel);
+                loadLevel(currentLevel); // recarrega a fase distorcida
             } else {
                 loadLevel(currentLevel);
             }
@@ -848,14 +848,12 @@ function update() {
         }
     }
 
-    // Animação dos sprites do distorcedor
+    // Animação do distorcedor
     enemyFrameCounter++;
     if (enemyFrameCounter >= enemyFrameDelay) {
         enemyFrameCounter = 0;
         enemies.forEach(e => {
-            if (e.type === 'distorter') {
-                e.frame = (e.frame + 1) % 9;
-            }
+            if (e.type === 'distorter') e.frame = (e.frame + 1) % 9;
         });
     }
 
@@ -881,15 +879,13 @@ function update() {
         if (particles[i].life <= 0) particles.splice(i,1);
     }
 
-    // Transição de distorção
+    // Transição
     if (transitionActive) {
         transitionTimer--;
         transitionIntensity = Math.sin((90 - transitionTimer) / 90 * Math.PI);
         if (transitionTimer <= 0) {
             transitionActive = false;
-            if (!isDistorted) {
-                enterDistortedPhase();
-            }
+            if (!isDistorted) enterDistortedPhase();
         }
     }
 
@@ -1045,7 +1041,6 @@ function draw() {
                 ctx.fillStyle = `rgba(255, 50, 80, ${0.4 + Math.sin(Date.now() * 0.02) * 0.2})`;
                 ctx.fill();
             } else if (e.type === 'square') {
-                // Desenha o quadrado com tamanho 48x48 (mais encorpado)
                 if (squareEnemyImg.complete) {
                     ctx.drawImage(squareEnemyImg, e.x, e.y, e.w, e.h);
                 } else {
