@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Super Ball - Sinsice Definitive Edition</title>
     <style>
+        /* Estilos mantidos iguais aos anteriores */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             margin: 0;
@@ -20,10 +21,6 @@
             box-shadow: 0 0 30px rgba(255, 170, 51, 0.5);
             cursor: crosshair;
             border-radius: 8px;
-            /* Garante renderização nítida dos sprites */
-            image-rendering: crisp-edges;    /* Fallback */
-            image-rendering: pixelated;      /* Chrome, Edge */
-            image-rendering: crisp-edges;    /* Firefox */
         }
         .overlay {
             position: absolute;
@@ -262,7 +259,7 @@ for (let i = 1; i <= 9; i++) {
     enemySprites.push(img);
 }
 
-// NOVO INIMIGO: quadrado – tamanho 100x100
+// NOVO INIMIGO: quadrado – tamanho 60x60 (intermediário, mais encorpado que o player)
 const squareEnemyImg = new Image();
 squareEnemyImg.src = 'quadrado.webp';
 
@@ -565,14 +562,14 @@ function generateLevel(n) {
             canDistort: true
         });
     }
-    // Inimigo quadrado: fases 42 em diante – tamanho 100x100, plataformas com largura mínima 80
+    // Inimigo quadrado: fases 42 em diante – tamanho 60x60 (intermediário)
     else if (n >= 42 && n !== 100) {
-        // Exclui a plataforma inicial (x < 100) e garante largura mínima para o inimigo
+        // Exclui a plataforma inicial (x < 100) e garante largura mínima para o inimigo (80px)
         let possiblePlatforms = lv.filter(p => p.type === 'normal' && p.x > 100 && p.w >= 80);
         if (possiblePlatforms.length > 0) {
             let plat = possiblePlatforms[Math.floor(Math.random() * possiblePlatforms.length)];
-            let enemyW = 100;
-            let enemyH = 100;
+            let enemyW = 60;
+            let enemyH = 60;
             let enemyX = plat.x + 10;
             enemyX = Math.min(Math.max(enemyX, plat.x), plat.x + plat.w - enemyW);
             en.push({
@@ -598,13 +595,17 @@ function loadLevel(n) {
         return;
     }
 
+    // Caso especial: se estamos numa fase distorcida e o loadLevel foi chamado por morte ou reset,
+    // devemos recarregar a fase distorcida, e NÃO avançar.
     if (isDistorted) {
+        // Recarrega a fase distorcida (mesmo returnToLevel)
         const data = generateDistortedLevel();
         platforms = data.platforms;
         lasers = data.lasers;
         movingPlatforms = data.movingPlatforms;
-        enemies = [];
+        enemies = []; // sem inimigo na fase distorcida
         currentBgColor = data.bgColor;
+        // Mantém isDistorted = true e returnToLevel inalterado
         player.x = 60; player.y = 300;
         player.vx = 0; player.vy = 0;
         player.grounded = false;
@@ -613,6 +614,7 @@ function loadLevel(n) {
         return;
     }
 
+    // Se não está distorcido, carrega a fase normal normalmente
     currentLevel = n;
     isDistorted = false;
     const data = generateLevel(n);
@@ -630,6 +632,7 @@ function loadLevel(n) {
     player.vx = 0; player.vy = 0; player.angle = 0; player.grounded = false; player.canDoubleJump = true;
     document.getElementById("lvlNum").innerText = n;
 
+    // Fase 33: distorção automática APENAS UMA VEZ
     if (n === 33 && !phase33Distorted && !isDistorted && enemies.some(e => e.type === 'distorter')) {
         phase33Distorted = true;
         setTimeout(() => {
@@ -643,7 +646,9 @@ function loadLevel(n) {
 function completeDistortedPhase() {
     if (!isDistorted) return;
     let nextLevel = returnToLevel + 1;
+    // Limpa estado distorcido antes de carregar a próxima fase
     isDistorted = false;
+    let tempReturn = returnToLevel;
     returnToLevel = null;
     loadLevel(nextLevel);
 }
@@ -767,18 +772,24 @@ function update() {
     player.grounded = false;
     let collisionOccurred = false;
 
+    // VERIFICAÇÃO DO GOAL
     for (let p of platforms) {
         if (p.type === 'goal') {
             const goalCenterX = p.x;
             const goalCenterY = p.y - 50;
             if (Math.hypot(player.x - goalCenterX, player.y - goalCenterY) < 45) {
-                if (isDistorted) completeDistortedPhase();
-                else loadLevel(currentLevel + 1);
+                if (isDistorted) {
+                    // Completa a fase distorcida e avança
+                    completeDistortedPhase();
+                } else {
+                    loadLevel(currentLevel + 1);
+                }
                 return;
             }
         }
     }
 
+    // Colisão com plataformas fixas
     for (let p of platforms) {
         if (p.type !== 'goal' && player.x + player.r > p.x && player.x - player.r < p.x + p.w &&
             player.y + player.r > p.y && player.y - player.r < p.y + p.h) {
@@ -793,6 +804,7 @@ function update() {
         }
     }
 
+    // Colisão com plataformas móveis
     for (let mp of movingPlatforms) {
         let newY = mp.originalY + Math.sin(Date.now() * mp.speed + mp.phase) * mp.moveRange;
         mp.y = newY;
@@ -811,17 +823,24 @@ function update() {
 
     if (!collisionOccurred) player.grounded = false;
 
+    // Atualiza movimento dos inimigos e colisão
     for (let e of enemies) {
         updateEnemyMovement(e);
+        // Colisão com o jogador
         if (player.x + player.r > e.x && player.x - player.r < e.x + e.w &&
             player.y + player.r > e.y && player.y - player.r < e.y + e.h) {
             deaths++;
-            if (isDistorted) loadLevel(currentLevel);
-            else loadLevel(currentLevel);
+            if (isDistorted) {
+                // Se morreu na fase distorcida, recarrega a mesma fase distorcida
+                loadLevel(currentLevel);
+            } else {
+                loadLevel(currentLevel);
+            }
             return;
         }
     }
 
+    // Ativa distorção apenas para o distorcedor
     if (!isDistorted && currentLevel >= 33 && currentLevel <= 41 && currentLevel !== 100) {
         for (let e of enemies) {
             if (e.type === 'distorter' && enemySeesPlayer(e)) {
@@ -831,12 +850,18 @@ function update() {
         }
     }
 
+    // Animação dos sprites do distorcedor
     enemyFrameCounter++;
     if (enemyFrameCounter >= enemyFrameDelay) {
         enemyFrameCounter = 0;
-        enemies.forEach(e => { if (e.type === 'distorter') e.frame = (e.frame + 1) % 9; });
+        enemies.forEach(e => {
+            if (e.type === 'distorter') {
+                e.frame = (e.frame + 1) % 9;
+            }
+        });
     }
 
+    // Partículas do distorcedor
     if (!isDistorted && currentLevel >= 33 && currentLevel <= 41 && currentLevel !== 100) {
         for (let e of enemies) {
             if (e.type === 'distorter' && Math.random() < 0.4) {
@@ -858,19 +883,24 @@ function update() {
         if (particles[i].life <= 0) particles.splice(i,1);
     }
 
+    // Transição de distorção
     if (transitionActive) {
         transitionTimer--;
         transitionIntensity = Math.sin((90 - transitionTimer) / 90 * Math.PI);
         if (transitionTimer <= 0) {
             transitionActive = false;
-            if (!isDistorted) enterDistortedPhase();
+            if (!isDistorted) {
+                enterDistortedPhase();
+            }
         }
     }
 
+    // Morte por queda ou lava
     if (player.y > 550) { deaths++; loadLevel(currentLevel); }
     if (player.y < -150) { deaths++; loadLevel(currentLevel); }
     if (b.lava && player.y + player.r > 480 && !isDistorted) { deaths++; loadLevel(currentLevel); }
 
+    // Lasers
     for (let l of lasers) {
         l.angle += l.rotSpeed;
         let x2 = l.x + Math.cos(l.angle) * l.len;
@@ -879,6 +909,7 @@ function update() {
         if (dist < player.r - 3) { deaths++; loadLevel(currentLevel); }
     }
 
+    // Balas
     for (let i = bullets.length-1; i>=0; i--) {
         let bu = bullets[i];
         bu.x += bu.vx; bu.y += bu.vy;
@@ -906,8 +937,6 @@ function distToSegment(p, v, w) {
 
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    // Desativa suavização de imagens para manter os sprites nítidos
-    ctx.imageSmoothingEnabled = false;
 
     if (currentLevel === 100 && !isDistorted) {
         ctx.fillStyle = anniversaryTheme ? "#ff6600" : "#FFD700";
@@ -999,6 +1028,7 @@ function draw() {
             }
         }
 
+        // Desenha inimigos
         for (let e of enemies) {
             if (e.type === 'distorter') {
                 const frame = e.frame % 9;
@@ -1006,10 +1036,10 @@ function draw() {
                 ctx.shadowBlur = 25;
                 ctx.shadowColor = `hsl(${Date.now() * 0.02 % 360}, 100%, 50%)`;
                 if (enemySprites[frame] && enemySprites[frame].complete) {
-                    ctx.drawImage(enemySprites[frame], Math.round(e.x), Math.round(e.y), e.w, e.h);
+                    ctx.drawImage(enemySprites[frame], e.x, e.y, e.w, e.h);
                 } else {
                     ctx.fillStyle = "#f0f";
-                    ctx.fillRect(Math.round(e.x), Math.round(e.y), e.w, e.h);
+                    ctx.fillRect(e.x, e.y, e.w, e.h);
                 }
                 ctx.restore();
                 ctx.beginPath();
@@ -1018,10 +1048,10 @@ function draw() {
                 ctx.fill();
             } else if (e.type === 'square') {
                 if (squareEnemyImg.complete) {
-                    ctx.drawImage(squareEnemyImg, Math.round(e.x), Math.round(e.y), e.w, e.h);
+                    ctx.drawImage(squareEnemyImg, e.x, e.y, e.w, e.h);
                 } else {
                     ctx.fillStyle = "#0f0";
-                    ctx.fillRect(Math.round(e.x), Math.round(e.y), e.w, e.h);
+                    ctx.fillRect(e.x, e.y, e.w, e.h);
                 }
             }
         }
@@ -1041,9 +1071,8 @@ function draw() {
         }
     }
 
-    // Jogador (arredonda a posição para evitar desfoque de subpixel)
     ctx.save();
-    ctx.translate(Math.round(player.x), Math.round(player.y));
+    ctx.translate(player.x, player.y);
     let b = getBiome(currentLevel);
     if (b.isAssas && !isDistorted) {
         const data = assasSpriteData[spriteFrame];
@@ -1062,7 +1091,7 @@ function draw() {
 
     if (b.hasGun && !b.isDynamic && currentLevel !== 100 && !isDistorted) {
         ctx.save();
-        ctx.translate(Math.round(player.x), Math.round(player.y));
+        ctx.translate(player.x, player.y);
         let angle = Math.atan2(mouse.y - player.y, mouse.x - player.x);
         ctx.rotate(angle);
         ctx.drawImage(gunImg, 10, -10, 30, 20);
