@@ -215,7 +215,7 @@
                     <li>R : recarregar blocos de gelo (fases com lava)</li>
                 </ul>
                 <p><strong>Objetivo:</strong> Chegar até a bandeira vermelha em cada fase. Complete 100 fases e vença!</p>
-                <p><strong>Inimigo distorcido:</strong> Aparece nas fases 33 a 41. Na fase 33, ele distorce o mundo após 2 segundos. Nas demais, ele te persegue!</p>
+                <p><strong>Inimigo distorcido:</strong> Aparece nas fases 33 a 41. Na fase 33, ele distorce o mundo <strong>apenas uma vez</strong>. Nas demais, ele te persegue!</p>
                 <p><strong>Fase Distorcida:</strong> Se for capturado, você é jogado em um mundo caótico. Complete a fase para <strong>escapar</strong> e voltar à fase normal onde estava!</p>
                 <p><strong>Dicas:</strong> Use o duplo pulo para alcançar plataformas distantes.</p>
             </div>
@@ -305,8 +305,8 @@ let currentBgColor = "#000";
 // Partículas do inimigo
 let particles = [];
 
-// Timer para fase 33
-let phase33Timer = null;
+// Controle da distorção na fase 33 (apenas uma vez)
+let phase33Distorted = false;
 
 function randomInt(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -429,7 +429,7 @@ function startGame() {
     isDistorted = false;
     returnToLevel = null;
     transitionActive = false;
-    if (phase33Timer) clearTimeout(phase33Timer);
+    phase33Distorted = false;
     loadLevel(1);
     gameLoop();
 }
@@ -513,7 +513,7 @@ function generateLevel(n) {
 
     if (b.isDynamic) {
         lv.push({x: 0, y: 450, w: 80, h: 20, c: "#888", t: "#aaa", type: 'normal'});
-        let numPlatforms = harderMode ? 6 + Math.floor(random() * 3) : 4 + Math.floor(random() * 3);
+        let numPlatforms = harderMode ? 6 + Math.floor(random() * 3) : 5 + Math.floor(random() * 3);
         let startX = 120;
         for (let i = 0; i < numPlatforms; i++) {
             let x = startX + i * (100 + random() * 60);
@@ -549,7 +549,7 @@ function generateLevel(n) {
         lv.push({x: 960, y: ly, type: 'goal'});
     }
 
-    // Inimigo apenas nas fases 33 a 41 (inclusive)
+    // Inimigo apenas nas fases 33 a 41
     if (n >= 33 && n <= 41 && n !== 100) {
         let enemyX = randomInt(300, 850);
         let enemyY = randomInt(150, 400);
@@ -560,7 +560,8 @@ function generateLevel(n) {
             speedX: 0.9 + Math.random() * 0.6,
             amplitude: 35 + Math.random() * 25,
             phase: Math.random() * Math.PI * 2,
-            direction: Math.random() > 0.5 ? 1 : -1
+            direction: Math.random() > 0.5 ? 1 : -1,
+            canDistort: true  // todos podem distorcer inicialmente
         });
     }
 
@@ -573,10 +574,8 @@ function loadLevel(n) {
         return;
     }
 
-    if (phase33Timer) clearTimeout(phase33Timer);
-
     if (isDistorted && returnToLevel !== null) {
-        // Ao completar fase distorcida, VOLTA para a fase original (não avança)
+        // Voltando da fase distorcida para a fase original
         currentLevel = returnToLevel;
         isDistorted = false;
         returnToLevel = null;
@@ -592,6 +591,13 @@ function loadLevel(n) {
         else player = { ...player, x: 60, y: 350 };
         player.vx = 0; player.vy = 0; player.angle = 0; player.grounded = false; player.canDoubleJump = true;
         document.getElementById("lvlNum").innerText = currentLevel;
+        
+        // Se voltou para a fase 33, marca que a distorção já aconteceu
+        if (currentLevel === 33) {
+            phase33Distorted = true;
+            // Remove a capacidade de distorcer do inimigo na fase 33
+            enemies.forEach(e => { e.canDistort = false; });
+        }
         return;
     }
 
@@ -612,9 +618,10 @@ function loadLevel(n) {
     player.vx = 0; player.vy = 0; player.angle = 0; player.grounded = false; player.canDoubleJump = true;
     document.getElementById("lvlNum").innerText = n;
 
-    // Fase 33: distorção automática após 2 segundos
-    if (n === 33 && !isDistorted && enemies.length > 0) {
-        phase33Timer = setTimeout(() => {
+    // Fase 33: distorção automática APENAS UMA VEZ
+    if (n === 33 && !phase33Distorted && !isDistorted && enemies.length > 0) {
+        phase33Distorted = true;
+        setTimeout(() => {
             if (gameRunning && !isDistorted && !transitionActive && currentLevel === 33) {
                 startDistortionTransition();
             }
@@ -656,6 +663,7 @@ function updateEnemyMovement(e) {
 }
 
 function enemySeesPlayer(e) {
+    if (!e.canDistort) return false; // se perdeu o poder, não distorce mais
     const enemyCenter = { x: e.x + e.w/2, y: e.y + e.h/2 };
     const playerCenter = { x: player.x, y: player.y };
     const dx = playerCenter.x - enemyCenter.x;
@@ -727,7 +735,6 @@ function update() {
     for (let p of platforms) {
         if (p.type === 'goal' && Math.hypot(player.x - p.x, player.y - (p.y - 20)) < 45) {
             if (isDistorted) {
-                // Volta para a fase original
                 loadLevel(returnToLevel);
             } else {
                 loadLevel(currentLevel + 1);
@@ -768,7 +775,7 @@ function update() {
 
     if (!collisionOccurred) player.grounded = false;
 
-    // Inimigos apenas nas fases 33-41 (e não na fase distorcida)
+    // Inimigos apenas nas fases 33-41 (e apenas se ainda podem distorcer)
     if (!isDistorted && currentLevel >= 33 && currentLevel <= 41 && currentLevel !== 100) {
         for (let e of enemies) {
             updateEnemyMovement(e);
