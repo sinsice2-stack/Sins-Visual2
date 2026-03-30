@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <title>Super Ball - Sinsice Definitive Edition</title>
     <style>
-        /* (mantém todos os estilos anteriores) */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             margin: 0;
@@ -259,7 +258,7 @@ for (let i = 1; i <= 9; i++) {
     enemySprites.push(img);
 }
 
-// NOVO INIMIGO: quadrado (Geometry Dash style) - tamanho aumentado para 60x60
+// NOVO INIMIGO: quadrado (Geometry Dash style) - tamanho aumentado para 48x48 (mais encorpado)
 const squareEnemyImg = new Image();
 squareEnemyImg.src = 'quadrado.webp';
 
@@ -562,16 +561,14 @@ function generateLevel(n) {
             canDistort: true
         });
     }
-    // Inimigo quadrado: fases 42 em diante (até 99) – tamanho 60x60, mais encorpado
+    // Inimigo quadrado: fases 42 em diante – tamanho aumentado para 48x48 (mais encorpado)
     else if (n >= 42 && n !== 100) {
-        // Busca plataformas com pelo menos 80px de largura para acomodar o quadrado de 60px
-        let possiblePlatforms = lv.filter(p => p.type === 'normal' && p.w >= 80);
+        let possiblePlatforms = lv.filter(p => p.type === 'normal' && p.w >= 70);
         if (possiblePlatforms.length > 0) {
             let plat = possiblePlatforms[Math.floor(Math.random() * possiblePlatforms.length)];
-            let enemyW = 60;
-            let enemyH = 60;
-            // Centraliza o quadrado na plataforma
-            let enemyX = plat.x + (plat.w - enemyW) / 2;
+            let enemyW = 48;
+            let enemyH = 48;
+            let enemyX = plat.x + 10;
             enemyX = Math.min(Math.max(enemyX, plat.x), plat.x + plat.w - enemyW);
             en.push({
                 type: 'square',
@@ -1048,6 +1045,7 @@ function draw() {
                 ctx.fillStyle = `rgba(255, 50, 80, ${0.4 + Math.sin(Date.now() * 0.02) * 0.2})`;
                 ctx.fill();
             } else if (e.type === 'square') {
+                // Desenha o quadrado com tamanho 48x48 (mais encorpado)
                 if (squareEnemyImg.complete) {
                     ctx.drawImage(squareEnemyImg, e.x, e.y, e.w, e.h);
                 } else {
