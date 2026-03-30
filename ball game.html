@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Super Ball - Sinsice Definitive Edition</title>
     <style>
+        /* (estilos iguais ao anterior) */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             margin: 0;
@@ -318,7 +319,6 @@ function generateDistortedLevel() {
     const mp = [];
     const bgColor = `hsl(${Math.random() * 360}, 70%, 15%)`;
 
-    // Plataforma inicial SEGURA
     lv.push({ x: 0, y: 300, w: 120, h: 20, c: "#888", t: "#aaa", type: 'normal' });
 
     let numPlats = randomInt(6, 10);
@@ -350,7 +350,6 @@ function generateDistortedLevel() {
         });
     }
 
-    // GOAL - posicionado com plataforma abaixo para não cair
     lv.push({ x: 900, y: 360, w: 80, h: 20, c: "#888", t: "#aaa", type: 'normal' });
     lv.push({ x: 940, y: 350, type: 'goal' });
 
@@ -561,33 +560,33 @@ function generateLevel(n) {
     return { platforms: lv, lasers: lz, movingPlatforms: mp, enemies: en, bgColor: b.bg };
 }
 
+// Carrega uma fase (normal ou distorcida)
 function loadLevel(n) {
     if (n > 100) {
         showVictory();
         return;
     }
 
-    if (isDistorted && returnToLevel !== null) {
-        // COMPLETOU A FASE DISTORCIDA: VAI PARA A PRÓXIMA FASE
-        let nextLevel = returnToLevel + 1;
-        currentLevel = nextLevel;
-        isDistorted = false;
-        returnToLevel = null;
-        const data = generateLevel(currentLevel);
+    // Caso especial: se estamos numa fase distorcida e o loadLevel foi chamado por morte ou reset,
+    // devemos recarregar a fase distorcida, e NÃO avançar.
+    if (isDistorted) {
+        // Recarrega a fase distorcida (mesmo returnToLevel)
+        const data = generateDistortedLevel();
         platforms = data.platforms;
         lasers = data.lasers;
         movingPlatforms = data.movingPlatforms;
-        enemies = data.enemies;
+        enemies = []; // sem inimigo na fase distorcida
         currentBgColor = data.bgColor;
-        let b = getBiome(currentLevel);
-        if (b.laser) player = { ...player, x: 40, y: 250 };
-        else if (b.isDynamic) player = { ...player, x: 60, y: 430 };
-        else player = { ...player, x: 60, y: 350 };
-        player.vx = 0; player.vy = 0; player.angle = 0; player.grounded = false; player.canDoubleJump = true;
-        document.getElementById("lvlNum").innerText = currentLevel;
+        // Mantém isDistorted = true e returnToLevel inalterado
+        player.x = 60; player.y = 300;
+        player.vx = 0; player.vy = 0;
+        player.grounded = false;
+        player.canDoubleJump = true;
+        document.getElementById("lvlNum").innerText = "???";
         return;
     }
 
+    // Se não está distorcido, carrega a fase normal normalmente
     currentLevel = n;
     isDistorted = false;
     const data = generateLevel(n);
@@ -614,6 +613,17 @@ function loadLevel(n) {
             }
         }, 2000);
     }
+}
+
+// Função chamada quando o jogador completa a fase distorcida (toca o goal)
+function completeDistortedPhase() {
+    if (!isDistorted) return;
+    let nextLevel = returnToLevel + 1;
+    // Limpa estado distorcido antes de carregar a próxima fase
+    isDistorted = false;
+    let tempReturn = returnToLevel;
+    returnToLevel = null;
+    loadLevel(nextLevel);
 }
 
 function startDistortionTransition() {
@@ -719,16 +729,15 @@ function update() {
     player.grounded = false;
     let collisionOccurred = false;
 
-    // VERIFICAÇÃO DO GOAL - PRIMEIRA COISA
+    // VERIFICAÇÃO DO GOAL
     for (let p of platforms) {
         if (p.type === 'goal') {
-            // Calcula a distância do centro do jogador até o ponto central da bandeira
             const goalCenterX = p.x;
             const goalCenterY = p.y - 50;
             if (Math.hypot(player.x - goalCenterX, player.y - goalCenterY) < 45) {
                 if (isDistorted) {
-                    // Completa fase distorcida e vai para a próxima
-                    loadLevel(returnToLevel + 1);
+                    // Completa a fase distorcida e avança
+                    completeDistortedPhase();
                 } else {
                     loadLevel(currentLevel + 1);
                 }
@@ -857,6 +866,7 @@ function distToSegment(p, v, w) {
 }
 
 function draw() {
+    // (mesmo código de desenho do último exemplo, sem alterações)
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     if (currentLevel === 100 && !isDistorted) {
@@ -924,7 +934,6 @@ function draw() {
 
         for (let p of platforms) {
             if (p.type === 'goal') {
-                // Desenha bandeira
                 ctx.fillStyle = "#fff";
                 ctx.fillRect(p.x-2, p.y-70, 4, 70);
                 ctx.fillStyle = "red";
