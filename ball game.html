@@ -216,7 +216,7 @@
                 </ul>
                 <p><strong>Objetivo:</strong> Chegar até a bandeira vermelha em cada fase. Complete 100 fases e vença!</p>
                 <p><strong>Inimigo distorcido:</strong> Aparece nas fases 33 a 41. Na fase 33, ele distorce o mundo após 2 segundos. Ao completar a fase distorcida, você avança para a próxima fase.</p>
-                <p><strong>Inimigo quadrado:</strong> Aparece a partir da fase 42. Ele patrulha as plataformas e persegue o jogador. Se tocar nele, você morre e recomeça a fase.</p>
+                <p><strong>Inimigo quadrado:</strong> Aparece a partir da fase 42. Ele patrulha as plataformas como um obstáculo de Geometry Dash. Se tocar nele, você morre e recomeça a fase.</p>
                 <p><strong>Dicas:</strong> Use o duplo pulo para alcançar plataformas distantes.</p>
             </div>
             <div id="secrets" class="tab-pane">
@@ -316,7 +316,7 @@ function randomInt(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-// Gera fase distorcida
+// Gera fase distorcida (idêntica)
 function generateDistortedLevel() {
     const lv = [];
     const lz = [];
@@ -561,9 +561,9 @@ function generateLevel(n) {
             canDistort: true
         });
     }
-    // Inimigo quadrado: fases 42 em diante – tamanho 60x50, persegue o jogador
+    // Inimigo quadrado: fases 42 em diante – patrulha (Geometry Dash style)
     else if (n >= 42 && n !== 100) {
-        let possiblePlatforms = lv.filter(p => p.type === 'normal' && p.x > 100 && p.w >= 60);
+        let possiblePlatforms = lv.filter(p => p.type === 'normal' && p.x > 100 && p.w >= 70);
         if (possiblePlatforms.length > 0) {
             let plat = possiblePlatforms[Math.floor(Math.random() * possiblePlatforms.length)];
             let enemyW = 60;
@@ -576,9 +576,9 @@ function generateLevel(n) {
                 y: plat.y - enemyH,
                 w: enemyW,
                 h: enemyH,
-                vx: 0,
-                grounded: true,
-                speed: 2.5
+                vx: 2.0,                 // velocidade constante
+                direction: Math.random() > 0.5 ? 1 : -1,
+                platform: plat
             });
         }
     }
@@ -675,34 +675,20 @@ function updateEnemyMovement(e) {
         if (e.x + e.w > canvas.width - 50) { e.x = canvas.width - e.w - 50; e.direction = -1; }
         e.y = e.originalY + Math.sin(Date.now() * 0.007 + e.phase) * e.amplitude;
     } else if (e.type === 'square') {
-        // Persegue o jogador horizontalmente
-        if (player.x < e.x) {
-            e.vx = -e.speed;
-        } else if (player.x > e.x + e.w) {
-            e.vx = e.speed;
-        } else {
-            e.vx *= 0.95;
+        // Patrulha (Geometry Dash): move horizontalmente, inverte nas bordas da plataforma
+        if (!e.platform) return;
+        e.x += e.vx * e.direction;
+        let leftLimit = e.platform.x;
+        let rightLimit = e.platform.x + e.platform.w - e.w;
+        if (e.x < leftLimit) {
+            e.x = leftLimit;
+            e.direction = 1;
+        } else if (e.x > rightLimit) {
+            e.x = rightLimit;
+            e.direction = -1;
         }
-        e.x += e.vx;
-        // Mantém o quadrado sobre a plataforma mais próxima abaixo dele
-        let groundY = 500;
-        for (let p of platforms) {
-            if (p.type !== 'goal' && e.x + e.w > p.x && e.x < p.x + p.w) {
-                if (p.y < groundY && p.y >= e.y + e.h) {
-                    groundY = p.y;
-                }
-            }
-        }
-        if (groundY < 500) {
-            e.y = groundY - e.h;
-            e.grounded = true;
-        } else {
-            e.grounded = false;
-            deaths++;
-            loadLevel(currentLevel);
-            return;
-        }
-        e.x = Math.max(0, Math.min(canvas.width - e.w, e.x));
+        // Mantém a altura exata sobre a plataforma
+        e.y = e.platform.y - e.h;
     }
 }
 
@@ -827,6 +813,7 @@ function update() {
     // Inimigos: movimento e colisão
     for (let e of enemies) {
         updateEnemyMovement(e);
+        // Colisão com o jogador
         if (player.x + player.r > e.x && player.x - player.r < e.x + e.w &&
             player.y + player.r > e.y && player.y - player.r < e.y + e.h) {
             deaths++;
