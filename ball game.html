@@ -295,7 +295,7 @@ let anniversaryTheme = false;
 
 // Fase distorcida
 let isDistorted = false;
-let returnToLevel = null; // fase que foi distorcida (33, 34, etc.)
+let returnToLevel = null;
 let transitionActive = false;
 let transitionTimer = 0;
 let transitionIntensity = 0;
@@ -318,6 +318,7 @@ function generateDistortedLevel() {
     const mp = [];
     const bgColor = `hsl(${Math.random() * 360}, 70%, 15%)`;
 
+    // Plataforma inicial SEGURA
     lv.push({ x: 0, y: 300, w: 120, h: 20, c: "#888", t: "#aaa", type: 'normal' });
 
     let numPlats = randomInt(6, 10);
@@ -349,8 +350,9 @@ function generateDistortedLevel() {
         });
     }
 
-    lv.push({ x: 900, y: randomInt(320, 430), w: 80, h: 20, c: "#888", t: "#aaa", type: 'normal' });
-    lv.push({ x: 940, y: 400, type: 'goal' });
+    // GOAL - posicionado com plataforma abaixo para não cair
+    lv.push({ x: 900, y: 360, w: 80, h: 20, c: "#888", t: "#aaa", type: 'normal' });
+    lv.push({ x: 940, y: 350, type: 'goal' });
 
     if (Math.random() > 0.8) {
         let laserCount = randomInt(1, 3);
@@ -603,7 +605,7 @@ function loadLevel(n) {
     player.vx = 0; player.vy = 0; player.angle = 0; player.grounded = false; player.canDoubleJump = true;
     document.getElementById("lvlNum").innerText = n;
 
-    // Fase 33: distorção automática APENAS UMA VEZ (quando entra pela primeira vez)
+    // Fase 33: distorção automática APENAS UMA VEZ
     if (n === 33 && !phase33Distorted && !isDistorted && enemies.length > 0) {
         phase33Distorted = true;
         setTimeout(() => {
@@ -630,7 +632,7 @@ function enterDistortedPhase() {
     enemies = [];
     currentBgColor = data.bgColor;
     isDistorted = true;
-    returnToLevel = currentLevel; // guarda qual fase foi distorcida (33)
+    returnToLevel = currentLevel;
     player.x = 60; player.y = 300;
     player.vx = 0; player.vy = 0;
     player.grounded = false;
@@ -717,20 +719,27 @@ function update() {
     player.grounded = false;
     let collisionOccurred = false;
 
+    // VERIFICAÇÃO DO GOAL - PRIMEIRA COISA
     for (let p of platforms) {
-        if (p.type === 'goal' && Math.hypot(player.x - p.x, player.y - (p.y - 20)) < 45) {
-            if (isDistorted) {
-                // COMPLETOU A FASE DISTORCIDA: vai para a próxima fase (returnToLevel + 1)
-                loadLevel(returnToLevel + 1);
-            } else {
-                loadLevel(currentLevel + 1);
+        if (p.type === 'goal') {
+            // Calcula a distância do centro do jogador até o ponto central da bandeira
+            const goalCenterX = p.x;
+            const goalCenterY = p.y - 50;
+            if (Math.hypot(player.x - goalCenterX, player.y - goalCenterY) < 45) {
+                if (isDistorted) {
+                    // Completa fase distorcida e vai para a próxima
+                    loadLevel(returnToLevel + 1);
+                } else {
+                    loadLevel(currentLevel + 1);
+                }
+                return;
             }
-            return;
         }
     }
 
+    // Colisão com plataformas
     for (let p of platforms) {
-        if (player.x + player.r > p.x && player.x - player.r < p.x + p.w &&
+        if (p.type !== 'goal' && player.x + player.r > p.x && player.x - player.r < p.x + p.w &&
             player.y + player.r > p.y && player.y - player.r < p.y + p.h) {
             if (p.type === 'spike') { deaths++; loadLevel(currentLevel); return; }
             if (player.vy > 0 && player.y < p.y + 15) {
@@ -761,7 +770,7 @@ function update() {
 
     if (!collisionOccurred) player.grounded = false;
 
-    // Inimigos nas fases 33-41 (exceto na fase 33 se já distorceu? na verdade pode continuar, mas o importante é que ao completar a distorcida já avançamos)
+    // Inimigos
     if (!isDistorted && currentLevel >= 33 && currentLevel <= 41 && currentLevel !== 100) {
         for (let e of enemies) {
             updateEnemyMovement(e);
@@ -777,7 +786,7 @@ function update() {
         enemies.forEach(e => { e.frame = (e.frame + 1) % 9; });
     }
 
-    // Partículas do inimigo
+    // Partículas
     if (!isDistorted && currentLevel >= 33 && currentLevel <= 41 && currentLevel !== 100) {
         for (let e of enemies) {
             if (Math.random() < 0.4) {
@@ -915,6 +924,7 @@ function draw() {
 
         for (let p of platforms) {
             if (p.type === 'goal') {
+                // Desenha bandeira
                 ctx.fillStyle = "#fff";
                 ctx.fillRect(p.x-2, p.y-70, 4, 70);
                 ctx.fillStyle = "red";
