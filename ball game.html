@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Super Ball - Sinsice Definitive Edition</title>
     <style>
+        /* (mantém todos os estilos anteriores) */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             margin: 0;
@@ -258,7 +259,7 @@ for (let i = 1; i <= 9; i++) {
     enemySprites.push(img);
 }
 
-// NOVO INIMIGO: quadrado (Geometry Dash style) - tamanho ajustado para 42x42 (pouco maior que o player)
+// NOVO INIMIGO: quadrado (Geometry Dash style) - tamanho aumentado para 60x60
 const squareEnemyImg = new Image();
 squareEnemyImg.src = 'quadrado.webp';
 
@@ -561,14 +562,16 @@ function generateLevel(n) {
             canDistort: true
         });
     }
-    // Inimigo quadrado: fases 42 em diante (até 99) – tamanho ajustado para 42x42
+    // Inimigo quadrado: fases 42 em diante (até 99) – tamanho 60x60, mais encorpado
     else if (n >= 42 && n !== 100) {
-        let possiblePlatforms = lv.filter(p => p.type === 'normal' && p.w >= 60);
+        // Busca plataformas com pelo menos 80px de largura para acomodar o quadrado de 60px
+        let possiblePlatforms = lv.filter(p => p.type === 'normal' && p.w >= 80);
         if (possiblePlatforms.length > 0) {
             let plat = possiblePlatforms[Math.floor(Math.random() * possiblePlatforms.length)];
-            let enemyW = 42;
-            let enemyH = 42;
-            let enemyX = plat.x + 10;
+            let enemyW = 60;
+            let enemyH = 60;
+            // Centraliza o quadrado na plataforma
+            let enemyX = plat.x + (plat.w - enemyW) / 2;
             enemyX = Math.min(Math.max(enemyX, plat.x), plat.x + plat.w - enemyW);
             en.push({
                 type: 'square',
