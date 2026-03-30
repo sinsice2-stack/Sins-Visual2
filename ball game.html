@@ -24,7 +24,6 @@
             image-rendering: crisp-edges;
             image-rendering: pixelated;
         }
-        /* (resto dos estilos igual ao anterior) */
         .overlay {
             position: absolute;
             top: 0;
@@ -262,7 +261,7 @@ for (let i = 1; i <= 9; i++) {
     enemySprites.push(img);
 }
 
-// NOVO INIMIGO: quadrado – tamanho aumentado para 60x60 (mais encorpado)
+// NOVO INIMIGO: quadrado – tamanho aumentado para 80x80 (bem encorpado)
 const squareEnemyImg = new Image();
 squareEnemyImg.src = 'quadrado.webp';
 
@@ -565,14 +564,14 @@ function generateLevel(n) {
             canDistort: true
         });
     }
-    // Inimigo quadrado: fases 42 em diante – tamanho 60x60 (mais encorpado)
+    // Inimigo quadrado: fases 42 em diante – tamanho 80x80 (encorpado) e exclui plataforma inicial
     else if (n >= 42 && n !== 100) {
-        // Plataformas com largura mínima 90px para acomodar o quadrado
-        let possiblePlatforms = lv.filter(p => p.type === 'normal' && p.w >= 90);
+        // Exclui a plataforma inicial (x < 80) e garante largura mínima para o inimigo
+        let possiblePlatforms = lv.filter(p => p.type === 'normal' && p.x > 100 && p.w >= 100);
         if (possiblePlatforms.length > 0) {
             let plat = possiblePlatforms[Math.floor(Math.random() * possiblePlatforms.length)];
-            let enemyW = 60;
-            let enemyH = 60;
+            let enemyW = 80;
+            let enemyH = 80;
             let enemyX = plat.x + 10;
             enemyX = Math.min(Math.max(enemyX, plat.x), plat.x + plat.w - enemyW);
             en.push({
