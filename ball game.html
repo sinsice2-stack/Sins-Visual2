@@ -20,8 +20,11 @@
             box-shadow: 0 0 30px rgba(255, 170, 51, 0.5);
             cursor: crosshair;
             border-radius: 8px;
+            /* Garante renderização nítida dos sprites */
+            image-rendering: crisp-edges;    /* Fallback */
+            image-rendering: pixelated;      /* Chrome, Edge */
+            image-rendering: crisp-edges;    /* Firefox */
         }
-        /* (demais estilos iguais ao anterior, mantidos para brevidade) */
         .overlay {
             position: absolute;
             top: 0;
@@ -259,7 +262,7 @@ for (let i = 1; i <= 9; i++) {
     enemySprites.push(img);
 }
 
-// NOVO INIMIGO: quadrado – tamanho 100x100 (bem encorpado)
+// NOVO INIMIGO: quadrado – tamanho 100x100
 const squareEnemyImg = new Image();
 squareEnemyImg.src = 'quadrado.webp';
 
@@ -903,6 +906,8 @@ function distToSegment(p, v, w) {
 
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // Desativa suavização de imagens para manter os sprites nítidos
+    ctx.imageSmoothingEnabled = false;
 
     if (currentLevel === 100 && !isDistorted) {
         ctx.fillStyle = anniversaryTheme ? "#ff6600" : "#FFD700";
@@ -1001,10 +1006,10 @@ function draw() {
                 ctx.shadowBlur = 25;
                 ctx.shadowColor = `hsl(${Date.now() * 0.02 % 360}, 100%, 50%)`;
                 if (enemySprites[frame] && enemySprites[frame].complete) {
-                    ctx.drawImage(enemySprites[frame], e.x, e.y, e.w, e.h);
+                    ctx.drawImage(enemySprites[frame], Math.round(e.x), Math.round(e.y), e.w, e.h);
                 } else {
                     ctx.fillStyle = "#f0f";
-                    ctx.fillRect(e.x, e.y, e.w, e.h);
+                    ctx.fillRect(Math.round(e.x), Math.round(e.y), e.w, e.h);
                 }
                 ctx.restore();
                 ctx.beginPath();
@@ -1013,10 +1018,10 @@ function draw() {
                 ctx.fill();
             } else if (e.type === 'square') {
                 if (squareEnemyImg.complete) {
-                    ctx.drawImage(squareEnemyImg, e.x, e.y, e.w, e.h);
+                    ctx.drawImage(squareEnemyImg, Math.round(e.x), Math.round(e.y), e.w, e.h);
                 } else {
                     ctx.fillStyle = "#0f0";
-                    ctx.fillRect(e.x, e.y, e.w, e.h);
+                    ctx.fillRect(Math.round(e.x), Math.round(e.y), e.w, e.h);
                 }
             }
         }
@@ -1036,8 +1041,9 @@ function draw() {
         }
     }
 
+    // Jogador (arredonda a posição para evitar desfoque de subpixel)
     ctx.save();
-    ctx.translate(player.x, player.y);
+    ctx.translate(Math.round(player.x), Math.round(player.y));
     let b = getBiome(currentLevel);
     if (b.isAssas && !isDistorted) {
         const data = assasSpriteData[spriteFrame];
@@ -1056,7 +1062,7 @@ function draw() {
 
     if (b.hasGun && !b.isDynamic && currentLevel !== 100 && !isDistorted) {
         ctx.save();
-        ctx.translate(player.x, player.y);
+        ctx.translate(Math.round(player.x), Math.round(player.y));
         let angle = Math.atan2(mouse.y - player.y, mouse.x - player.x);
         ctx.rotate(angle);
         ctx.drawImage(gunImg, 10, -10, 30, 20);
