@@ -215,8 +215,7 @@
                     <li>R : recarregar blocos de gelo (fases com lava)</li>
                 </ul>
                 <p><strong>Objetivo:</strong> Chegar até a bandeira vermelha em cada fase. Complete 100 fases e vença!</p>
-                <p><strong>Inimigo distorcido:</strong> Aparece nas fases 33 a 41. Na fase 33, ele distorce o mundo <strong>apenas uma vez</strong>. Depois de escapar, ele perde o poder e você pode prosseguir!</p>
-                <p><strong>Fase Distorcida:</strong> Se for capturado, você é jogado em um mundo caótico. Complete a fase para <strong>escapar e voltar</strong> à fase normal, onde o inimigo não te distorce mais.</p>
+                <p><strong>Inimigo distorcido:</strong> Aparece nas fases 33 a 41. Na fase 33, ele distorce o mundo após 2 segundos. Ao completar a fase distorcida, você <strong>avança para a próxima fase</strong>!</p>
                 <p><strong>Dicas:</strong> Use o duplo pulo para alcançar plataformas distantes.</p>
             </div>
             <div id="secrets" class="tab-pane">
@@ -296,7 +295,7 @@ let anniversaryTheme = false;
 
 // Fase distorcida
 let isDistorted = false;
-let returnToLevel = null;
+let returnToLevel = null; // fase que foi distorcida (33, 34, etc.)
 let transitionActive = false;
 let transitionTimer = 0;
 let transitionIntensity = 0;
@@ -310,14 +309,6 @@ let phase33Distorted = false;
 
 function randomInt(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-function getRandomLevel(excludeCurrent = true) {
-    let newLevel;
-    do {
-        newLevel = randomInt(1, 99);
-    } while (excludeCurrent && newLevel === currentLevel);
-    return newLevel;
 }
 
 // Gera fase distorcida (mais fácil)
@@ -575,8 +566,9 @@ function loadLevel(n) {
     }
 
     if (isDistorted && returnToLevel !== null) {
-        // Voltando da fase distorcida para a fase original
-        currentLevel = returnToLevel;
+        // COMPLETOU A FASE DISTORCIDA: VAI PARA A PRÓXIMA FASE
+        let nextLevel = returnToLevel + 1;
+        currentLevel = nextLevel;
         isDistorted = false;
         returnToLevel = null;
         const data = generateLevel(currentLevel);
@@ -591,12 +583,6 @@ function loadLevel(n) {
         else player = { ...player, x: 60, y: 350 };
         player.vx = 0; player.vy = 0; player.angle = 0; player.grounded = false; player.canDoubleJump = true;
         document.getElementById("lvlNum").innerText = currentLevel;
-        
-        // Se voltou para a fase 33, marca que a distorção já aconteceu e remove o poder do inimigo
-        if (currentLevel === 33) {
-            phase33Distorted = true;
-            enemies.forEach(e => { e.canDistort = false; });
-        }
         return;
     }
 
@@ -617,11 +603,11 @@ function loadLevel(n) {
     player.vx = 0; player.vy = 0; player.angle = 0; player.grounded = false; player.canDoubleJump = true;
     document.getElementById("lvlNum").innerText = n;
 
-    // Fase 33: distorção automática APENAS UMA VEZ (e apenas se não foi distorcida ainda)
+    // Fase 33: distorção automática APENAS UMA VEZ (quando entra pela primeira vez)
     if (n === 33 && !phase33Distorted && !isDistorted && enemies.length > 0) {
+        phase33Distorted = true;
         setTimeout(() => {
-            if (gameRunning && !isDistorted && !transitionActive && currentLevel === 33 && !phase33Distorted) {
-                phase33Distorted = true; // marca antes de iniciar para evitar múltiplos disparos
+            if (gameRunning && !isDistorted && !transitionActive && currentLevel === 33) {
                 startDistortionTransition();
             }
         }, 2000);
@@ -644,7 +630,7 @@ function enterDistortedPhase() {
     enemies = [];
     currentBgColor = data.bgColor;
     isDistorted = true;
-    returnToLevel = currentLevel;
+    returnToLevel = currentLevel; // guarda qual fase foi distorcida (33)
     player.x = 60; player.y = 300;
     player.vx = 0; player.vy = 0;
     player.grounded = false;
@@ -734,8 +720,8 @@ function update() {
     for (let p of platforms) {
         if (p.type === 'goal' && Math.hypot(player.x - p.x, player.y - (p.y - 20)) < 45) {
             if (isDistorted) {
-                // Volta para a fase original
-                loadLevel(returnToLevel);
+                // COMPLETOU A FASE DISTORCIDA: vai para a próxima fase (returnToLevel + 1)
+                loadLevel(returnToLevel + 1);
             } else {
                 loadLevel(currentLevel + 1);
             }
@@ -775,7 +761,7 @@ function update() {
 
     if (!collisionOccurred) player.grounded = false;
 
-    // Inimigos apenas nas fases 33-41 (e apenas se ainda podem distorcer)
+    // Inimigos nas fases 33-41 (exceto na fase 33 se já distorceu? na verdade pode continuar, mas o importante é que ao completar a distorcida já avançamos)
     if (!isDistorted && currentLevel >= 33 && currentLevel <= 41 && currentLevel !== 100) {
         for (let e of enemies) {
             updateEnemyMovement(e);
