@@ -469,7 +469,8 @@ function getBiome(n) {
     if (n <= 20) return { bg: "#f0f8ff", g: "#b0c4de", t: "#ffffff", grav: 0.8 };
     if (n <= 32) return { bg: "#2a0000", g: "#440000", t: "#ff4500", lava: true, hasGun: true, grav: 0.8 };
     if (n >= 33 && n <= 41) return { bg: "#2a1a2a", g: "#4a2a3a", t: "#ff66cc", grav: 0.8, isDynamic: true };
-    if (n <= 50) return { bg: "#001a33", g: "#003366", t: "#00d4ff", water: true, grav: 0.2 };
+    // CORREÇÃO: fases 42 a 50 agora têm gravidade normal (0.8) para não deixar o pulo flutuante
+    if (n >= 42 && n <= 50) return { bg: "#001a33", g: "#003366", t: "#00d4ff", water: true, grav: 0.8 };
     if (n <= 70) return { bg: "#050505", g: "#111", t: "#f00", laser: true, grav: 0.8, isAssas: true, flappy: true, hasGun: true };
     if (n <= 90) return { bg: "#4a1a2a", g: "#2a0a1a", t: "#ff66cc", grav: 0.85 };
     if (n <= 99) return { bg: "#000011", g: "#000", t: "#fff", space: true, grav: 0.05 };
@@ -579,7 +580,8 @@ function generateLevel(n) {
                 vx: 0,
                 angle: 0,
                 speed: 2.5,
-                platform: plat
+                platform: plat,
+                jumpRotate: 0   // para simular rotação de "pulo"
             });
         }
     }
@@ -699,6 +701,16 @@ function updateEnemyMovement(e) {
 
         // Rotação baseada na velocidade (gira enquanto se move)
         e.angle += e.vx * 0.2;
+
+        // Efeito de "pulo" – quando a velocidade muda drasticamente (simula impulso)
+        if (Math.abs(e.vx) > 1.5 && e.jumpRotate === 0) {
+            e.jumpRotate = 20; // dá um giro extra
+        }
+        if (e.jumpRotate > 0) {
+            e.angle += 0.3;
+            e.jumpRotate--;
+        }
+
         if (e.angle > Math.PI * 2) e.angle -= Math.PI * 2;
         if (e.angle < 0) e.angle += Math.PI * 2;
     }
@@ -1160,11 +1172,11 @@ window.addEventListener("keydown", e => {
         if (b.flappy) { player.vy = -7; }
         else {
             if (player.grounded) {
-                player.vy = -10;      // pulo reduzido
+                player.vy = -10;
                 player.grounded = false;
                 player.angle += 0.2;
             } else if (player.canDoubleJump) {
-                player.vy = -8.5;     // duplo pulo reduzido
+                player.vy = -8.5;
                 player.canDoubleJump = false;
                 player.angle += 0.4;
             }
