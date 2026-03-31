@@ -216,7 +216,7 @@
                 </ul>
                 <p><strong>Objetivo:</strong> Chegar até a bandeira vermelha em cada fase. Complete 100 fases e vença!</p>
                 <p><strong>Inimigo distorcido:</strong> Aparece nas fases 33 a 41. Na fase 33, ele distorce o mundo após 2 segundos. Ao completar a fase distorcida, você avança para a próxima fase.</p>
-                <p><strong>Inimigo quadrado:</strong> Aparece a partir da fase 42. Ele persegue o jogador e gira enquanto se move. Se tocar nele, você morre e recomeça a fase.</p>
+                <p><strong>Inimigo quadrado:</strong> Aparece a partir da fase 42. Ele persegue o jogador e gira apenas quando muda de direção (como um “pulo”). Se tocar nele, você morre e recomeça a fase.</p>
                 <p><strong>Dicas:</strong> Use o duplo pulo para alcançar plataformas distantes.</p>
             </div>
             <div id="secrets" class="tab-pane">
@@ -562,7 +562,7 @@ function generateLevel(n) {
             canDistort: true
         });
     }
-    // Inimigo quadrado: fases 42 em diante – persegue e gira apenas quando se move
+    // Inimigo quadrado: fases 42 em diante – persegue e gira apenas na mudança de direção
     else if (n >= 42 && n !== 100) {
         let possiblePlatforms = lv.filter(p => p.type === 'normal' && p.x > 100 && p.w >= 70);
         if (possiblePlatforms.length > 0) {
@@ -697,11 +697,7 @@ function updateEnemyMovement(e) {
         e.x = Math.min(Math.max(e.x, leftLimit), rightLimit);
         e.y = e.platform.y - e.h;
 
-        // Rotação: só se estiver se movendo (velocidade não nula)
-        if (Math.abs(e.vx) > 0.1) {
-            e.angle += e.vx * 0.15;
-        }
-        // Giro extra ao inverter a direção (simula um "pulo")
+        // Gira APENAS quando muda de direção (simula um "pulo")
         if (prevVx * e.vx < 0 && Math.abs(e.vx) > 0.5) {
             e.angle += (e.vx > 0 ? 0.8 : -0.8);
         }
