@@ -217,7 +217,7 @@
                 </ul>
                 <p><strong>Objetivo:</strong> Chegar até a bandeira vermelha em cada fase. Complete 100 fases e vença!</p>
                 <p><strong>Inimigo distorcido:</strong> Aparece nas fases 33 a 41. Na fase 33, ele distorce o mundo após 2 segundos. Ao completar a fase distorcida, você avança para a próxima fase.</p>
-                <p><strong>Inimigo quadrado:</strong> Aparece a partir da fase 42. Ele persegue o jogador e gira apenas quando muda de direção (efeito de “pulo”). Se tocar nele, você morre e recomeça a fase.</p>
+                <p><strong>Inimigo quadrado:</strong> Aparece a partir da fase 42. Ele persegue o jogador, pula e gira (estilo Geometry Dash). Se tocar nele, você morre e recomeça a fase.</p>
                 <p><strong>Dicas:</strong> Use o duplo pulo para alcançar plataformas distantes.</p>
             </div>
             <div id="secrets" class="tab-pane">
@@ -575,8 +575,11 @@ function generateLevel(n) {
                 w: enemyW,
                 h: enemyH,
                 vx: 0,
+                vy: 0,
+                grounded: true,
                 angle: 0,
                 speed: 2.5,
+                jumpCooldown: 0,
                 platform: plat
             });
         }
@@ -676,9 +679,9 @@ function updateEnemyMovement(e) {
     } else if (e.type === 'square') {
         if (!e.platform) return;
 
+        // Perseguição horizontal
         let targetX = player.x;
         let prevVx = e.vx;
-        // Decide direção da perseguição
         if (targetX < e.x) {
             e.vx = -e.speed;
         } else if (targetX > e.x + e.w) {
@@ -688,17 +691,49 @@ function updateEnemyMovement(e) {
             if (Math.abs(e.vx) < 0.1) e.vx = 0;
         }
 
+        // Aplica gravidade
+        if (!e.grounded) {
+            e.vy += 0.8; // gravidade
+        }
+
+        // Atualiza posição vertical
+        e.y += e.vy;
+
+        // Verifica colisão com o chão (plataforma)
+        let platformTop = e.platform.y;
+        if (e.y + e.h > platformTop) {
+            e.y = platformTop - e.h;
+            e.vy = 0;
+            e.grounded = true;
+        } else {
+            e.grounded = false;
+        }
+
+        // Atualiza posição horizontal e limites da plataforma
         e.x += e.vx;
         let leftLimit = e.platform.x;
         let rightLimit = e.platform.x + e.platform.w - e.w;
         e.x = Math.min(Math.max(e.x, leftLimit), rightLimit);
-        e.y = e.platform.y - e.h;
 
-        // Gira APENAS quando muda de direção (inverte o sinal de vx)
-        if (prevVx * e.vx < 0 && Math.abs(e.vx) > 0.5) {
-            e.angle += (e.vx > 0 ? 0.8 : -0.8);
+        // Lógica de pulo: a cada 80 frames (~1.3 segundos a 60fps) e somente se estiver no chão
+        if (e.grounded && e.jumpCooldown <= 0) {
+            e.vy = -9;   // impulso do pulo
+            e.grounded = false;
+            e.jumpCooldown = 80; // cooldown
         }
-        // Normaliza o ângulo
+        if (e.jumpCooldown > 0) e.jumpCooldown--;
+
+        // Rotação: durante o pulo (vy != 0) gira mais rápido; no chão gira apenas ao mudar de direção
+        if (!e.grounded) {
+            // Gira no ar (efeito de rotação do salto)
+            e.angle += 0.3;
+        } else {
+            // No chão: gira apenas ao inverter a direção
+            if (prevVx * e.vx < 0 && Math.abs(e.vx) > 0.5) {
+                e.angle += (e.vx > 0 ? 0.8 : -0.8);
+            }
+        }
+        // Normaliza ângulo
         e.angle = e.angle % (Math.PI * 2);
         if (e.angle < 0) e.angle += Math.PI * 2;
     }
