@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>Super Ball - Sinsice Definitive Edition</title>
     <style>
-        /* Estilos exatamente iguais aos anteriores (omitidos por brevidade, mas mantidos) */
+        /* ESTILOS ORIGINAIS – NÃO ALTERADOS */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             margin: 0;
@@ -22,30 +22,176 @@
             cursor: crosshair;
             border-radius: 8px;
         }
-        .overlay { /* ... */ }
-        .tabs { /* ... */ }
-        .tab-btn { /* ... */ }
-        .tab-content { /* ... */ }
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            color: white;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .tabs {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .tab-btn {
+            padding: 12px 28px;
+            font-size: 20px;
+            font-weight: bold;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            cursor: pointer;
+            border-radius: 40px;
+            transition: 0.3s;
+        }
+        .tab-btn.active {
+            background: #ffaa33;
+            color: #1a1a2e;
+            border-color: #ffaa33;
+            box-shadow: 0 0 15px #ffaa33;
+        }
+        .tab-btn:hover {
+            background: #ffaa33;
+            color: #1a1a2e;
+            transform: scale(1.05);
+        }
+        .tab-content {
+            background: rgba(0, 0, 0, 0.65);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 24px;
+            width: 80%;
+            max-width: 850px;
+            max-height: 70vh;
+            overflow-y: auto;
+            border: 1px solid rgba(255, 170, 51, 0.5);
+        }
         .tab-pane { display: none; }
         .tab-pane.active { display: block; }
-        .menu-btn { /* ... */ }
-        input { /* ... */ }
-        .hud { /* ... */ }
-        b { /* ... */ }
-        .victory-overlay { /* ... */ }
-        .victory-title { /* ... */ }
-        .victory-stats { /* ... */ }
-        .restart-btn { /* ... */ }
-        .cheat-input { /* ... */ }
-        .cheat-list { /* ... */ }
-        .cheat-message { /* ... */ }
-        h2 { /* ... */ }
-        ul { /* ... */ }
-        code { /* ... */ }
+        .menu-btn {
+            padding: 12px 30px;
+            margin: 10px;
+            font-size: 18px;
+            cursor: pointer;
+            background: #ffaa33;
+            border: none;
+            border-radius: 40px;
+            font-weight: bold;
+            transition: 0.3s;
+            color: #1a1a2e;
+        }
+        .menu-btn:hover {
+            background: #fff;
+            transform: scale(1.05);
+            box-shadow: 0 0 20px #ffaa33;
+        }
+        input {
+            padding: 12px 20px;
+            font-size: 18px;
+            border-radius: 40px;
+            border: none;
+            margin-bottom: 20px;
+            text-align: center;
+            width: 280px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            outline: none;
+            border: 1px solid #ffaa33;
+        }
+        input::placeholder { color: rgba(255, 255, 255, 0.7); }
+        .hud {
+            color: white;
+            position: absolute;
+            top: 20px;
+            font-size: 18px;
+            width: 100%;
+            pointer-events: none;
+            display: flex;
+            justify-content: space-around;
+            z-index: 10;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px #000;
+            font-family: monospace;
+        }
+        b { color: #ffaa33; font-size: 24px; }
+        .victory-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #1a0033, #000000);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            animation: fadeIn 1s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes glow {
+            0% { text-shadow: 0 0 10px gold; }
+            100% { text-shadow: 0 0 30px orange; }
+        }
+        .victory-title {
+            font-size: 72px;
+            font-weight: bold;
+            color: gold;
+            animation: glow 0.5s infinite alternate;
+            margin-bottom: 20px;
+        }
+        .victory-stats {
+            font-size: 24px;
+            margin: 20px;
+            text-align: center;
+            line-height: 2;
+        }
+        .victory-stats span { color: #ffaa33; font-weight: bold; font-size: 32px; }
+        .restart-btn {
+            padding: 15px 40px;
+            margin-top: 30px;
+            font-size: 20px;
+            cursor: pointer;
+            background: gold;
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+        .restart-btn:hover { transform: scale(1.1); background: orange; box-shadow: 0 0 30px gold; }
+        .cheat-input {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .cheat-input input { width: 220px; }
+        .cheat-list {
+            text-align: left;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 15px;
+            border-radius: 12px;
+        }
+        .cheat-message { color: #ffcc66; margin-top: 10px; font-weight: bold; }
+        h2 { margin-bottom: 20px; color: #ffaa33; }
+        ul { margin-left: 20px; line-height: 1.6; }
+        code { background: #222; padding: 2px 6px; border-radius: 6px; color: #ffaa33; }
     </style>
 </head>
 <body>
-    <!-- HTML do menu e HUD, igual ao anterior -->
+
     <div class="hud" id="gameHud" style="display:none">
         <span>PLAYER: <b id="displayName">---</b></span>
         <span>FASE: <b id="lvlNum">1</b></span>
@@ -71,7 +217,7 @@
                 </ul>
                 <p><strong>Objetivo:</strong> Chegar até a bandeira vermelha em cada fase. Complete 100 fases e vença!</p>
                 <p><strong>Inimigo distorcido:</strong> Aparece nas fases 33 a 41. Na fase 33, ele distorce o mundo após 2 segundos. Ao completar a fase distorcida, você avança para a próxima fase.</p>
-                <p><strong>Inimigo quadrado:</strong> Aparece a partir da fase 42. Ele persegue o jogador e gira enquanto se move. Se tocar nele, você morre e recomeça a fase.</p>
+                <p><strong>Inimigo quadrado:</strong> Aparece a partir da fase 42. Ele persegue o jogador e gira apenas quando muda de direção (efeito de “pulo”). Se tocar nele, você morre e recomeça a fase.</p>
                 <p><strong>Dicas:</strong> Use o duplo pulo para alcançar plataformas distantes.</p>
             </div>
             <div id="secrets" class="tab-pane">
@@ -97,7 +243,6 @@
     <canvas id="gameCanvas" style="display:none"></canvas>
 
 <script>
-// CÓDIGO JAVASCRIPT COMPLETO (igual ao último, mas com a correção da rotação do quadrado)
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 canvas.width = 1000; canvas.height = 500;
@@ -400,7 +545,6 @@ function generateLevel(n) {
         lv.push({x: 960, y: ly, type: 'goal'});
     }
 
-    // Inimigo distorcedor: fases 33 a 41
     if (n >= 33 && n <= 41 && n !== 100) {
         let enemyX = randomInt(300, 850);
         let enemyY = randomInt(150, 400);
@@ -416,7 +560,6 @@ function generateLevel(n) {
             canDistort: true
         });
     }
-    // Inimigo quadrado: fases 42 em diante – persegue e gira enquanto se move
     else if (n >= 42 && n !== 100) {
         let possiblePlatforms = lv.filter(p => p.type === 'normal' && p.x > 100 && p.w >= 70);
         if (possiblePlatforms.length > 0) {
@@ -533,8 +676,9 @@ function updateEnemyMovement(e) {
     } else if (e.type === 'square') {
         if (!e.platform) return;
 
-        // Persegue o jogador horizontalmente
         let targetX = player.x;
+        let prevVx = e.vx;
+        // Decide direção da perseguição
         if (targetX < e.x) {
             e.vx = -e.speed;
         } else if (targetX > e.x + e.w) {
@@ -550,12 +694,12 @@ function updateEnemyMovement(e) {
         e.x = Math.min(Math.max(e.x, leftLimit), rightLimit);
         e.y = e.platform.y - e.h;
 
-        // CORREÇÃO: Gira APENAS enquanto se move (velocidade não nula)
-        if (Math.abs(e.vx) > 0.1) {
-            e.angle += e.vx * 0.15;
+        // Gira APENAS quando muda de direção (inverte o sinal de vx)
+        if (prevVx * e.vx < 0 && Math.abs(e.vx) > 0.5) {
+            e.angle += (e.vx > 0 ? 0.8 : -0.8);
         }
         // Normaliza o ângulo
-        if (e.angle > Math.PI * 2) e.angle -= Math.PI * 2;
+        e.angle = e.angle % (Math.PI * 2);
         if (e.angle < 0) e.angle += Math.PI * 2;
     }
 }
@@ -576,14 +720,10 @@ function enemySeesPlayer(e) {
         const checkX = enemyCenter.x + dx * t;
         const checkY = enemyCenter.y + dy * t;
         for (let p of platforms) {
-            if (checkX > p.x && checkX < p.x + p.w && checkY > p.y && checkY < p.y + p.h) {
-                return false;
-            }
+            if (checkX > p.x && checkX < p.x + p.w && checkY > p.y && checkY < p.y + p.h) return false;
         }
         for (let mp of movingPlatforms) {
-            if (checkX > mp.x && checkX < mp.x + mp.w && checkY > mp.y && checkY < mp.y + mp.h) {
-                return false;
-            }
+            if (checkX > mp.x && checkX < mp.x + mp.w && checkY > mp.y && checkY < mp.y + mp.h) return false;
         }
     }
     return true;
@@ -631,7 +771,6 @@ function update() {
     player.grounded = false;
     let collisionOccurred = false;
 
-    // Goal
     for (let p of platforms) {
         if (p.type === 'goal') {
             const goalCenterX = p.x;
@@ -644,7 +783,6 @@ function update() {
         }
     }
 
-    // Colisão com plataformas fixas
     for (let p of platforms) {
         if (p.type !== 'goal' && player.x + player.r > p.x && player.x - player.r < p.x + p.w &&
             player.y + player.r > p.y && player.y - player.r < p.y + p.h) {
@@ -659,7 +797,6 @@ function update() {
         }
     }
 
-    // Colisão com plataformas móveis
     for (let mp of movingPlatforms) {
         let newY = mp.originalY + Math.sin(Date.now() * mp.speed + mp.phase) * mp.moveRange;
         mp.y = newY;
@@ -678,23 +815,16 @@ function update() {
 
     if (!collisionOccurred) player.grounded = false;
 
-    // Inimigos: movimento e colisão
     for (let e of enemies) {
         updateEnemyMovement(e);
-        // Colisão com o jogador
         if (player.x + player.r > e.x && player.x - player.r < e.x + e.w &&
             player.y + player.r > e.y && player.y - player.r < e.y + e.h) {
             deaths++;
-            if (isDistorted) {
-                loadLevel(currentLevel);
-            } else {
-                loadLevel(currentLevel);
-            }
+            loadLevel(currentLevel);
             return;
         }
     }
 
-    // Ativa distorção apenas para o distorcedor
     if (!isDistorted && currentLevel >= 33 && currentLevel <= 41 && currentLevel !== 100) {
         for (let e of enemies) {
             if (e.type === 'distorter' && enemySeesPlayer(e)) {
@@ -704,18 +834,12 @@ function update() {
         }
     }
 
-    // Animação dos sprites do distorcedor
     enemyFrameCounter++;
     if (enemyFrameCounter >= enemyFrameDelay) {
         enemyFrameCounter = 0;
-        enemies.forEach(e => {
-            if (e.type === 'distorter') {
-                e.frame = (e.frame + 1) % 9;
-            }
-        });
+        enemies.forEach(e => { if (e.type === 'distorter') e.frame = (e.frame + 1) % 9; });
     }
 
-    // Partículas do distorcedor
     if (!isDistorted && currentLevel >= 33 && currentLevel <= 41 && currentLevel !== 100) {
         for (let e of enemies) {
             if (e.type === 'distorter' && Math.random() < 0.4) {
@@ -737,24 +861,19 @@ function update() {
         if (particles[i].life <= 0) particles.splice(i,1);
     }
 
-    // Transição de distorção
     if (transitionActive) {
         transitionTimer--;
         transitionIntensity = Math.sin((90 - transitionTimer) / 90 * Math.PI);
         if (transitionTimer <= 0) {
             transitionActive = false;
-            if (!isDistorted) {
-                enterDistortedPhase();
-            }
+            if (!isDistorted) enterDistortedPhase();
         }
     }
 
-    // Morte por queda ou lava
     if (player.y > 550) { deaths++; loadLevel(currentLevel); }
     if (player.y < -150) { deaths++; loadLevel(currentLevel); }
     if (b.lava && player.y + player.r > 480 && !isDistorted) { deaths++; loadLevel(currentLevel); }
 
-    // Lasers
     for (let l of lasers) {
         l.angle += l.rotSpeed;
         let x2 = l.x + Math.cos(l.angle) * l.len;
@@ -763,7 +882,6 @@ function update() {
         if (dist < player.r - 3) { deaths++; loadLevel(currentLevel); }
     }
 
-    // Balas
     for (let i = bullets.length-1; i>=0; i--) {
         let bu = bullets[i];
         bu.x += bu.vx; bu.y += bu.vy;
@@ -882,7 +1000,6 @@ function draw() {
             }
         }
 
-        // Desenha inimigos
         for (let e of enemies) {
             if (e.type === 'distorter') {
                 const frame = e.frame % 9;
