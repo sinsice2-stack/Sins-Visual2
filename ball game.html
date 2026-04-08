@@ -216,7 +216,7 @@
                 </ul>
                 <p><strong>Objetivo:</strong> Chegar até a bandeira vermelha em cada fase. Complete 100 fases e vença!</p>
                 <p><strong>Inimigo distorcido:</strong> Aparece nas fases 33 a 41. Na fase 33, ele distorce o mundo após 2 segundos. Ao completar a fase distorcida, você avança para a próxima fase.</p>
-                <p><strong>Inimigo quadrado:</strong> Aparece a partir da fase 42. Ele fica parado na plataforma e pula verticalmente. Se tocar nele, você morre e recomeça a fase.</p>
+                <p><strong>Inimigo quadrado:</strong> Aparece a partir da fase 42. Ele fica parado na plataforma e pula verticalmente (mais alto). Se tocar nele, você morre e recomeça a fase.</p>
                 <p><strong>Dicas:</strong> Use o duplo pulo para alcançar plataformas distantes.</p>
             </div>
             <div id="secrets" class="tab-pane">
@@ -573,7 +573,6 @@ function generateLevel(n) {
                 y: plat.y - enemyH,
                 w: enemyW,
                 h: enemyH,
-                vx: 0,
                 vy: 0,
                 grounded: true,
                 jumpCooldown: 0,
@@ -677,8 +676,7 @@ function updateEnemyMovement(e) {
     else if (e.type === 'square') {
         if (!e.platform) return;
 
-        // NÃO PERSegue: fica parado horizontalmente
-        e.vx = 0;
+        // Fica parado horizontalmente
         // Aplica gravidade
         if (!e.grounded) {
             e.vy += 0.8;
@@ -699,10 +697,10 @@ function updateEnemyMovement(e) {
 
         // Lógica de pulo (apenas quando está no chão)
         if (e.grounded && e.jumpCooldown <= 0) {
-            e.vy = -9;      // impulso do pulo
+            e.vy = -13;      // impulso do pulo MAIS ALTO (antes -9)
             e.grounded = false;
             e.jumpCooldown = 80;
-            // Não aplica rotação para não ficar invertido
+            // NÃO GIRA – removido qualquer incremento de ângulo
         }
         if (e.jumpCooldown > 0) e.jumpCooldown--;
     }
