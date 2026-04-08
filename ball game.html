@@ -9,7 +9,7 @@
             margin: 0;
             overflow: hidden;
             background: #0a0a2a;
-            font-family: 'Segoe UI', 'Poppins', sans-serif;
+            font-family: 'Segoe UI', 'Roboto', 'Poppins', sans-serif;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -27,13 +27,14 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
-            color: white;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: #eee;
             z-index: 100;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            font-family: 'Segoe UI', 'Roboto', sans-serif;
         }
         .tabs {
             display: flex;
@@ -43,14 +44,15 @@
         .tab-btn {
             padding: 12px 28px;
             font-size: 20px;
-            font-weight: bold;
+            font-weight: 500;
             background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(5px);
             border: 1px solid rgba(255, 255, 255, 0.3);
-            color: white;
+            color: #fff;
             cursor: pointer;
             border-radius: 40px;
             transition: 0.3s;
+            letter-spacing: 1px;
         }
         .tab-btn.active {
             background: #ffaa33;
@@ -64,7 +66,7 @@
             transform: scale(1.05);
         }
         .tab-content {
-            background: rgba(0, 0, 0, 0.65);
+            background: rgba(0, 0, 0, 0.6);
             backdrop-filter: blur(10px);
             padding: 30px;
             border-radius: 24px;
@@ -184,7 +186,7 @@
             border-radius: 12px;
         }
         .cheat-message { color: #ffcc66; margin-top: 10px; font-weight: bold; }
-        h2 { margin-bottom: 20px; color: #ffaa33; }
+        h2 { margin-bottom: 20px; color: #ffaa33; font-weight: 400; letter-spacing: 1px; }
         ul { margin-left: 20px; line-height: 1.6; }
         code { background: #222; padding: 2px 6px; border-radius: 6px; color: #ffaa33; }
     </style>
@@ -200,27 +202,27 @@
 
     <div id="startMenu" class="overlay">
         <div class="tabs">
-            <button class="tab-btn active" data-tab="tutorial">📘 TUTORIAL</button>
-            <button class="tab-btn" data-tab="secrets">🔐 SEGREDOS</button>
-            <button class="tab-btn" data-tab="play">🎮 JOGAR</button>
+            <button class="tab-btn active" data-tab="tutorial">TUTORIAL</button>
+            <button class="tab-btn" data-tab="secrets">SEGREDOS</button>
+            <button class="tab-btn" data-tab="play">JOGAR</button>
         </div>
         <div class="tab-content">
             <div id="tutorial" class="tab-pane active">
-                <h2>✨ SUPER BALL 100 ✨</h2>
+                <h2>SUPER BALL 100</h2>
                 <p><strong>Controles:</strong></p>
                 <ul>
-                    <li>⬅️ ➡️ : mover a bola</li>
-                    <li>␣ (espaço) : pular / duplo pulo</li>
-                    <li>🖱️ mouse (fases com arma) : atirar projéteis de gelo</li>
-                    <li>R : recarregar blocos de gelo (fases com lava)</li>
+                    <li>Setas esquerda/direita : mover a bola</li>
+                    <li>Espaço : pular / duplo pulo</li>
+                    <li>Mouse (fases com arma) : atirar projéteis de gelo</li>
+                    <li>Tecla R : recarregar blocos de gelo (fases com lava)</li>
                 </ul>
                 <p><strong>Objetivo:</strong> Chegar até a bandeira vermelha em cada fase. Complete 100 fases e vença!</p>
                 <p><strong>Inimigo distorcido:</strong> Aparece nas fases 33 a 41. Na fase 33, ele distorce o mundo após 2 segundos. Ao completar a fase distorcida, você avança para a próxima fase.</p>
-                <p><strong>Inimigo quadrado:</strong> Aparece a partir da fase 42. Ele fica parado na plataforma e pula verticalmente (mais alto). Se tocar nele, você morre e recomeça a fase.</p>
+                <p><strong>Inimigo quadrado:</strong> Aparece a partir da fase 42. Ele fica parado na plataforma e pula verticalmente (bem alto). Se tocar nele, você morre e recomeça a fase.</p>
                 <p><strong>Dicas:</strong> Use o duplo pulo para alcançar plataformas distantes.</p>
             </div>
             <div id="secrets" class="tab-pane">
-                <h2>🔐 CÓDIGOS SECRETOS</h2>
+                <h2>CODIGOS SECRETOS</h2>
                 <div class="cheat-input">
                     <input type="text" id="cheatCode" placeholder="Digite o código...">
                     <button class="menu-btn" onclick="activateCheat()">ATIVAR</button>
@@ -232,7 +234,7 @@
                 <div id="cheatMessage" class="cheat-message"></div>
             </div>
             <div id="play" class="tab-pane">
-                <h2>▶️ INICIAR JOGO</h2>
+                <h2>INICIAR JOGO</h2>
                 <input type="text" id="playerNameInput" placeholder="Seu nome..." maxlength="15">
                 <button class="menu-btn" onclick="startGame()">INICIAR JOGO</button>
             </div>
@@ -380,17 +382,17 @@ function activateCheat() {
     if (!code) return;
 
     switch(code) {
-        case "GAMERUIM": glitchMode = true; msgDiv.innerHTML = "🌀 Modo malfeito ativado!"; break;
-        case "HARDER": harderMode = true; msgDiv.innerHTML = "⚡ Dificuldade aumentada!"; break;
+        case "GAMERUIM": glitchMode = true; msgDiv.innerHTML = "Modo malfeito ativado!"; break;
+        case "HARDER": harderMode = true; msgDiv.innerHTML = "Dificuldade aumentada!"; break;
         case "3110":
             const today = new Date();
             if (today.getMonth() === 9 && today.getDate() === 31) {
                 anniversaryTheme = true;
-                msgDiv.innerHTML = "🎃 Tema de aniversário ativado!";
-            } else msgDiv.innerHTML = "❌ Este código só funciona em 31/10!";
+                msgDiv.innerHTML = "Tema de aniversário ativado!";
+            } else msgDiv.innerHTML = "Este código só funciona em 31 de outubro!";
             break;
-        case "DISTORCED": distortedMode = true; msgDiv.innerHTML = "👾 Modo Distorcido ativado!"; break;
-        default: msgDiv.innerHTML = "❌ Código desconhecido!";
+        case "DISTORCED": distortedMode = true; msgDiv.innerHTML = "Modo Distorcido ativado!"; break;
+        default: msgDiv.innerHTML = "Código desconhecido!";
     }
     input.value = "";
     setTimeout(() => { if (msgDiv.innerHTML !== "") msgDiv.innerHTML = ""; }, 3000);
@@ -441,15 +443,15 @@ function showVictory() {
     const victoryDiv = document.createElement("div");
     victoryDiv.className = "victory-overlay";
     victoryDiv.innerHTML = `
-        <div class="victory-title">✨ VITÓRIA! ✨</div>
+        <div class="victory-title">VITORIA!</div>
         <div class="victory-stats">
-            🎮 JOGADOR: <span>${playerName}</span><br>
-            ⭐ FASES COMPLETAS: <span>100</span><br>
-            💀 TOTAL DE MORTES: <span>${totalDeaths}</span><br>
-            ⏱️ TEMPO TOTAL: <span>${mins} minutos e ${secs} segundos</span><br>
-            🏆 VOCÊ CONQUISTOU A SUPER BALL! 🏆
+            JOGADOR: <span>${playerName}</span><br>
+            FASES COMPLETAS: <span>100</span><br>
+            TOTAL DE MORTES: <span>${totalDeaths}</span><br>
+            TEMPO TOTAL: <span>${mins} minutos e ${secs} segundos</span><br>
+            VOCE CONQUISTOU A SUPER BALL!
         </div>
-        <button class="restart-btn" onclick="restartGame()">▶ JOGAR NOVAMENTE</button>
+        <button class="restart-btn" onclick="restartGame()">JOGAR NOVAMENTE</button>
     `;
     document.body.appendChild(victoryDiv);
 }
@@ -695,12 +697,11 @@ function updateEnemyMovement(e) {
             e.grounded = false;
         }
 
-        // Lógica de pulo (apenas quando está no chão)
+        // Lógica de pulo (apenas quando está no chão) - pulo bem mais alto
         if (e.grounded && e.jumpCooldown <= 0) {
-            e.vy = -13;      // impulso do pulo MAIS ALTO (antes -9)
+            e.vy = -18;      // impulso do pulo MAIS ALTO ainda
             e.grounded = false;
             e.jumpCooldown = 80;
-            // NÃO GIRA – removido qualquer incremento de ângulo
         }
         if (e.jumpCooldown > 0) e.jumpCooldown--;
     }
@@ -923,7 +924,7 @@ function draw() {
         ctx.fillRect(0, 300, canvas.width, 200);
         ctx.font = "bold 36px Arial";
         ctx.fillStyle = "#FFF";
-        ctx.fillText("✨ FASE FINAL! ✨", canvas.width/2 - 150, 80);
+        ctx.fillText("FASE FINAL!", canvas.width/2 - 120, 80);
         ctx.font = "20px Arial";
         ctx.fillText("Vá até o portal dourado!", canvas.width/2 - 130, 140);
         ctx.fillStyle = "#FFD700";
@@ -1094,7 +1095,7 @@ function draw() {
     if (glitchMode) {
         ctx.font = "bold 16px monospace";
         ctx.fillStyle = "#ff00ff";
-        ctx.fillText("⚡ GLITCH MODE ⚡", 10, 450);
+        ctx.fillText("GLITCH MODE", 10, 450);
         ctx.save();
         ctx.globalCompositeOperation = "difference";
         ctx.fillStyle = "rgba(255,0,0,0.2)";
@@ -1104,17 +1105,17 @@ function draw() {
     if (harderMode) {
         ctx.font = "bold 16px monospace";
         ctx.fillStyle = "#ff6600";
-        ctx.fillText("💀 HARDER MODE 💀", 10, 470);
+        ctx.fillText("HARDER MODE", 10, 470);
     }
     if (distortedMode) {
         ctx.font = "bold 16px monospace";
         ctx.fillStyle = "#aa44ff";
-        ctx.fillText("🌀 DISTORCED MODE 🌀", 10, 490);
+        ctx.fillText("DISTORCED MODE", 10, 490);
     }
     if (anniversaryTheme) {
         ctx.font = "bold 20px monospace";
         ctx.fillStyle = "#ffaa00";
-        ctx.fillText("🎃 HALLOWEEN SPECIAL 🎃", canvas.width/2 - 130, 30);
+        ctx.fillText("HALLOWEEN SPECIAL", canvas.width/2 - 120, 30);
     }
 }
 
