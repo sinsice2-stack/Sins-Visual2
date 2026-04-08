@@ -218,7 +218,7 @@
                 </ul>
                 <p><strong>Objetivo:</strong> Chegar até a bandeira vermelha em cada fase. Complete 100 fases e vença!</p>
                 <p><strong>Inimigo distorcido:</strong> Aparece nas fases 33 a 41. Na fase 33, ele distorce o mundo após 2 segundos. Ao completar a fase distorcida, você avança para a próxima fase.</p>
-                <p><strong>Inimigo quadrado:</strong> Aparece a partir da fase 42. Ele fica parado na plataforma e pula verticalmente (bem alto). Se tocar nele, você morre e recomeça a fase.</p>
+                <p><strong>Inimigo quadrado:</strong> Aparece apenas nas fases 42 a 50. Ele fica parado na plataforma e pula verticalmente (bem alto). Se tocar nele, você morre e recomeça a fase.</p>
                 <p><strong>Dicas:</strong> Use o duplo pulo para alcançar plataformas distantes.</p>
             </div>
             <div id="secrets" class="tab-pane">
@@ -546,6 +546,7 @@ function generateLevel(n) {
         lv.push({x: 960, y: ly, type: 'goal'});
     }
 
+    // Inimigo distorcedor: fases 33 a 41
     if (n >= 33 && n <= 41 && n !== 100) {
         let enemyX = randomInt(300, 850);
         let enemyY = randomInt(150, 400);
@@ -561,7 +562,8 @@ function generateLevel(n) {
             canDistort: true
         });
     }
-    else if (n >= 42 && n !== 100) {
+    // Inimigo quadrado: aparece apenas nas fases 42 a 50 (depois desaparece)
+    else if (n >= 42 && n <= 50) {
         let possiblePlatforms = lv.filter(p => p.type === 'normal' && p.x > 100 && p.w >= 70);
         if (possiblePlatforms.length > 0) {
             let plat = possiblePlatforms[Math.floor(Math.random() * possiblePlatforms.length)];
