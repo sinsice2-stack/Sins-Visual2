@@ -25,7 +25,7 @@
             border-bottom: 1px solid rgba(188, 19, 254, 0.3);
         }
 
-        .header-logo { max-width: 350px; margin: 0 auto 15px auto; }
+        .header-logo { max-width: 350px; margin: 0 auto 15px auto; cursor: pointer; }
         .header-logo img { width: 100%; height: auto; display: block; }
 
         .subtitle {
@@ -139,7 +139,7 @@
             border-top: 1px solid rgba(188, 19, 254, 0.3);
         }
 
-        /* ===== SISTEMA DE CONQUISTAS ESTILO XBOX ===== */
+        /* ===== SISTEMA DE CONQUISTAS ESTILO FLASH 2010-2014 ===== */
         #achievement-toast-container {
             position: fixed;
             bottom: 30px;
@@ -149,35 +149,78 @@
         }
 
         .achievement-toast {
-            background: rgba(20, 20, 20, 0.95);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            border: 2px solid #2e2e2e;
-            border-radius: 8px;
+            background: linear-gradient(145deg, #1a1a1a 0%, #0f0f0f 100%);
+            border: 2px solid;
+            border-radius: 12px;
             padding: 16px 24px;
             margin-bottom: 15px;
             display: flex;
             align-items: center;
             gap: 15px;
-            box-shadow: 0 0 25px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(188, 19, 254, 0.3);
+            box-shadow: 0 0 20px rgba(188, 19, 254, 0.6), inset 0 0 8px rgba(255, 255, 255, 0.1);
             color: white;
-            font-family: 'Segoe UI', sans-serif;
+            font-family: 'Arial Black', 'Impact', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 1px;
             pointer-events: none;
             transform: translateX(120%);
             animation: slideInOut 5s ease-in-out forwards;
             min-width: 280px;
-            border-left: 6px solid;
+            border-image: repeating-linear-gradient(45deg, #bc13fe, #ff00ff, #bc13fe) 30;
+            border-style: solid;
+            border-width: 3px;
         }
 
-        /* Cores por raridade (borda esquerda) */
-        .achievement-toast.rarity-common { border-left-color: #a0a0a0; }
-        .achievement-toast.rarity-uncommon { border-left-color: #3a9b3a; }
-        .achievement-toast.rarity-rare { border-left-color: #bc13fe; }
+        /* Cores da borda por raridade (mantemos o gradiente animado, mas variamos a cor base) */
+        .achievement-toast.rarity-common {
+            border-color: #a0a0a0;
+            box-shadow: 0 0 20px rgba(160, 160, 160, 0.5), inset 0 0 8px rgba(255,255,255,0.1);
+        }
+        .achievement-toast.rarity-uncommon {
+            border-color: #3a9b3a;
+            box-shadow: 0 0 20px rgba(58, 155, 58, 0.7), inset 0 0 8px rgba(255,255,255,0.1);
+        }
+        .achievement-toast.rarity-rare {
+            border-color: #bc13fe;
+            box-shadow: 0 0 25px #bc13fe, inset 0 0 10px rgba(255,255,255,0.2);
+            animation: slideInOut 5s ease-in-out forwards, rarePulse 1.5s infinite alternate;
+        }
 
+        @keyframes rarePulse {
+            from { box-shadow: 0 0 20px #bc13fe, inset 0 0 8px rgba(255,255,255,0.2); }
+            to { box-shadow: 0 0 35px #ff66ff, inset 0 0 12px rgba(255,255,255,0.3); }
+        }
+
+        /* Ícone de troféu estilizado (CSS puro, sem emojis) */
         .achievement-icon {
-            font-size: 42px;
-            line-height: 1;
-            filter: drop-shadow(0 0 8px currentColor);
+            width: 48px;
+            height: 48px;
+            background: radial-gradient(circle at 30% 20%, #fff9c4, #ffb300);
+            border-radius: 50% 50% 30% 30% / 40% 40% 20% 20%;
+            position: relative;
+            box-shadow: 0 0 15px currentColor;
+            transform: rotate(-5deg);
+        }
+        .achievement-icon::before {
+            content: "";
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: #b8860b;
+            bottom: -6px;
+            left: 14px;
+            border-radius: 20% 20% 50% 50% / 30% 30% 70% 70%;
+            box-shadow: 0 0 8px #ffb300;
+        }
+        .achievement-icon::after {
+            content: "★";
+            position: absolute;
+            top: 8px;
+            left: 12px;
+            font-size: 28px;
+            color: #fff8e7;
+            text-shadow: 0 0 10px #ffd700;
+            transform: rotate(10deg);
         }
 
         .achievement-content {
@@ -185,28 +228,33 @@
         }
 
         .achievement-title {
-            font-size: 16px;
-            font-weight: 600;
-            letter-spacing: 0.3px;
+            font-size: 18px;
+            font-weight: 900;
+            text-shadow: 0 0 8px currentColor;
             margin-bottom: 4px;
         }
 
         .achievement-description {
-            font-size: 13px;
-            color: #aaa;
+            font-size: 11px;
+            color: #ddd;
+            font-family: 'Segoe UI', sans-serif;
+            text-transform: none;
+            letter-spacing: 0.5px;
         }
 
         .achievement-score {
-            font-size: 22px;
-            font-weight: 700;
-            color: #bc13fe;
-            text-shadow: 0 0 10px rgba(188, 19, 254, 0.8);
+            font-size: 28px;
+            font-weight: 900;
+            color: #ffd966;
+            text-shadow: 0 0 15px #ffaa00;
             margin-left: 5px;
+            font-family: 'Impact', sans-serif;
         }
         .achievement-score span {
-            font-size: 14px;
+            font-size: 16px;
             color: #ccc;
-            margin-right: 3px;
+            margin-right: 4px;
+            text-shadow: none;
         }
 
         @keyframes slideInOut {
@@ -223,13 +271,13 @@
     <audio id="click-sound" src="click.mp3" preload="auto"></audio>
     <audio id="select-sound" src="select.mp3" preload="auto"></audio>
 
-    <!-- Áudios das conquistas (serão gerenciados pelo sistema) -->
+    <!-- Áudios das conquistas -->
     <audio id="achievement-sound-common" src="conquista 1.mp3" preload="auto"></audio>
     <audio id="achievement-sound-uncommon" src="conquista 2.mp3" preload="auto"></audio>
     <audio id="achievement-sound-rare" src="conquista suprema.mp3" preload="auto"></audio>
 
     <header>
-        <div class="header-logo">
+        <div class="header-logo" id="secret-logo">
             <img src="logo sinsice2 site.webp" alt="Sins Ice2 Logo">
         </div>
         <div class="subtitle">13 anos • YouTuber • Animador • Compositor • Designer</div>
@@ -288,7 +336,7 @@
         <video id="lightbox-video" controls loop style="display:none;"></video>
     </div>
 
-    <!-- Container para os toasts de conquista -->
+    <!-- Container dos toasts -->
     <div id="achievement-toast-container"></div>
 
     <footer>
@@ -296,7 +344,7 @@
     </footer>
 
     <script>
-        // ======================== SCRIPTS ORIGINAIS (MODIFICADOS PARA INTEGRAR CONQUISTAS) ========================
+        // ======================== SCRIPTS ORIGINAIS ========================
         const clickSound = document.getElementById('click-sound');
         const selectSound = document.getElementById('select-sound');
 
@@ -307,46 +355,40 @@
             }
         }
 
-        // Carrega os sons antecipadamente (útil para mobile)
         document.body.addEventListener('click', function() {
             clickSound.load();
             selectSound.load();
         }, { once: true });
 
-        // ======================== SISTEMA DE CONQUISTAS (XBOX STYLE) ========================
+        // ======================== SISTEMA DE CONQUISTAS (ESTILO FLASH) ========================
         (function(){
             "use strict";
 
-            // ----- Elementos de áudio -----
+            // ----- Áudios -----
             const audioCommon = document.getElementById('achievement-sound-common');
             const audioUncommon = document.getElementById('achievement-sound-uncommon');
             const audioRare = document.getElementById('achievement-sound-rare');
             
             // ----- Configuração de raridade -----
             const RARITY = {
-                COMMON: { name: 'common', sound: audioCommon, points: 15 },
-                UNCOMMON: { name: 'uncommon', sound: audioUncommon, points: 30 },
-                RARE: { name: 'rare', sound: audioRare, points: 50 }
+                COMMON:   { name: 'common',   sound: audioCommon,   points: 10 },
+                UNCOMMON: { name: 'uncommon', sound: audioUncommon, points: 25 },
+                RARE:     { name: 'rare',     sound: audioRare,     points: 50 }
             };
 
             // ----- Estado e fila -----
-            let unlockedAchievements = {};          // Chaves das conquistas já desbloqueadas na sessão atual
-            const STORAGE_KEY = 'sins_achievements';
+            let unlockedAchievements = {};          // desbloqueadas na sessão atual
+            const STORAGE_KEY = 'sins_achievements_v2';
             
             let isQueueProcessing = false;
             const achievementQueue = [];
-            let audioUnlocked = false;               // Flag para autoplay (desbloqueado no primeiro clique)
-            let firstClickHandlerAttached = false;
+            let audioUnlocked = false;
 
-            // ----- Persistência (localStorage) -----
+            // ----- Persistência -----
             function loadUnlockedFromStorage() {
                 const stored = localStorage.getItem(STORAGE_KEY);
                 if (stored) {
-                    try {
-                        unlockedAchievements = JSON.parse(stored);
-                    } catch(e) {
-                        unlockedAchievements = {};
-                    }
+                    try { unlockedAchievements = JSON.parse(stored); } catch(e) { unlockedAchievements = {}; }
                 } else {
                     unlockedAchievements = {};
                 }
@@ -356,15 +398,12 @@
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(unlockedAchievements));
             }
 
-            // Carrega inicial
             loadUnlockedFromStorage();
 
-            // Após 2 segundos, permite reconquistar (limpa flags da sessão atual, mas mantém no storage para próxima recarga)
+            // Permite reconquistar após 2 segundos (mantém a experiência de "sempre ter feedback")
             setTimeout(() => {
-                // Reseta apenas as flags em memória, assim novas conquistas podem ser ganhas novamente
                 unlockedAchievements = {};
-                console.log('[Conquistas] Sessão resetada – você pode ganhar conquistas novamente!');
-                // Não salvamos no storage, pois queremos que ao recarregar a página o ciclo se repita.
+                console.log('[Conquistas] Sessão resetada – conquistas disponíveis novamente.');
             }, 2000);
 
             // ----- Fila de exibição (evita sobreposição) -----
@@ -375,27 +414,28 @@
                 while (achievementQueue.length > 0) {
                     const achievement = achievementQueue.shift();
                     await showAchievementToast(achievement);
-                    // Pequena pausa entre conquistas consecutivas (opcional)
-                    await new Promise(resolve => setTimeout(resolve, 300));
+                    await new Promise(resolve => setTimeout(resolve, 300)); // pequeno intervalo entre toasts
                 }
 
                 isQueueProcessing = false;
             }
 
-            // Exibe o toast e toca o áudio correspondente, retorna Promise que resolve quando a animação termina (5s)
+            // Exibe o toast e toca o áudio IMEDIATAMENTE
             function showAchievementToast(achievement) {
                 return new Promise((resolve) => {
                     const container = document.getElementById('achievement-toast-container');
                     const toast = document.createElement('div');
                     toast.className = `achievement-toast rarity-${achievement.rarity.name}`;
                     
-                    // Ícone de troféu com cor baseada na raridade (simples)
-                    let iconColor = '#a0a0a0';
-                    if (achievement.rarity === RARITY.UNCOMMON) iconColor = '#3a9b3a';
-                    if (achievement.rarity === RARITY.RARE) iconColor = '#bc13fe';
+                    // Toca o som no mesmo instante (garantindo que o contexto de áudio já foi desbloqueado)
+                    if (audioUnlocked && achievement.rarity.sound) {
+                        const sound = achievement.rarity.sound;
+                        sound.currentTime = 0;
+                        sound.play().catch(e => console.warn('Erro ao tocar áudio da conquista:', e));
+                    }
                     
                     toast.innerHTML = `
-                        <div class="achievement-icon" style="color: ${iconColor};">🏆</div>
+                        <div class="achievement-icon"></div>
                         <div class="achievement-content">
                             <div class="achievement-title">${achievement.name}</div>
                             <div class="achievement-description">Conquista desbloqueada!</div>
@@ -405,45 +445,28 @@
                     
                     container.appendChild(toast);
                     
-                    // Toca o áudio correspondente (se desbloqueado)
-                    if (audioUnlocked && achievement.rarity.sound) {
-                        const sound = achievement.rarity.sound;
-                        sound.currentTime = 0;
-                        sound.play().catch(e => console.warn('Erro ao tocar áudio da conquista:', e));
-                    }
-                    
-                    // Remove o toast após a animação (5s)
                     setTimeout(() => {
-                        if (toast.parentNode) {
-                            toast.remove();
-                        }
+                        if (toast.parentNode) toast.remove();
                         resolve();
                     }, 5000);
                 });
             }
 
-            // ----- API pública para desbloquear conquista -----
+            // ----- API pública -----
             window.unlockAchievement = function(achievementId, name, rarity, customPoints = null) {
-                // Se não houver raridade válida, sai
-                if (!rarity || !RARITY[rarity]) {
-                    console.error('Raridade inválida:', rarity);
-                    return;
-                }
+                if (!rarity || !RARITY[rarity]) return;
                 
                 const rarityObj = RARITY[rarity];
                 const points = customPoints !== null ? customPoints : rarityObj.points;
                 
-                // Verifica se já foi desbloqueada nesta sessão (após delay pode estar limpo)
                 if (unlockedAchievements[achievementId]) {
-                    console.log(`Conquista "${name}" já foi desbloqueada nesta sessão.`);
+                    console.log(`Conquista "${name}" já desbloqueada nesta sessão.`);
                     return;
                 }
                 
-                // Marca como desbloqueada e salva
                 unlockedAchievements[achievementId] = true;
                 saveUnlockedToStorage();
                 
-                // Adiciona à fila
                 achievementQueue.push({
                     id: achievementId,
                     name: name,
@@ -451,20 +474,17 @@
                     points: points
                 });
                 
-                // Inicia processamento se não estiver em andamento
                 processQueue();
             };
 
-            // ----- Desbloqueio de áudio no primeiro clique (prevenção de autoplay) + conquista "Primeiro Acesso" -----
+            // ----- Desbloqueio de áudio no primeiro clique + conquista "Primeiro Acesso" -----
             function enableAudioOnFirstInteraction() {
                 if (audioUnlocked) return;
                 
-                // Força carregamento e reprodução silenciosa para desbloquear contexto
                 const allAudios = [audioCommon, audioUncommon, audioRare, clickSound, selectSound];
                 allAudios.forEach(audio => {
                     if (audio) {
                         audio.load();
-                        // Tenta tocar e pausar imediatamente para "desbloquear"
                         audio.play().then(() => {
                             audio.pause();
                             audio.currentTime = 0;
@@ -473,33 +493,26 @@
                 });
                 
                 audioUnlocked = true;
-                console.log('[Conquistas] Áudio desbloqueado pelo primeiro clique.');
+                console.log('[Conquistas] Áudio desbloqueado.');
                 
-                // Dispara conquista "Primeiro Acesso" (Simples/Comum)
-                // Verifica se já não foi desbloqueada (pode ter sido resetada após delay, mas queremos garantir que só toque uma vez por "sessão ativa")
                 if (!unlockedAchievements['first_access']) {
                     window.unlockAchievement('first_access', 'Primeiro Acesso', 'COMMON', 10);
                 }
                 
-                // Remove o listener global após o primeiro clique
                 document.removeEventListener('click', enableAudioOnFirstInteraction);
                 document.removeEventListener('touchstart', enableAudioOnFirstInteraction);
             }
 
-            // Adiciona listeners para o primeiro clique/toque
             document.addEventListener('click', enableAudioOnFirstInteraction, { once: true });
             document.addEventListener('touchstart', enableAudioOnFirstInteraction, { once: true });
 
-            // ----- Conexão com eventos existentes (exemplos de conquistas) -----
-            // Para demonstrar, adicionamos conquistas em algumas interações já existentes.
-            
-            // 1. Ao abrir lightbox de imagem (Ilustrações ou Design) -> Conquista Incomum
+            // ========== NOVOS GATILHOS DE CONQUISTAS (AJUSTADOS PARA DIFICULDADE) ==========
+
+            // 1. Lightbox de imagem (ilustração/design) → COMMON (antes era incomum)
             const originalOpenLightbox = window.openLightbox;
             window.openLightbox = function(element) {
-                // Chama função original
                 if (originalOpenLightbox) originalOpenLightbox.call(this, element);
                 else {
-                    // Fallback caso não definido (segurança)
                     const lb = document.getElementById('lightbox');
                     const lbImg = document.getElementById('lightbox-img');
                     const lbVid = document.getElementById('lightbox-video');
@@ -510,11 +523,10 @@
                     lbImg.style.display = 'block';
                     lb.style.display = 'flex';
                 }
-                // Conquista: "Olheiro de Arte" (Incomum)
-                window.unlockAchievement('art_viewer', 'Olheiro de Arte', 'UNCOMMON', 25);
+                window.unlockAchievement('art_viewer', 'Olheiro de Arte', 'COMMON', 10);
             };
 
-            // 2. Ao abrir lightbox de vídeo (animação) -> Conquista Rara
+            // 2. Lightbox de vídeo (animação) → UNCOMMON (antes era rara)
             const originalOpenLightboxVideo = window.openLightboxVideo;
             window.openLightboxVideo = function(videoSrc) {
                 if (originalOpenLightboxVideo) originalOpenLightboxVideo.call(this, videoSrc);
@@ -528,76 +540,83 @@
                     lb.style.display = 'flex';
                     lbVid.play();
                 }
-                window.unlockAchievement('anim_lover', 'Mestre da Animação', 'RARE', 50);
+                window.unlockAchievement('anim_lover', 'Apreciador de Animações', 'UNCOMMON', 25);
             };
 
-            // 3. Clicar no link do YouTube (GIF) -> Conquista Comum (mas com som especial)
-            document.getElementById('youtube-link').addEventListener('click', function(e) {
-                // Não impede navegação, apenas dispara conquista
-                window.unlockAchievement('youtube_fan', 'Apoiador do Canal', 'COMMON', 15);
+            // 3. Link do YouTube → COMMON
+            document.getElementById('youtube-link').addEventListener('click', function() {
+                window.unlockAchievement('youtube_fan', 'Apoiador do Canal', 'COMMON', 10);
             });
 
-            // 4. Clicar no botão "JOGAR BALL GAME" -> Conquista Rara
+            // 4. Botão "JOGAR BALL GAME" → UNCOMMON
             const ballGameItem = document.querySelector('.gallery-item.new-game-glow');
             if (ballGameItem) {
-                // Já tem onclick, vamos adicionar um listener extra para não sobrescrever
-                ballGameItem.addEventListener('click', function(e) {
-                    // A conquista só será disparada se o clique não for no link (o window.open já vai abrir)
-                    window.unlockAchievement('game_tester', 'Playtester Dedicado', 'RARE', 50);
+                ballGameItem.addEventListener('click', function() {
+                    window.unlockAchievement('game_tester', 'Playtester Dedicado', 'UNCOMMON', 25);
                 });
             }
 
-            // Também podemos adicionar conquista ao fechar lightbox (apenas exemplo)
-            const originalCloseLightbox = window.closeLightbox;
-            window.closeLightbox = function() {
-                if (originalCloseLightbox) originalCloseLightbox.call(this);
-                else {
-                    document.getElementById('lightbox').style.display = 'none';
-                    const vid = document.getElementById('lightbox-video');
-                    if (vid) vid.pause();
+            // 5. CONQUISTA SECRETA RARA: clicar 5 vezes no logo (header-logo)
+            const logoElement = document.getElementById('secret-logo');
+            let logoClickCount = 0;
+            let logoClickTimer = null;
+            logoElement.addEventListener('click', function(e) {
+                e.stopPropagation(); // não interfere em outros cliques
+                logoClickCount++;
+                clearTimeout(logoClickTimer);
+                logoClickTimer = setTimeout(() => { logoClickCount = 0; }, 2000); // reseta após 2s sem clicar
+                
+                if (logoClickCount >= 5) {
+                    window.unlockAchievement('secret_fan', 'Fã de Sins Ice2', 'RARE', 50);
+                    logoClickCount = 0;
+                    clearTimeout(logoClickTimer);
                 }
-                // Conquista opcional: "Fechou a Galeria" (Comum)
-                // window.unlockAchievement('gallery_closer', 'Curador Rápido', 'COMMON', 5);
-            };
+            });
 
-            console.log('[Conquistas] Sistema iniciado. Aguardando primeiro clique para desbloquear áudio...');
+            // 6. (Opcional) Conquista RARA ao pressionar a tecla "S" (para quem sabe do segredo)
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 's' || e.key === 'S') {
+                    window.unlockAchievement('secret_key', 'Digitou S', 'RARE', 50);
+                }
+            });
+
+            // Fallback para funções originais caso não definidas
+            if (typeof window.openLightbox !== 'function') {
+                window.openLightbox = function(element) {
+                    const imgSrc = element.querySelector('img').src;
+                    const lb = document.getElementById('lightbox');
+                    const lbImg = document.getElementById('lightbox-img');
+                    const lbVid = document.getElementById('lightbox-video');
+                    lbVid.style.display = 'none';
+                    lbVid.pause();
+                    lbImg.src = imgSrc;
+                    lbImg.style.display = 'block';
+                    lb.style.display = 'flex';
+                };
+            }
+            if (typeof window.openLightboxVideo !== 'function') {
+                window.openLightboxVideo = function(videoSrc) {
+                    const lb = document.getElementById('lightbox');
+                    const lbImg = document.getElementById('lightbox-img');
+                    const lbVid = document.getElementById('lightbox-video');
+                    lbImg.style.display = 'none';
+                    lbVid.src = videoSrc;
+                    lbVid.style.display = 'block';
+                    lb.style.display = 'flex';
+                    lbVid.play();
+                };
+            }
+            if (typeof window.closeLightbox !== 'function') {
+                window.closeLightbox = function() {
+                    const lb = document.getElementById('lightbox');
+                    const lbVid = document.getElementById('lightbox-video');
+                    lb.style.display = 'none';
+                    if (lbVid) lbVid.pause();
+                };
+            }
+
+            console.log('[Conquistas] Sistema FLASH 2010-2014 ativo. Boa sorte desbloqueando as raras!');
         })();
-
-        // ======================== FUNÇÕES ORIGINAIS (caso não tenham sido sobrescritas) ========================
-        // Garantir definições padrão se não existirem (por segurança)
-        if (typeof window.openLightbox !== 'function') {
-            window.openLightbox = function(element) {
-                const imgSrc = element.querySelector('img').src;
-                const lb = document.getElementById('lightbox');
-                const lbImg = document.getElementById('lightbox-img');
-                const lbVid = document.getElementById('lightbox-video');
-                lbVid.style.display = 'none';
-                lbVid.pause();
-                lbImg.src = imgSrc;
-                lbImg.style.display = 'block';
-                lb.style.display = 'flex';
-            };
-        }
-        if (typeof window.openLightboxVideo !== 'function') {
-            window.openLightboxVideo = function(videoSrc) {
-                const lb = document.getElementById('lightbox');
-                const lbImg = document.getElementById('lightbox-img');
-                const lbVid = document.getElementById('lightbox-video');
-                lbImg.style.display = 'none';
-                lbVid.src = videoSrc;
-                lbVid.style.display = 'block';
-                lb.style.display = 'flex';
-                lbVid.play();
-            };
-        }
-        if (typeof window.closeLightbox !== 'function') {
-            window.closeLightbox = function() {
-                const lb = document.getElementById('lightbox');
-                const lbVid = document.getElementById('lightbox-video');
-                lb.style.display = 'none';
-                if (lbVid) lbVid.pause();
-            };
-        }
     </script>
 </body>
 </html>
